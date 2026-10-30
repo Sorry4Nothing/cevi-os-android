@@ -75,6 +75,8 @@ fun ProfileScreen(
     onRemoveImage: () -> Unit,
     onChangePassword: () -> Unit,
     onOpenPrivacy: () -> Unit,
+    onOpenSupport: () -> Unit,
+    onOpenDeleteAccount: () -> Unit,
     onSignOut: () -> Unit,
     onLeave: () -> Unit,
 ) {
@@ -103,6 +105,11 @@ fun ProfileScreen(
                     R.drawable.ic_shield, stringResource(R.string.profile_privacy),
                     onClick = onOpenPrivacy, clickLabel = stringResource(R.string.profile_privacy_open), chevron = true,
                 )
+                SettingsDivider()
+                SettingsRow(
+                    R.drawable.ic_question, stringResource(R.string.profile_support),
+                    onClick = onOpenSupport, clickLabel = stringResource(R.string.profile_privacy_open), chevron = true,
+                )
             }
             SectionTitle(R.string.profile_section_account)
             SettingsCard {
@@ -115,6 +122,11 @@ fun ProfileScreen(
                     )
                     SettingsDivider()
                 }
+                SettingsRow(
+                    R.drawable.ic_info, stringResource(R.string.profile_delete_account),
+                    onClick = onOpenDeleteAccount, clickLabel = stringResource(R.string.profile_privacy_open), chevron = true,
+                )
+                SettingsDivider()
                 SettingsRow(R.drawable.ic_logout, stringResource(R.string.profile_sign_out), onClick = onSignOut, loading = form.running)
             }
             SlowHint(form.running)

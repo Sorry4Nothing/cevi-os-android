@@ -34,22 +34,23 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Login, Passwort, Willkommen, Profil, Datenschutz | – | mit den jeweiligen Issues (Login, Profil) |
 | Anmeldungen und Anwesenheit (Leitende) | – | Epic «Leitende», nicht begonnen |
 
-## Was der Entwurf zeigt, die API aber nicht liefert
+## Was der Entwurf zeigt, die API aber (noch) nicht liefert
 
-Beim Umsetzen nicht erfinden, sondern im Backend nachfragen:
+Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erfinden: Der Baustein bleibt weg, die Stelle ist mit dem Backend-Issue verknüpft.
 
 - **Ungelesen-Zähler** am Chat-Icon und in der Chatliste: kein Feld in der API.
 - **Kontaktperson** im Programmdetail: kein Feld in der API.
 - **Profilbild, Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.
+- Ebenfalls gewünscht: ein Flag je Nachricht, ob man sie ausblenden darf (heute leitet die App das aus dem Profil ab).
 
-## Abweichungen im Entwurf selbst
+## Grössen und Werte: das Design System gilt, nicht die Mockups
 
-Beim Auslesen sind Widersprüche aufgefallen. Der Code folgt den Tokens, bis der Entwurf geklärt ist:
+Zwischen dem Design System (`tokens.json`, Brandbook) und den einzelnen Bildschirmen gibt es kleine Abweichungen. **Es gelten immer die Werte des Design Systems**, die Bildschirme zeigen nur Aufbau und Anordnung (Entscheid 2026-10-30). Bekannte Abweichungen in den Bildschirmen, die der Code nicht übernimmt:
 
-- Titelgrösse: Token `headline` 32/38, das Brandbook nennt für den Kopf 30 sp, die Bildschirme 30/36.
-- `outline`: Token `#8A8A90` (Nacht), die Bildschirme nutzen `#74746F`.
-- Einige Farben der Bildschirme haben kein Token (`#C2C3EC`, `#B4B6F5`, `#2C7C91`).
-- MitleseHinweis im Tag-Theme: Bildschirm `#DFDFF3`, Token `secondary-container` `#ECECF8`.
+- Titelgrösse: Token `headline` 32/38 gilt, nicht 30/36 aus den Bildschirmen.
+- `outline`: Token `#8A8A90` (Nacht) gilt, nicht `#74746F`.
+- Farben ohne Token (`#C2C3EC`, `#B4B6F5`, `#2C7C91`): nicht übernommen, es gelten die Tokens `accent`, `secondary-container` usw.
+- MitleseHinweis im Tag-Theme: Token `secondary-container` `#ECECF8` gilt, nicht `#DFDFF3`.
 
 ## Prüfen
 

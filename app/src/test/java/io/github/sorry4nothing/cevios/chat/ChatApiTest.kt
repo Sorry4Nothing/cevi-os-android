@@ -95,6 +95,70 @@ class ChatApiTest {
     }
 
     @Test
+    fun einzelchatDesElternteilsSendetNurDieStufe() {
+        server.enqueue(json(200, """{"id":"c7"}"""))
+        assertEquals(ApiResult.Ok(ChatKennung("c7")), runBlocking { chat.einzelchat("s1") })
+        val anfrage = server.takeRequest()
+        assertEquals("POST /api/v1/chats/direkt HTTP/1.1", anfrage.requestLine)
+        assertEquals("""{"stufeId":"s1"}""", anfrage.body?.utf8())
+    }
+
+    @Test
+    fun einzelchatDerStufenleitungNenntDasElternteil() {
+        server.enqueue(json(200, """{"id":"c7"}"""))
+        runBlocking { chat.einzelchat("s1", "e1") }
+        assertEquals("""{"stufeId":"s1","elternUserId":"e1"}""", server.takeRequest().body?.utf8())
+    }
+
+    @Test
+    fun ausblendenUndMeldenPostenOhneBody() {
+        server.enqueue(MockResponse.Builder().code(204).build())
+        server.enqueue(MockResponse.Builder().code(204).build())
+        runBlocking {
+            assertEquals(ApiResult.Ok(Unit), chat.ausblenden("m1"))
+            assertEquals(ApiResult.Ok(Unit), chat.melden("m1"))
+        }
+        val ausblenden = server.takeRequest()
+        assertEquals("POST /api/v1/nachrichten/m1/ausblenden HTTP/1.1", ausblenden.requestLine)
+        assertEquals(0, ausblenden.body?.size ?: 0)
+        assertEquals("POST /api/v1/nachrichten/m1/melden HTTP/1.1", server.takeRequest().requestLine)
+    }
+
+    @Test
+    fun ausblendenOhneRechtIst403() {
+        server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"x"}"""))
+        assertEquals(ApiResult.Fehler(ApiFehler.KEINE_BERECHTIGUNG), runBlocking { chat.ausblenden("m1") })
+    }
+
+    @Test
+    fun hilfeLiestDenTextOderKeinen() {
+        server.enqueue(json(200, """{"vertrauenspersonen":"Vertrauensperson: Beispiel, erreichbar am Abend."}"""))
+        server.enqueue(json(200, """{"vertrauenspersonen":null}"""))
+        runBlocking {
+            assertEquals("Vertrauensperson: Beispiel, erreichbar am Abend.", (chat.hilfe() as ApiResult.Ok).wert.vertrauenspersonen)
+            assertNull((chat.hilfe() as ApiResult.Ok).wert.vertrauenspersonen)
+        }
+        assertEquals("GET /api/v1/hilfe HTTP/1.1", server.takeRequest().requestLine)
+    }
+
+    @Test
+    fun profilLiestNurRollenStufenUndKinderDerStufen() {
+        server.enqueue(
+            json(
+                200,
+                """{"id":"u1","name":"Beispiel","benutzername":"b","mussPasswortAendern":false,"admin":false,
+                "rollen":[{"stufeId":"s1","typ":"stufenleitung"}],
+                "stufen":[{"id":"s1","name":"Pfadi","kuerzel":"PF"}],
+                "kinder":[{"id":"k1","vorname":"Mia","nachname":"Muster","stufeId":"s1"}]}""",
+            ),
+        )
+        val profil = (runBlocking { chat.profil() } as ApiResult.Ok).wert
+        assertEquals("GET /api/v1/ich HTTP/1.1", server.takeRequest().requestLine)
+        assertTrue(profil.istStufenleitung("s1"))
+        assertEquals(ProfilKind("k1", "s1"), profil.kinder.single())
+    }
+
+    @Test
     fun zuVieleNachrichtenGibtDenFehlerFuerZuVieleAnfragen() {
         server.enqueue(json(429, """{"code":"ZU_VIELE_ANFRAGEN","message":"x"}"""))
         assertEquals(ApiResult.Fehler(ApiFehler.ZU_VIELE_ANFRAGEN), runBlocking { chat.senden("c1", "Hallo") })

@@ -12,4 +12,18 @@ class ChatApi(private val api: ApiClient) {
 
     suspend fun senden(chatId: String, text: String): ApiResult<NachrichtKennung> =
         api.post("/api/v1/chats/$chatId/nachrichten", NachrichtAnfrage(text))
+
+    /** Legt den Einzelchat an oder liefert den bestehenden (idempotent). Nur Stufenleitungen nennen `elternUserId`. */
+    suspend fun einzelchat(stufeId: String, elternUserId: String? = null): ApiResult<ChatKennung> =
+        api.post("/api/v1/chats/direkt", EinzelchatAnfrage(stufeId, elternUserId))
+
+    suspend fun ausblenden(nachrichtId: String): ApiResult<Unit> =
+        api.postOhneBody("/api/v1/nachrichten/$nachrichtId/ausblenden")
+
+    suspend fun melden(nachrichtId: String): ApiResult<Unit> =
+        api.postOhneBody("/api/v1/nachrichten/$nachrichtId/melden")
+
+    suspend fun hilfe(): ApiResult<HilfeAntwort> = api.get("/api/v1/hilfe")
+
+    suspend fun profil(): ApiResult<Profil> = api.get("/api/v1/ich")
 }

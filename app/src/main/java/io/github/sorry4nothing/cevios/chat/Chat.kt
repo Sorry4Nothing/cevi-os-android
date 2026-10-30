@@ -47,6 +47,7 @@ data class NachrichtAnfrage(val text: String)
 @Serializable
 data class NachrichtKennung(val id: String)
 
+
 /**
  * Die geladenen Nachrichten eines Chats, neueste zuerst. Die IDs sind UUIDv7 in Kleinbuchstaben und
  * ordnen sich als Text nach der Zeit.

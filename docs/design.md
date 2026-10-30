@@ -36,11 +36,11 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Notice.kt` (`NoticeBanner`), `ui/Buttons.kt` (`PrimaryButton`, `OutlinedPillButton`, `TextActionButton`), `ui/Focus.kt` (`focusRing`) | umgesetzt (#38) |
 | Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/States.kt`: `ErrorState`, `EmptyState`, `LoadingSkeleton` | umgesetzt (#38); «Anmelden» erst mit dem Login |
 | ChatZeile (Karten, Abschnitte «Gruppen» und «Mit der Stufenleitung») | `chat/ChatScreens.kt`: `ChatListScreen`, `ChatCard`, `ChatAvatar` | umgesetzt (#39), Zähler «ungelesen» (#52), Vorschau der letzten Nachricht mit Zeit (#62) |
-| ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), Rolle «· SL» am Namen und «Ausblenden» nach `darfAusblenden` (#62) |
+| ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), Rolle «· SL» am Namen (#62); ausgeblendete Nachrichten (alte Daten) erscheinen als Hinweis, das Ausblenden selbst gibt es nicht mehr (#64) |
 | Avatar (32 dp bei fremden Blasen, Initiale auf `secondary`) | `ui/Avatar.kt`: `Avatar` | umgesetzt (#49), zeigt die Initiale; für ein Profilbild vorbereitet (`imageUrl`). Der Kreis wächst mit der Schrift (`scaledWithFont`), die Schrift hat kein Limit (Checkliste 5.3) |
 | ChatEingabe | `chat/ChatScreens.kt`: `MessageInput` | umgesetzt (#39) |
 | MitleseHinweis | `chat/ChatScreens.kt`: `ReadAlongNote` | umgesetzt (#39), Avatare einfarbig `secondary` (Farben ohne Token nicht übernommen) |
-| Dialog (Auswahl, Bestätigung), Danger- und gestrichelter Knopf | `ui/Dialog.kt` (`CeviDialog`, `DialogText`, `initialFocus`), `ui/Buttons.kt` (`DangerButton`, `DashedButton`) | umgesetzt (#39) |
+| Dialog (Auswahl), gestrichelter Knopf | `ui/Dialog.kt` (`CeviDialog`, `DialogText`), `ui/Buttons.kt` (`DashedButton`) | umgesetzt (#39); Bestätigungsdialog und Danger-Knopf entfielen mit dem Ausblenden (#64) |
 | Hinweis (Aktionen und Senden), Zustände (Laden, Fehler, Leer) im Chat | `ui/Notice.kt`, `ui/States.kt`, `chat/ChatScreens.kt` (`ActionNotice`) | umgesetzt (#39) |
 | Zuordnung (Stufen und Sichtbarkeit), Chip «Nicht zugeordnet» | `programs/AssignmentScreen.kt`, `programs/Assignment.kt` (Regeln), `ui/Chips.kt` (`UNASSIGNED`) | umgesetzt (#15), **ohne Vorlage in den Bildschirmen**: aus Karten, Hinweis und Buttons zusammengesetzt; Knopf mit Text im Abschnitt «Für Leitende» (Stift-Icon fehlt im Design). Ergänzungen (Treffpunkt, Schluss, Mitnehmen, Info) bearbeitet die App nicht: Das geschieht zentral auf der Webseite |
 | Textfeld (Label oben, 52 dp, Radius 12) | `ui/TextField.kt`: `LabeledTextField` | umgesetzt (#53), erste Verwendung bei der Telefonnummer; ohne Passwort-Auge (kommt mit dem Login) |
@@ -65,11 +65,11 @@ Bezeichner im Code sind Englisch, Texte (`strings.xml`) und Kommentare Deutsch; 
 | Nachricht, Verlauf | `Message`, `Conversation` (`ChatConversationScreen`) |
 | Chatliste, Einzelchat, Gruppenchat | `ChatList`, `ChatListScreen`, `openDirectChat`, `isGroup` |
 | Hilfe, Vertrauenspersonen | `Help`, `trustedPersons` |
-| Ausblenden, Mitlesen | `hide`, `chat_read_along` (Text) |
+| Mitlesen | `chat_read_along` (Text) |
 | Sitzung, Speicher, Herkunft | `Session`, `Storage`, `Origin` (`SessionStorage`, `SessionInterceptor`) |
 | Fehler, Laden, Leer, Zustand | `Error` (`ApiError`, `ErrorPage`, `ApiResult.Failure`), `Loading`, `Empty`, `State` |
 | Kopf, Dock | `Header`, `Dock` |
-| Knöpfe | `PrimaryButton`, `OutlinedPillButton`, `TextActionButton`, `DashedButton`, `DangerButton`, `RoundButton`, `HeaderButton` |
+| Knöpfe | `PrimaryButton`, `OutlinedPillButton`, `TextActionButton`, `DashedButton`, `RoundButton`, `HeaderButton` |
 | Hinweis | `Notice` (`NoticeBanner`) |
 | Fokus, Fokusring | `Focus`, `focusRing` |
 | Abstände, Grössen, Formen | `Spacing`, `Sizes`, `CeviShapes` |

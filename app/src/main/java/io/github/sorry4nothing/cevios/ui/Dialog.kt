@@ -15,12 +15,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -31,8 +27,8 @@ import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
 /**
  * Dialog im Design: `surfaceContainerHigh`, Ecken 24 dp, Innenabstand 24 dp, Abstand 12 dp, Titel als Frage. Aktionen
- * rechtsbündig: «Abbrechen» als Text-Knopf in `dismissButton`, die Aktion in `confirmButton` (bei Bestätigungen
- * [DangerButton]). Der Dialog ist nur so hoch wie sein Inhalt und scrollt bei grosser Schrift.
+ * rechtsbündig: «Abbrechen» als Text-Knopf in `dismissButton`, die Aktion in `confirmButton`. Der Dialog ist nur so hoch wie
+ * sein Inhalt und scrollt bei grosser Schrift.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -82,12 +78,4 @@ fun DialogText(text: String) {
         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.sp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-}
-
-/** Der Fokus startet auf diesem Element, sobald es erscheint (im Dialog: «Abbrechen»). */
-@Composable
-fun Modifier.initialFocus(): Modifier {
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
-    return focusRequester(focus)
 }

@@ -36,12 +36,11 @@ data class DirectChatRequest(@SerialName("stufeId") val ageGroupId: String, @Ser
 data class ChatIdResponse(val id: String)
 
 /** Was man mit einer Nachricht tun kann (langes Drücken und Screenreader-Aktionen). */
-enum class MessageAction { OPEN_DIRECT_CHAT, HIDE }
+enum class MessageAction { OPEN_DIRECT_CHAT }
 
 /**
- * Wann die App eine Aktion anbietet. «Ausblenden» sagt der Server je Nachricht (`darfAusblenden`); «Einzelchat öffnen»
- * leitet die App aus dem Profil ab. Die Entscheidung trifft trotzdem der Server: Eine Aktion, die er ablehnt, zeigt die App
- * als Fehler.
+ * Wann die App eine Aktion anbietet: «Einzelchat öffnen» leitet sie aus dem Profil ab. Die Entscheidung trifft trotzdem der
+ * Server: Eine Aktion, die er ablehnt, zeigt die App als Fehler.
  */
 object ChatRules {
     /** Eine Stufenleitung öffnet den Einzelchat mit einem Elternteil über dessen Nachricht im Gruppenchat. */
@@ -52,7 +51,6 @@ object ChatRules {
     /** Alle Aktionen, die zu einer Nachricht erlaubt sind, in der Reihenfolge des Dialogs. Leer heisst: keine Aktion. */
     fun actions(chat: Chat?, message: ChatMessage, profile: Profile?): List<MessageAction> = buildList {
         if (mayOpenDirectChat(chat, message, profile)) add(MessageAction.OPEN_DIRECT_CHAT)
-        if (message.mayHide) add(MessageAction.HIDE)
     }
 
     /**

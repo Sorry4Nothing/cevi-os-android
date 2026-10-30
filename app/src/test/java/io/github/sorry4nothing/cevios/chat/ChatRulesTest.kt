@@ -23,19 +23,10 @@ class ChatRulesTest {
         authorIsLeader: Boolean = false,
         own: Boolean = false,
         hidden: Boolean = false,
-        mayHide: Boolean = false,
     ) = ChatMessage(
         id = "m1", text = if (hidden) null else "t", createdAt = "2027-01-01T10:00:00Z",
-        author = ChatPerson(authorId, "Name", groupLeader = authorIsLeader), hidden = hidden, mayHide = mayHide, own = own,
+        author = ChatPerson(authorId, "Name", groupLeader = authorIsLeader), hidden = hidden, own = own,
     )
-
-    @Test
-    fun hideIsOfferedExactlyWhenTheServerSaysSo() {
-        assertTrue(MessageAction.HIDE in ChatRules.actions(group, message(mayHide = true), groupLeader))
-        assertFalse(MessageAction.HIDE in ChatRules.actions(group, message(mayHide = false), groupLeader))
-        assertFalse("Eltern: der Server sagt nein", MessageAction.HIDE in ChatRules.actions(group, message(), parent))
-        assertTrue("auch ohne Profil und Chat gilt das Feld", MessageAction.HIDE in ChatRules.actions(null, message(mayHide = true), null))
-    }
 
     @Test
     fun groupLeaderOpensDirectChatViaParentMessage() {
@@ -49,8 +40,8 @@ class ChatRulesTest {
     @Test
     fun actionsListOnlyWhatIsAllowed() {
         assertEquals(
-            listOf(MessageAction.OPEN_DIRECT_CHAT, MessageAction.HIDE),
-            ChatRules.actions(group, message(mayHide = true), groupLeader),
+            listOf(MessageAction.OPEN_DIRECT_CHAT),
+            ChatRules.actions(group, message(), groupLeader),
         )
         assertEquals("Eltern haben keine Aktion", emptyList<MessageAction>(), ChatRules.actions(group, message(), parent))
         assertEquals(emptyList<MessageAction>(), ChatRules.actions(null, message(own = true), null))

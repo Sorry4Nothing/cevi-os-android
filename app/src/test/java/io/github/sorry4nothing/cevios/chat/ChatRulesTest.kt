@@ -22,10 +22,9 @@ class ChatRulesTest {
         authorId: String = "e2",
         authorIsLeader: Boolean = false,
         own: Boolean = false,
-        hidden: Boolean = false,
     ) = ChatMessage(
-        id = "m1", text = if (hidden) null else "t", createdAt = "2027-01-01T10:00:00Z",
-        author = ChatPerson(authorId, "Name", groupLeader = authorIsLeader), hidden = hidden, own = own,
+        id = "m1", text = "t", createdAt = "2027-01-01T10:00:00Z",
+        author = ChatPerson(authorId, "Name", groupLeader = authorIsLeader), own = own,
     )
 
     @Test

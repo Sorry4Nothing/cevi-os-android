@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Gestrichelter Rand (Design: gestrichelter Knopf, ausgeblendete Nachricht). Das Design legt die Strichlänge nicht fest:
+ * Gestrichelter Rand (Design: gestrichelter Knopf). Das Design legt die Strichlänge nicht fest:
  * 6 dp Strich, 4 dp Lücke.
  */
 fun Modifier.dashedBorder(color: Color, shape: Shape, width: Dp = 1.dp): Modifier = drawBehind {

@@ -45,7 +45,7 @@ data class LastMessage(
 @Serializable
 data class ProgramRef(val id: String, @SerialName("titel") val title: String)
 
-/** `text` ist `null`, wenn die Nachricht ausgeblendet ist (nur die Autorin oder der Autor sieht sie dann noch). */
+/** `text` ist bei Nachrichten, die die App erwartet, immer gefüllt; ein fehlender Text zerstört den Chat nicht (`orEmpty()`). */
 @Serializable
 data class ChatMessage(
     val id: String,
@@ -53,7 +53,6 @@ data class ChatMessage(
     @SerialName("erstelltAm") val createdAt: String,
     @SerialName("autor") val author: ChatPerson,
     @SerialName("programm") val program: ProgramRef? = null,
-    @SerialName("ausgeblendet") val hidden: Boolean = false,
     @SerialName("eigene") val own: Boolean = false,
 )
 
@@ -87,7 +86,7 @@ data class Conversation(val messages: List<ChatMessage> = emptyList(), val next:
 
     /** Wie viele sichtbare Nachrichten anderer neuer sind als `knownNewestId` (für die Ansage «2 neue Nachrichten»). */
     fun newFromOthers(knownNewestId: String?): Int =
-        if (knownNewestId == null) 0 else messages.count { it.id > knownNewestId && !it.own && !it.hidden }
+        if (knownNewestId == null) 0 else messages.count { it.id > knownNewestId && !it.own }
 
     /** Hängt eine ältere Seite an. */
     fun withOlder(page: MessagePage): Conversation {

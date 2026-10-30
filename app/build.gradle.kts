@@ -4,6 +4,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Die Konfigurationsdatei google-services.json liegt nur lokal (sie steht in der .gitignore). Ohne sie bleibt das Plug-in aus
+// und der Build läuft wie bisher; Firebase ist dann nicht konfiguriert.
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+
 android {
     namespace = "io.github.sorry4nothing.cevios"
     compileSdk {
@@ -61,6 +65,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
 }

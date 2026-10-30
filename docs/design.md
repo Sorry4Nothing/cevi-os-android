@@ -36,7 +36,8 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Notice.kt` (`NoticeBanner`), `ui/Buttons.kt` (`PrimaryButton`, `OutlinedPillButton`, `TextActionButton`), `ui/Focus.kt` (`focusRing`) | umgesetzt (#38) |
 | Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/States.kt`: `ErrorState`, `EmptyState`, `LoadingSkeleton` | umgesetzt (#38); «Anmelden» erst mit dem Login |
 | ChatZeile (Karten, Abschnitte «Gruppen» und «Mit der Stufenleitung») | `chat/ChatScreens.kt`: `ChatListScreen`, `ChatCard`, `ChatAvatar` | umgesetzt (#39), ohne letzte Nachricht, Uhrzeit und Ungelesen-Zähler (API) |
-| ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), ohne Rolle des Absenders und Avatar |
+| ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), ohne Rolle des Absenders |
+| Avatar (32 dp bei fremden Blasen, Initiale auf `secondary`) | `ui/Avatar.kt`: `Avatar` | umgesetzt (#49), zeigt die Initiale; für ein Profilbild vorbereitet (`imageUrl`) |
 | ChatEingabe | `chat/ChatScreens.kt`: `MessageInput` | umgesetzt (#39) |
 | MitleseHinweis | `chat/ChatScreens.kt`: `ReadAlongNote` | umgesetzt (#39), Avatare einfarbig `secondary` (Farben ohne Token nicht übernommen) |
 | Dialog (Auswahl, Bestätigung), Danger- und gestrichelter Knopf | `ui/Dialog.kt` (`CeviDialog`, `DialogText`, `initialFocus`), `ui/Buttons.kt` (`DangerButton`, `DashedButton`) | umgesetzt (#39) |
@@ -83,7 +84,8 @@ Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erf
 - **Rolle des Absenders** («Sarah · SL») über der Blase: kein Feld in der Nachricht; die App zeigt nur den Namen.
 - **Kontaktperson** im Programmdetail: kein Feld in der API.
 - **Status je Kind in der Programmliste** («Noah kommt», «Zusage für Lena offen»): Die Liste liefert keine Kinder, nur das Detail. Die Karte zeigt darum nur «abgesagt» und «wird geprüft».
-- **Profilbild, Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.
+- **Profilbild:** kein Feld in der API. Der Avatar zeigt bis dahin die Initiale; `Avatar` hat den Parameter `imageUrl` schon, lädt aber nichts. Das Bild kommt mit dem Feld der API.
+- **Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.
 - Ebenfalls gewünscht: ein Flag je Nachricht, ob man sie ausblenden darf (heute leitet die App das aus dem Profil ab).
 
 ## Grössen und Werte: das Design System gilt, nicht die Mockups

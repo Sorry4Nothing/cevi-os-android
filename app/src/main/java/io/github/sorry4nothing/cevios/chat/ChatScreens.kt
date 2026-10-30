@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -32,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -63,10 +67,13 @@ import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
 import io.github.sorry4nothing.cevios.programs.dayAndMonth
+import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.CeviDialog
+import io.github.sorry4nothing.cevios.ui.avatarInitial
 import io.github.sorry4nothing.cevios.ui.DangerButton
 import io.github.sorry4nothing.cevios.ui.DashedButton
 import io.github.sorry4nothing.cevios.ui.DialogText
+import io.github.sorry4nothing.cevios.ui.InitialText
 import io.github.sorry4nothing.cevios.ui.EmptyState
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.Header
@@ -290,11 +297,8 @@ private fun ReadAlongNote(leaders: List<ChatPerson>, modifier: Modifier = Modifi
                     Modifier.size(28.dp).background(scheme.secondary, Pill).border(2.dp, scheme.secondaryContainer, Pill),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        initials(leader.name),
-                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.ExtraBold),
-                        color = scheme.onSecondary,
-                    )
+                    // Eine Initiale: zwei Buchstaben würde der nächste Kreis überdecken.
+                    InitialText(avatarInitial(leader.name), 11.sp, scheme.onSecondary)
                 }
             }
         }
@@ -330,8 +334,14 @@ private fun Messages(
         }
     }
 
+    // Eine eben gesendete Nachricht soll sichtbar sein, auch wenn man weiter oben gelesen hat.
+    val listState = rememberLazyListState()
+    val newestOwnId = conversation.messages.firstOrNull()?.takeIf { it.own }?.id
+    LaunchedEffect(newestOwnId) { if (newestOwnId != null) listState.scrollToItem(0) }
+
     // Neueste zuerst und von unten nach oben: so wächst der Verlauf wie in jedem Chat nach oben.
     LazyColumn(
+        state = listState,
         reverseLayout = true,
         contentPadding = PaddingValues(Spacing.s4),
         verticalArrangement = Arrangement.spacedBy(Spacing.s3, Alignment.Bottom),
@@ -376,10 +386,11 @@ private fun Messages(
         ) {
             Column {
                 ChatRules.actions(chat, message, profile).forEach { action ->
+                    // Nach links um den Innenabstand des Knopfes: Der Text steht bündig mit dem Titel.
                     TextActionButton(actionLabel(action, message), {
                         selected = null
                         perform(message, action)
-                    })
+                    }, Modifier.offset(x = -Spacing.s3))
                 }
             }
         }
@@ -430,7 +441,7 @@ private fun DayDividerText(label: DayLabel) {
 }
 
 /**
- * Eine Nachricht als Blase, höchstens 80 % breit. Die Aktionen (Einzelchat öffnen, ausblenden, melden) liegen auf langem
+ * Eine Nachricht als Blase, höchstens 80 % breit; fremde Nachrichten haben links einen Avatar. Die Aktionen (Einzelchat öffnen, ausblenden, melden) liegen auf langem
  * Drücken und als Screenreader-Aktionen; ohne erlaubte Aktion gibt es keine.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -448,7 +459,8 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
         bottomEnd = if (pointedOwn) 6.dp else 20.dp,
     )
     val ringShape = MaterialTheme.shapes.medium
-    Box(Modifier.fillMaxWidth(), contentAlignment = if (own) Alignment.CenterEnd else Alignment.CenterStart) {
+    // Die Blase samt Name und Zeit; 80 % der Breite, bei fremden Nachrichten der Spalte neben dem Avatar.
+    val column: @Composable () -> Unit = {
         Column(
             Modifier
                 .fillMaxWidth(0.8f)
@@ -506,6 +518,16 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
                     color = scheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+    if (own || hidden) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = if (own) Alignment.CenterEnd else Alignment.CenterStart) { column() }
+    } else {
+        // Avatar unten bündig mit der Blase: Er rückt um die Zeile der Zeit nach oben.
+        val timeHeight = with(LocalDensity.current) { MaterialTheme.typography.bodySmall.lineHeight.toDp() } + Spacing.s1
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.Bottom) {
+            Avatar(message.author.name, Modifier.padding(bottom = timeHeight))
+            Box(Modifier.weight(1f)) { column() }
         }
     }
 }

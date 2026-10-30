@@ -98,6 +98,10 @@ Zwischen dem Design System (`tokens.json`, Brandbook) und den einzelnen Bildschi
 - Farben ohne Token (`#C2C3EC`, `#B4B6F5`, `#2C7C91`): nicht übernommen, es gelten die Tokens `accent`, `secondary-container` usw.
 - MitleseHinweis im Tag-Theme: Token `secondary-container` `#ECECF8` gilt, nicht `#DFDFF3`.
 
+## Ausrichtung
+
+Die App läuft nur im Hochformat (`screenOrientation="portrait"`, Entscheid 2026-10-30). Das weicht von der Checkliste Barrierefreiheit 5.8 ab (Querformat bedienbar). Auf grossen Bildschirmen (ab 600 dp, Tablet, Faltgerät) ignoriert Android die Sperre, dort gelten das Dock links und die Tastaturregel im Chat. Wer das Telefon nur quer halten kann (zum Beispiel an einer Halterung), kann die App nicht bedienen: Das ist als offener Punkt im PR von #17 genannt.
+
 ## Prüfen
 
 `ContrastTest` rechnet die Textpaare der beiden Themen nach (Text 4.5:1, `outline` und `focus` 3:1). Ändert sich ein Wert, läuft der Test mit.

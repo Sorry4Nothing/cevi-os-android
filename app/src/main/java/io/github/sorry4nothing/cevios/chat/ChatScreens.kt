@@ -10,6 +10,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -45,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -253,28 +256,38 @@ fun ChatConversationScreen(
     onRetry: () -> Unit,
 ) {
     // Safe-Drawing-Padding enthält die Tastatur: Die Eingabe bleibt sichtbar.
+    // In einem niedrigen Fenster (Querformat) mit offener Tastatur bliebe für den grossen Kopf alles, für die Eingabe nichts:
+    // Dort entfällt der Kopf, bis die Tastatur zu ist.
+    val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val compact = keyboardOpen && windowHeight < COMPACT_HEIGHT
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        Header(
-            title = title,
-            eyebrow = chat?.ageGroup?.name,
-            back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
-            titleStyle = MaterialTheme.typography.headlineMedium,
-            focusOnTitle = true,
-        )
-        // Im Einzelchat lesen alle Stufenleitungen der Stufe mit; das steht im Kopf und scrollt nicht weg.
-        if (chat != null && !chat.isGroup && chat.groupLeaders.isNotEmpty()) {
-            ReadAlongNote(chat.groupLeaders, Modifier.padding(start = Spacing.s4, end = Spacing.s4, bottom = Spacing.s4))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        }
+        // Alles ausser Eingabe: Die Eingabe wird zuerst gemessen und behält immer ihren Platz.
         Column(Modifier.weight(1f)) {
-            when (state) {
-                null -> Loading()
-                is ApiResult.Failure -> ErrorState(state.error, onRetry, notFoundText = R.string.state_chat_not_found_text)
-                is ApiResult.Ok ->
-                    Box(Modifier.fillMaxSize()) {
-                        Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onReport, onDirectChat)
-                        NewMessagesAnnouncer(state.value)
-                    }
+            if (!compact) {
+                Header(
+                    title = title,
+                    eyebrow = chat?.ageGroup?.name,
+                    back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
+                    titleStyle = MaterialTheme.typography.headlineMedium,
+                    focusOnTitle = true,
+                )
+                // Im Einzelchat lesen alle Stufenleitungen der Stufe mit; das steht im Kopf und scrollt nicht weg.
+                if (chat != null && !chat.isGroup && chat.groupLeaders.isNotEmpty()) {
+                    ReadAlongNote(chat.groupLeaders, Modifier.padding(start = Spacing.s4, end = Spacing.s4, bottom = Spacing.s4))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+            Column(Modifier.weight(1f)) {
+                when (state) {
+                    null -> Loading()
+                    is ApiResult.Failure -> ErrorState(state.error, onRetry, notFoundText = R.string.state_chat_not_found_text)
+                    is ApiResult.Ok ->
+                        Box(Modifier.fillMaxSize()) {
+                            Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onReport, onDirectChat)
+                            NewMessagesAnnouncer(state.value)
+                        }
+                }
             }
         }
         ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
@@ -306,6 +319,9 @@ private fun NewMessagesAnnouncer(conversation: Conversation) {
 }
 
 private const val ANNOUNCEMENT_MS = 3_000L
+
+/** Fenster, die niedriger sind (Querformat eines Telefons), zeigen mit offener Tastatur den Kopf nicht. */
+private val COMPACT_HEIGHT = 500.dp
 
 /** Hinweis im Einzelchat: Die Nachricht geht an die ganze Stufenleitung. Die Avatare sind dekorativ. */
 @Composable

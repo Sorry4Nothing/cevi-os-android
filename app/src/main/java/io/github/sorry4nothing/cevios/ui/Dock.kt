@@ -7,15 +7,18 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,7 +58,7 @@ fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, cont
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         if (maxWidth >= WideBreakpoint) {
             Row(Modifier.fillMaxSize().padding(start = Spacing.s3)) {
-                Dock(active, onDestination, vertical = true, Modifier.padding(vertical = Spacing.s3).width(Sizes.dockWidth))
+                Dock(active, onDestination, vertical = true, Modifier.padding(vertical = Spacing.s3).widthIn(min = Sizes.dockWidth).width(IntrinsicSize.Max))
                 Spacer(Modifier.width(Spacing.s4))
                 content()
             }
@@ -81,10 +84,10 @@ private fun Dock(active: Destination, onDestination: (Destination) -> Unit, vert
         .selectableGroup()
     if (vertical) {
         Column(shell, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Destination.entries.forEach { DockDestination(it, it == active, onDestination, Modifier.fillMaxWidth().height(64.dp)) }
+            Destination.entries.forEach { DockDestination(it, it == active, onDestination, Modifier.fillMaxWidth().heightIn(min = 64.dp)) }
         }
     } else {
-        Row(shell.height(Sizes.footer), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(shell.heightIn(min = Sizes.footer).height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Destination.entries.forEach { DockDestination(it, it == active, onDestination, Modifier.weight(1f).fillMaxHeight()) }
         }
     }

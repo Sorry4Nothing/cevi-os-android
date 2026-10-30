@@ -33,6 +33,7 @@
             android:value="false" />
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.CeviOS.Starting"
             android:exported="true"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity,DiscouragedApi"

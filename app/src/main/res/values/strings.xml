@@ -195,4 +195,6 @@
     <string name="role_group_leader">Stufenleitung</string>
     <string name="role_leader">Leitung</string>
     <string name="role_parent">Elternteil</string>
+    <string name="working">Einen Moment …</string>
+    <string name="slow_hint">Das dauert länger als sonst. Bitte noch einen Moment warten.</string>
 </resources>

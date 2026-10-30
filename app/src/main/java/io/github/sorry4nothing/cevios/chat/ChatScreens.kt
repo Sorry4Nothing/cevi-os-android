@@ -92,6 +92,7 @@ import io.github.sorry4nothing.cevios.ui.Loading
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
+import io.github.sorry4nothing.cevios.ui.Spinner
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Pill
@@ -157,6 +158,8 @@ private fun ChatSections(
     onOpen: (String) -> Unit,
     onDirectChat: (ageGroupId: String) -> Unit,
 ) {
+    // Welche Stufe gerade einen Einzelchat startet: nur dieser Knopf zeigt den Ladekreis, die anderen sind gesperrt.
+    var starting by remember { mutableStateOf<String?>(null) }
     val groups = chats.filter { it.isGroup }
     val direct = chats.filterNot { it.isGroup }
     LazyColumn(
@@ -173,10 +176,11 @@ private fun ChatSections(
             items(startable, key = { "start-" + it.id }) { ageGroup ->
                 DashedButton(
                     stringResource(R.string.direct_chat_start, ageGroup.name),
-                    onClick = { onDirectChat(ageGroup.id) },
+                    onClick = { starting = ageGroup.id; onDirectChat(ageGroup.id) },
                     modifier = Modifier.fillMaxWidth().padding(top = Spacing.s2),
                     icon = R.drawable.ic_plus,
-                    enabled = !actionRunning,
+                    enabled = !actionRunning || starting == ageGroup.id,
+                    loading = actionRunning && starting == ageGroup.id,
                 )
             }
         }
@@ -495,9 +499,10 @@ private fun Messages(
             item(key = "older") {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     OutlinedPillButton(
-                        stringResource(if (loadingOlder) R.string.loading else R.string.messages_older),
+                        stringResource(R.string.messages_older),
                         onClick = onOlder,
-                        enabled = !loadingOlder,
+                        loading = loadingOlder,
+                        loadingText = stringResource(R.string.loading),
                     )
                 }
             }
@@ -638,6 +643,7 @@ private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) 
     val scheme = MaterialTheme.colorScheme
     val label = stringResource(R.string.message_input)
     val sendLabel = stringResource(R.string.message_send)
+    val sendingLabel = stringResource(R.string.message_sending)
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val fieldShape = RoundedCornerShape(26.dp)
@@ -684,13 +690,17 @@ private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) 
                     if (draft.isBlank()) emptyHint = true else onSend(draft) { draft = "" }
                 },
                 enabled = !send.running,
-                modifier = Modifier.size(52.dp).focusRing(Pill).semantics { contentDescription = sendLabel },
+                modifier = Modifier.size(52.dp).focusRing(Pill).semantics {
+                    contentDescription = sendLabel
+                    if (send.running) stateDescription = sendingLabel
+                },
                 shape = Pill,
-                color = scheme.primary.copy(alpha = if (send.running) 0.5f else 1f),
+                color = scheme.primary,
                 contentColor = scheme.onPrimary,
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(painterResource(R.drawable.ic_send), contentDescription = null, modifier = Modifier.size(Sizes.icon))
+                    if (send.running) Spinner(size = Sizes.icon)
+                    else Icon(painterResource(R.drawable.ic_send), contentDescription = null, modifier = Modifier.size(Sizes.icon))
                 }
             }
         }

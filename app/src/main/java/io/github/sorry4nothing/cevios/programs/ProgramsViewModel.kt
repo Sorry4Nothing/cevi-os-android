@@ -23,6 +23,9 @@ data class RsvpState(
     val running: Boolean = false,
     val error: ApiError? = null,
     val sentAt: Map<String, String> = emptyMap(),
+    /** Was gerade gespeichert wird: Schlüssel (Kind oder [LEADER_KEY]) und die gewählte Antwort. */
+    val pendingKey: String? = null,
+    val pendingAttending: Boolean? = null,
 )
 
 const val LEADER_KEY = "leitung"
@@ -121,19 +124,19 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
     }
 
     fun rsvpChild(programId: String, childId: String, attending: Boolean) =
-        save(programId, childId) { api.setAttendance(programId, childId, attending) }
+        save(programId, childId, attending) { api.setAttendance(programId, childId, attending) }
 
     fun rsvpLeader(programId: String, attending: Boolean) =
-        save(programId, LEADER_KEY) { api.setLeaderRsvp(programId, attending) }
+        save(programId, LEADER_KEY, attending) { api.setLeaderRsvp(programId, attending) }
 
     /**
      * Speichert und liest das Programm danach neu: Der Server ist die einzige Wahrheit über den Stand. Bei einem Fehler
      * bleibt der alte Stand sichtbar, die Pillen springen also zurück.
      */
-    private fun save(programId: String, key: String, block: suspend () -> ApiResult<Unit>) {
+    private fun save(programId: String, key: String, attending: Boolean, block: suspend () -> ApiResult<Unit>) {
         if (_rsvp.value.running) return
         val existing = _rsvp.value.sentAt
-        _rsvp.value = RsvpState(running = true, sentAt = existing)
+        _rsvp.value = RsvpState(running = true, sentAt = existing, pendingKey = key, pendingAttending = attending)
         viewModelScope.launch {
             when (val result = block()) {
                 is ApiResult.Failure -> _rsvp.value = RsvpState(error = result.error, sentAt = existing)

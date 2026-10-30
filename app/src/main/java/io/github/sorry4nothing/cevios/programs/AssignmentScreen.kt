@@ -31,10 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
@@ -47,6 +45,7 @@ import io.github.sorry4nothing.cevios.ui.LoadingSkeleton
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
+import io.github.sorry4nothing.cevios.ui.SlowHint
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
@@ -220,14 +219,11 @@ private fun FormPage(eyebrow: String, title: String, onBack: () -> Unit, content
 /** Speichern und Abbrechen mit dem Stand darüber: «Wird gespeichert …» oder der Fehler. */
 @Composable
 private fun SaveBar(edit: EditState, enabled: Boolean, onSave: () -> Unit, onCancel: () -> Unit) {
-    if (edit.running) {
-        Text(
-            stringResource(R.string.saving),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        )
-    }
+    SlowHint(edit.running)
     edit.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it.text)) }
-    PrimaryButton(stringResource(R.string.save), onSave, Modifier.fillMaxWidth(), enabled = enabled && !edit.running)
+    PrimaryButton(
+        stringResource(R.string.save), onSave, Modifier.fillMaxWidth(), enabled = enabled,
+        loading = edit.running, loadingText = stringResource(R.string.saving),
+    )
     TextActionButton(stringResource(R.string.cancel), onCancel, Modifier.fillMaxWidth())
 }

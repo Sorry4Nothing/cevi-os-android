@@ -9,6 +9,8 @@ data class ChatPerson(
     val name: String,
     /** Nur bei Nachrichten gefüllt (`autor.stufenleitung`): Die Person ist Stufenleitung der Stufe des Chats. */
     @SerialName("stufenleitung") val groupLeader: Boolean = false,
+    /** Pfad zum Profilbild (`GET /api/v1/personen/{id}/bild`); `null` ohne Bild. Nur bei Autoren von Nachrichten gefüllt. */
+    @SerialName("bildUrl") val imageUrl: String? = null,
 )
 
 @Serializable

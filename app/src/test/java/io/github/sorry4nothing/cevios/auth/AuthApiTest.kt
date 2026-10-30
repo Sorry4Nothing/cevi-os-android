@@ -144,7 +144,7 @@ class AuthApiTest {
         reply(
             200,
             """{"id":"u","name":"Marion Keller","benutzername":"m.keller","mussPasswortAendern":false,"datenschutzGelesenAm":null,
-               "telefon":null,"bildUrl":null,"pushChat":true,"pushProgramme":true,"admin":false,"zweiterFaktor":false,
+               "telefon":null,"bildUrl":"/api/v1/personen/u/bild?v=3","pushChat":true,"pushProgramme":true,"admin":false,"zweiterFaktor":false,
                "rollen":[],"stufen":[],"kinder":[{"id":"k","vorname":"Lena","nachname":"Keller","stufeId":"s"}]}""",
         )
         val profile = (runBlocking { auth.profile() } as ApiResult.Ok).value
@@ -152,6 +152,7 @@ class AuthApiTest {
         assertEquals("m.keller", profile.username)
         assertNull(profile.privacyReadAt)
         assertEquals("Lena", profile.children.single().firstName)
+        assertEquals("/api/v1/personen/u/bild?v=3", profile.imageUrl)
     }
 
     @Test
@@ -166,5 +167,28 @@ class AuthApiTest {
         val failure = runBlocking { auth.signIn("m.keller", "x") } as ApiResult.Failure
         assertEquals(ApiError.TOO_MANY_REQUESTS, failure.error)
         assertEquals(60, failure.retryAfterSeconds)
+    }
+
+    @Test
+    fun uploadSendsTheJpegAsBytes() {
+        reply(204, "")
+        assertEquals(ApiResult.Ok(Unit), runBlocking { auth.uploadImage(byteArrayOf(1, 2, 3)) })
+        val request = server.takeRequest()
+        assertEquals("PUT /api/v1/ich/bild HTTP/1.1", request.requestLine)
+        assertEquals("image/jpeg", request.headers["Content-Type"])
+        assertEquals(3L, request.body?.size?.toLong())
+    }
+
+    @Test
+    fun removeIsADelete() {
+        reply(204, "")
+        assertEquals(ApiResult.Ok(Unit), runBlocking { auth.removeImage() })
+        assertEquals("DELETE /api/v1/ich/bild HTTP/1.1", server.takeRequest().requestLine)
+    }
+
+    @Test
+    fun tooManyUploadsAreRateLimited() {
+        reply(429, "{}")
+        assertEquals(ApiResult.Failure(ApiError.TOO_MANY_REQUESTS), runBlocking { auth.uploadImage(byteArrayOf(1)) })
     }
 }

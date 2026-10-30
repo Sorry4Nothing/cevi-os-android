@@ -65,6 +65,10 @@ class AuthViewModel(
     private val _passwordSaved = MutableStateFlow(false)
     val passwordSaved: StateFlow<Boolean> = _passwordSaved.asStateFlow()
 
+    /** Zustand von «Profilbild ändern» und «Profilbild entfernen» (getrennt von Abmelden und Passwort). */
+    private val _imageForm = MutableStateFlow(FormState())
+    val imageForm: StateFlow<FormState> = _imageForm.asStateFlow()
+
     private var scope: SessionScope? = null
 
     init {
@@ -127,6 +131,46 @@ class AuthViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * Lädt ein neues Profilbild hoch. `prepare` liest und verkleinert das gewählte Foto (kann dauern, läuft nicht auf dem
+     * Hauptthread) und liefert `null`, wenn es sich nicht lesen lässt. Danach lädt die App das Profil neu: Die `bildUrl` hat
+     * eine neue Fassung.
+     */
+    fun uploadImage(prepare: suspend () -> ByteArray?) {
+        if (_imageForm.value.running) return
+        _imageForm.value = FormState(running = true)
+        viewModelScope.launch {
+            val jpeg = prepare()
+            if (jpeg == null) {
+                _imageForm.value = FormState(error = R.string.error_image_unreadable)
+                return@launch
+            }
+            finishImageChange(api.uploadImage(jpeg))
+        }
+    }
+
+    fun removeImage() {
+        if (_imageForm.value.running) return
+        _imageForm.value = FormState(running = true)
+        viewModelScope.launch { finishImageChange(api.removeImage()) }
+    }
+
+    private suspend fun finishImageChange(result: ApiResult<Unit>) {
+        when (result) {
+            is ApiResult.Failure -> _imageForm.value = if (result.error == ApiError.NOT_SIGNED_IN) FormState() else failureForm(result, result.error.text)
+            is ApiResult.Ok -> {
+                val fresh = (api.profile() as? ApiResult.Ok)?.value
+                val current = _state.value
+                if (fresh != null && current is AuthState.SignedIn) _state.value = current.copy(profile = fresh)
+                _imageForm.value = FormState()
+            }
+        }
+    }
+
+    fun clearImageError() {
+        _imageForm.value = FormState()
     }
 
     /** Beendet die Sitzung auf dem Server und leert alles auf dem Gerät. Offline geht es auch: Dann endet sie dort mit ihrem Ablauf. */
@@ -212,6 +256,7 @@ class AuthViewModel(
         forgetSession()
         scope?.viewModelStore?.clear()
         scope = null
+        _imageForm.value = FormState()
         _form.value = FormState()
         _passwordSaved.value = false
         _state.value = AuthState.SignedOut(expired)

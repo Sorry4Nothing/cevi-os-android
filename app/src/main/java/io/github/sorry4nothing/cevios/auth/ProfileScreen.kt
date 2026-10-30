@@ -2,6 +2,10 @@ package io.github.sorry4nothing.cevios.auth
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -22,6 +27,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -38,15 +48,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.chat.Profile
-import io.github.sorry4nothing.cevios.chat.initials
+import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.Header
-import io.github.sorry4nothing.cevios.ui.InitialText
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.SlowHint
 import io.github.sorry4nothing.cevios.ui.Spinner
 import io.github.sorry4nothing.cevios.ui.focusRing
-import io.github.sorry4nothing.cevios.ui.scaledWithFont
 import io.github.sorry4nothing.cevios.ui.theme.Eyebrow
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
@@ -62,19 +70,31 @@ fun ProfileScreen(
     profile: Profile,
     passwordSaved: Boolean,
     form: FormState,
+    imageForm: FormState,
+    onPickImage: (Uri) -> Unit,
+    onRemoveImage: () -> Unit,
     onChangePassword: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onSignOut: () -> Unit,
     onLeave: () -> Unit,
 ) {
     DisposableEffect(Unit) { onDispose(onLeave) }
+    // Die Systemauswahl braucht keine Berechtigung: Die Person wählt, die App bekommt nur dieses eine Bild.
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let(onPickImage) }
+    var removing by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Header(title = stringResource(R.string.profile_title), focusOnTitle = true)
         Column(Modifier.padding(horizontal = Spacing.s4), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             if (passwordSaved) {
                 NoticeBanner(NoticeKind.INFO, stringResource(R.string.password_saved), Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             }
-            PersonRow(profile)
+            PersonRow(
+                profile,
+                uploading = imageForm.running && !removing,
+                onChangeImage = { removing = false; picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            )
+            SlowHint(imageForm.running)
+            formErrorText(imageForm)?.let { NoticeBanner(NoticeKind.ERROR, it) }
             SectionTitle(R.string.profile_section_app)
             SettingsCard {
                 SettingsRow(R.drawable.ic_bell, stringResource(R.string.profile_notifications), value = stringResource(R.string.profile_soon))
@@ -88,6 +108,13 @@ fun ProfileScreen(
             SettingsCard {
                 SettingsRow(R.drawable.ic_lock, stringResource(R.string.profile_change_password), onClick = onChangePassword, chevron = true)
                 SettingsDivider()
+                if (profile.imageUrl != null) {
+                    SettingsRow(
+                        R.drawable.ic_cross, stringResource(R.string.profile_image_remove),
+                        onClick = { removing = true; onRemoveImage() }, loading = imageForm.running && removing,
+                    )
+                    SettingsDivider()
+                }
                 SettingsRow(R.drawable.ic_logout, stringResource(R.string.profile_sign_out), onClick = onSignOut, loading = form.running)
             }
             SlowHint(form.running)
@@ -97,17 +124,39 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun PersonRow(profile: Profile) {
+private fun PersonRow(profile: Profile, uploading: Boolean, onChangeImage: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val change = stringResource(R.string.profile_image_change)
+    val saving = stringResource(R.string.profile_image_saving)
     Row(
-        Modifier.fillMaxWidth().padding(start = 4.dp, top = Spacing.s2, end = 4.dp, bottom = 4.dp).semantics(mergeDescendants = true) {},
+        Modifier.fillMaxWidth().padding(start = 4.dp, top = Spacing.s2, end = 4.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(Spacing.s4),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(scaledWithFont(84.dp)).background(MaterialTheme.colorScheme.secondary, Pill),
-            contentAlignment = Alignment.Center,
-        ) { InitialText(initials(profile.name), 28.sp, MaterialTheme.colorScheme.onSecondary) }
-        Column {
+        // Das Bild ist Zierde; der Knopf daneben hat einen Namen und ist 48 dp gross (halb über dem Rand des Bildes).
+        Box(Modifier.padding(end = 10.dp, bottom = 10.dp)) {
+            Avatar(profile.name, size = 84.dp, imageUrl = profile.imageUrl, initialSize = 28.sp)
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(10.dp, 10.dp)
+                    .size(Sizes.touchTarget)
+                    .focusRing(Pill)
+                    .background(scheme.primary, Pill)
+                    .border(4.dp, scheme.surface, Pill)
+                    .clip(Pill)
+                    .clickable(enabled = !uploading, role = Role.Button, onClick = onChangeImage)
+                    .semantics {
+                        contentDescription = change
+                        if (uploading) stateDescription = saving
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (uploading) Spinner(size = 20.dp, color = scheme.onPrimary)
+                else Icon(painterResource(R.drawable.ic_camera), contentDescription = null, tint = scheme.onPrimary, modifier = Modifier.size(20.dp))
+            }
+        }
+        Column(Modifier.semantics(mergeDescendants = true) {}) {
             Text(
                 profile.name,
                 style = MaterialTheme.typography.titleLarge,

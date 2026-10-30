@@ -23,6 +23,12 @@ class AuthApi(private val api: ApiClient) {
     /** Bleibt auch bei offenem Pflichtwechsel des Passworts erreichbar (alle anderen Routen antworten dann 403). */
     suspend fun profile(): ApiResult<Profile> = api.get("/api/v1/ich")
 
+    /** Setzt das eigene Profilbild (JPEG, höchstens 5 MiB); ein vorhandenes wird ersetzt. */
+    suspend fun uploadImage(jpeg: ByteArray): ApiResult<Unit> = api.putBytes("/api/v1/ich/bild", jpeg, "image/jpeg")
+
+    /** Löscht das eigene Profilbild; ohne Bild ebenfalls 204. */
+    suspend fun removeImage(): ApiResult<Unit> = api.delete("/api/v1/ich/bild")
+
     /** Adresse der Datenschutzerklärung auf dem Backend. */
     fun privacyUrl(): String = api.pageUrl("/datenschutz")
 }

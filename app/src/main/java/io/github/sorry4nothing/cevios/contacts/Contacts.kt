@@ -6,7 +6,12 @@ import kotlinx.serialization.Serializable
 
 /** Eine Kontaktperson (Stufenleitung). `phone` ist nur für Eltern mit einem aktiven Kind in der Stufe gefüllt, sonst `null`. */
 @Serializable
-data class Contact(val id: String, val name: String, @SerialName("telefon") val phone: String? = null)
+data class Contact(
+    val id: String,
+    val name: String,
+    @SerialName("telefon") val phone: String? = null,
+    @SerialName("bildUrl") val imageUrl: String? = null,
+)
 
 @Serializable
 data class ContactList(@SerialName("kontakte") val contacts: List<Contact>)

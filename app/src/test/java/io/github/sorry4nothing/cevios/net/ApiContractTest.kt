@@ -44,9 +44,9 @@ class ApiContractTest {
     private fun calls(): List<Call> {
         val methods = mapOf(
             "get" to "GET", "post" to "POST", "postAction" to "POST", "postWithoutBody" to "POST",
-            "put" to "PUT", "putWithoutBody" to "PUT", "patch" to "PATCH",
+            "put" to "PUT", "putWithoutBody" to "PUT", "putBytes" to "PUT", "patch" to "PATCH", "delete" to "DELETE",
         )
-        val call = Regex("api\\.(get|post|put|patch|postAction|postWithoutBody|putWithoutBody)(?:<[^>]*>)?\\(\\s*\"([^\"]+)\"")
+        val call = Regex("api\\.(get|post|put|patch|postAction|postWithoutBody|putWithoutBody|putBytes|delete)(?:<[^>]*>)?\\(\\s*\"([^\"]+)\"")
         val page = Regex("pageUrl\\(\\s*\"([^\"]+)\"")
         return File(projectRoot, "app/src/main").walkTopDown()
             .filter { it.isFile && it.name.endsWith("Api.kt") }

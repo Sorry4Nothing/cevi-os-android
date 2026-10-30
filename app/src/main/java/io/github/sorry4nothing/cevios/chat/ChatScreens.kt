@@ -620,7 +620,7 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
         // Avatar unten bündig mit der Blase: Er rückt um die Zeile der Zeit nach oben.
         val timeHeight = with(LocalDensity.current) { MaterialTheme.typography.bodySmall.lineHeight.toDp() } + Spacing.s1
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.Bottom) {
-            Avatar(message.author.name, Modifier.padding(bottom = timeHeight))
+            Avatar(message.author.name, Modifier.padding(bottom = timeHeight), imageUrl = message.author.imageUrl)
             Box(Modifier.weight(1f)) { column() }
         }
     }

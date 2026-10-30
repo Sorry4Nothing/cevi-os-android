@@ -217,4 +217,11 @@ class ProgramsApiTest {
         val p = (runBlocking { programs.list(LocalDate.of(2027, 7, 1), LocalDate.of(2027, 7, 31)) } as ApiResult.Ok).value.programs.single()
         assertEquals(listOf("Noah" to "ja", "Lena" to null), p.children.map { it.firstName to it.status })
     }
+
+    @Test
+    fun contactImageUrlIsRead() {
+        server.enqueue(json(200, """{"kontakte":[{"id":"s1","name":"Sarah","bildUrl":"/api/v1/personen/s1/bild","telefon":null}]}"""))
+        val contacts = (runBlocking { programs.contacts("p1") } as ApiResult.Ok).value
+        assertEquals("/api/v1/personen/s1/bild", contacts.contacts.single().imageUrl)
+    }
 }

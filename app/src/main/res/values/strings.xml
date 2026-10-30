@@ -209,4 +209,8 @@
         <item quantity="one">%d Minute</item>
         <item quantity="other">%d Minuten</item>
     </plurals>
+    <string name="profile_image_change">Profilbild ändern</string>
+    <string name="profile_image_remove">Profilbild entfernen</string>
+    <string name="profile_image_saving">Bild wird gespeichert</string>
+    <string name="error_image_unreadable">Dieses Bild lässt sich nicht lesen. Wähle ein anderes.</string>
 </resources>

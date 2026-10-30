@@ -29,7 +29,6 @@ import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.AssignmentRules
 import io.github.sorry4nothing.cevios.programs.AssignmentScreen
-import io.github.sorry4nothing.cevios.programs.ExtrasScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import io.github.sorry4nothing.cevios.programs.ProgramListScreen
@@ -41,10 +40,6 @@ import kotlinx.coroutines.delay
 
 /** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist. */
 private const val CHAT_POLL_INTERVAL_MS = 15_000L
-
-
-/** Welchen Bearbeiten-Bildschirm Leitende gerade offen haben. */
-private enum class ProgramEdit { EXTRAS, ASSIGNMENT }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,11 +58,11 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var helpOpen by rememberSaveable { mutableStateOf(false) }
-    var editing by rememberSaveable { mutableStateOf<ProgramEdit?>(null) }
+    var assigning by rememberSaveable { mutableStateOf(false) }
 
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
-    LaunchedEffect(editing) { if (editing == ProgramEdit.ASSIGNMENT) programs.loadAgeGroups() }
+    LaunchedEffect(assigning) { if (assigning) programs.loadAgeGroups() }
     LaunchedEffect(helpOpen) { if (helpOpen) chat.loadHelp() }
     LaunchedEffect(openedChat) {
         val id = openedChat
@@ -80,25 +75,18 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
         val chatId = openedChat
         val detail by programs.detail.collectAsState()
         val programProfile = (programs.profile.collectAsState().value as? ApiResult.Ok)?.value
-        val editedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
+        val assignedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
         when {
-            programId != null && editing != null && editedProgram != null -> {
-                val leave = { editing = null; programs.resetEdit() }
+            programId != null && assigning && assignedProgram != null -> {
+                val leave = { assigning = false; programs.resetEdit() }
                 BackHandler(onBack = leave)
                 val edit = programs.edit.collectAsState().value
-                when (editing) {
-                    ProgramEdit.EXTRAS -> ExtrasScreen(
-                        editedProgram, edit,
-                        onSave = { changes -> programs.saveExtras(programId, changes, leave) },
-                        onBack = leave,
-                    )
-                    else -> AssignmentScreen(
-                        editedProgram, programs.ageGroups.collectAsState().value, programProfile, edit,
-                        onSave = { request -> programs.saveAssignment(programId, request, leave) },
-                        onBack = leave,
-                        onRetry = programs::loadAgeGroups,
-                    )
-                }
+                AssignmentScreen(
+                    assignedProgram, programs.ageGroups.collectAsState().value, programProfile, edit,
+                    onSave = { request -> programs.saveAssignment(programId, request, leave) },
+                    onBack = leave,
+                    onRetry = programs::loadAgeGroups,
+                )
             }
             programId != null -> {
                 BackHandler { openedProgram = null }
@@ -109,8 +97,7 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
                         canAssign = AssignmentRules.mayAssign(programProfile),
                         onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                         onLeader = { attending -> programs.rsvpLeader(programId, attending) },
-                        onEdit = { editing = ProgramEdit.EXTRAS },
-                        onAssign = { editing = ProgramEdit.ASSIGNMENT },
+                        onAssign = { assigning = true },
                         onBack = { openedProgram = null },
                         onRetry = { programs.loadDetail(programId) },
                     )

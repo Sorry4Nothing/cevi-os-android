@@ -24,10 +24,7 @@ class ProgramsApi(private val api: ApiClient) {
     suspend fun setLeaderRsvp(id: String, attending: Boolean): ApiResult<Unit> =
         api.put("/api/v1/programme/$id/leitung", rsvpBody(attending))
 
-    /** Ändert nur die genannten Ergänzungen (`treffpunkt`, `schlussOrt`, `schlussZeit`, `mitnehmen`, `infoEltern`). */
-    suspend fun updateExtras(id: String, changes: Map<String, String>): ApiResult<Unit> =
-        api.patch("/api/v1/programme/$id", changes)
-
+    /** Setzt Stufen und Sichtbarkeit; die App schickt den vollen neuen Stand, wie die API es verlangt. */
     suspend fun assign(id: String, request: AssignmentRequest): ApiResult<Unit> =
         api.put("/api/v1/programme/$id/zuordnung", request)
 

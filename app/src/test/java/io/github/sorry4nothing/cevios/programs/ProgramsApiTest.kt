@@ -134,11 +134,10 @@ class ProgramsApiTest {
     }
 
     @Test
-    fun detailReadsVisibilityAndEditRight() {
-        server.enqueue(json(200, camp.replace("\"googleBeschreibung\":null", "\"googleBeschreibung\":null,\"darfErgaenzen\":true")))
+    fun detailReadsVisibility() {
+        server.enqueue(json(200, camp))
         val p = (runBlocking { programs.read("x") } as ApiResult.Ok).value
         assertEquals("eltern", p.visibility)
-        assertTrue(p.mayEdit)
         assertFalse(p.unassigned)
     }
 
@@ -146,16 +145,6 @@ class ProgramsApiTest {
     fun programWithoutAgeGroupsIsUnassigned() {
         server.enqueue(json(200, camp.replace("\"stufen\":[{\"id\":\"a1\",\"name\":\"Stufe A\"}]", "\"stufen\":[]")))
         assertTrue((runBlocking { programs.read("x") } as ApiResult.Ok).value.unassigned)
-    }
-
-    @Test
-    fun extrasSendOnlyGivenFieldsAsPatch() {
-        server.enqueue(MockResponse.Builder().code(204).build())
-        val result = runBlocking { programs.updateExtras("p1", mapOf("treffpunkt" to "Bahnhof", "mitnehmen" to "")) }
-        assertEquals(ApiResult.Ok(Unit), result)
-        val request = server.takeRequest()
-        assertEquals("PATCH /api/v1/programme/p1 HTTP/1.1", request.requestLine)
-        assertEquals("""{"treffpunkt":"Bahnhof","mitnehmen":""}""", request.body?.utf8())
     }
 
     @Test

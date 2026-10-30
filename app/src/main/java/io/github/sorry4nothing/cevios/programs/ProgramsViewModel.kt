@@ -81,9 +81,6 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
         _edit.value = EditState()
     }
 
-    fun saveExtras(programId: String, changes: Map<String, String>, onSaved: () -> Unit) =
-        saveEdit(programId, onSaved) { api.updateExtras(programId, changes) }
-
     fun saveAssignment(programId: String, request: AssignmentRequest, onSaved: () -> Unit) =
         saveEdit(programId, onSaved) { api.assign(programId, request) }
 

@@ -19,11 +19,11 @@ internal class DemoProgram(
     val dayFrom: LocalDate? = null,
     val dayTo: LocalDate? = null,
     val googleLocation: String? = null,
-    var meetingPoint: String? = null,
-    var closingLocation: String? = null,
-    var closingTime: String? = null,
-    var bringAlong: String? = null,
-    var parentInfo: String? = null,
+    val meetingPoint: String? = null,
+    val closingLocation: String? = null,
+    val closingTime: String? = null,
+    val bringAlong: String? = null,
+    val parentInfo: String? = null,
 ) {
     /** Zugeordnete Stufen und Sichtbarkeit; die Leitung ändert sie über `PUT .../zuordnung`. */
     var ageGroupIds: Set<String> = setOf(DemoData.AGE_GROUP_ID)

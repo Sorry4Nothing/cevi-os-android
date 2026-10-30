@@ -43,8 +43,6 @@ data class Program(
     @SerialName("kinder") val children: List<ProgramChild> = emptyList(),
     /** «ja», «nein» oder «offen»; `null`, wenn die Person keine Leitung dieses Programms ist. */
     @SerialName("eigeneAnmeldung") val ownRegistration: String? = null,
-    /** Admin oder Leitung und Stufenleitung einer zugeordneten Stufe: darf Treffpunkt, Schluss, Mitnehmen und Info ändern. */
-    @SerialName("darfErgaenzen") val mayEdit: Boolean = false,
 ) {
     val cancelled get() = status == "abgesagt"
     val inReview get() = status == "pruefen"

@@ -5,12 +5,11 @@ import io.github.sorry4nothing.cevios.programs.Program
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
-/** Der Leitungs-Modus des DemoServers: Ergänzungen und Zuordnung wirken im Speicher, mit den Regeln der API. */
+/** Der Leitungs-Modus des DemoServers: Die Zuordnung wirkt im Speicher, mit den Regeln der API. */
 class LeaderDemoServerTest {
     private val storage = object : SessionStorage {
         override fun read(): String? = null
@@ -30,47 +29,22 @@ class LeaderDemoServerTest {
     private fun list(api: ProgramsApi = this.api): List<Program> =
         runBlocking { api.list(LocalDate.now(), LocalDate.now().plusDays(30)).value().programs }
 
-    private fun assigned() = list().first { it.status == "aktiv" }
-
     private fun unassigned() = list().single { it.unassigned }
 
     private fun read(id: String) = runBlocking { api.read(id).value() }
 
     @Test
-    fun leaderMayEditAssignedButNotUnassignedPrograms() {
-        assertTrue(read(assigned().id).mayEdit)
-        val open = unassigned()
-        assertEquals("pruefen", open.status)
-        assertFalse(read(open.id).mayEdit)
+    fun leaderHasOneUnassignedProgramInReview() {
+        assertEquals("pruefen", unassigned().status)
         assertTrue(runBlocking { api.profile().value() }.roles.any { it.type == "stufenleitung" })
+        assertTrue("Eltern sehen alle Programme zugeordnet", list(programsApi(leader = false)).none { it.unassigned })
     }
 
     @Test
-    fun parentsCannotEditOrAssign() {
+    fun parentsCannotAssign() {
         val parent = programsApi(leader = false)
         val id = list(parent).first().id
-        assertFalse(runBlocking { parent.read(id).value() }.mayEdit)
-        assertEquals(ApiError.FORBIDDEN, runBlocking { parent.updateExtras(id, mapOf("treffpunkt" to "x")) }.failure())
         assertEquals(ApiError.FORBIDDEN, runBlocking { parent.assign(id, AssignmentRequest(listOf(DemoData.AGE_GROUP_ID), "eltern")) }.failure())
-    }
-
-    @Test
-    fun extrasAreChangedAndEmptyTextRemovesThem() {
-        val id = assigned().id
-        runBlocking { api.updateExtras(id, mapOf("treffpunkt" to "Bahnhof", "schlussZeit" to "17:15", "mitnehmen" to "")) }.value()
-        val changed = read(id)
-        assertEquals("Bahnhof", changed.meetingPoint)
-        assertEquals("17:15:00", changed.closingTime)
-        assertEquals(null, changed.bringAlong)
-    }
-
-    @Test
-    fun invalidExtrasAreRejected() {
-        val id = assigned().id
-        assertEquals(ApiError.UNKNOWN, runBlocking { api.updateExtras(id, mapOf("schlussZeit" to "25:00")) }.failure())
-        assertEquals(ApiError.UNKNOWN, runBlocking { api.updateExtras(id, emptyMap()) }.failure())
-        assertEquals(ApiError.UNKNOWN, runBlocking { api.updateExtras(id, mapOf("titel" to "x")) }.failure())
-        assertEquals(ApiError.UNKNOWN, runBlocking { api.updateExtras(id, mapOf("treffpunkt" to "x".repeat(201))) }.failure())
     }
 
     @Test
@@ -82,7 +56,6 @@ class LeaderDemoServerTest {
         val now = read(id)
         assertEquals(listOf(own), now.ageGroups.map { it.id })
         assertEquals("eltern", now.visibility)
-        assertTrue(now.mayEdit)
         val other = AssignmentRequest(listOf(own, DemoData.OTHER_AGE_GROUP_ID), "eltern")
         assertEquals(ApiError.FORBIDDEN, runBlocking { api.assign(id, other) }.failure())
     }

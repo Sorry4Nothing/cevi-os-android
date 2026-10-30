@@ -192,7 +192,6 @@ fun ProgramDetailScreen(
     canAssign: Boolean,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
-    onEdit: () -> Unit,
     onAssign: () -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
@@ -208,7 +207,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, back, onChild, onLeader, onEdit, onAssign)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, back, onChild, onLeader, onAssign)
         }
     }
 }
@@ -221,7 +220,6 @@ private fun ProgramContent(
     back: HeaderButton,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
-    onEdit: () -> Unit,
     onAssign: () -> Unit,
 ) {
     val ageGroups = program.ageGroups.joinToString(", ") { it.name }
@@ -239,16 +237,16 @@ private fun ProgramContent(
             Tiles(program)
             Facts(program)
             RegistrationSection(program, rsvp, onChild, onLeader)
-            LeaderSection(program, canAssign, onEdit, onAssign)
+            LeaderSection(program, canAssign, onAssign)
             Box(Modifier.height(Spacing.s4))
         }
     }
 }
 
-/** Aktionen nur für Leitende: Ergänzungen bearbeiten, wer `mayEdit` hat; zuordnen, wer Admin oder Stufenleitung ist. */
+/** Aktion nur für Admins und Stufenleitungen: Stufen und Sichtbarkeit setzen. */
 @Composable
-private fun LeaderSection(program: Program, canAssign: Boolean, onEdit: () -> Unit, onAssign: () -> Unit) {
-    if (!program.mayEdit && !canAssign) return
+private fun LeaderSection(program: Program, canAssign: Boolean, onAssign: () -> Unit) {
+    if (!canAssign) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
         Text(
             stringResource(R.string.section_leaders),
@@ -256,8 +254,7 @@ private fun LeaderSection(program: Program, canAssign: Boolean, onEdit: () -> Un
             modifier = Modifier.padding(top = 6.dp).semantics { heading() },
         )
         if (program.unassigned) NoticeBanner(NoticeKind.INFO, stringResource(R.string.unassigned_notice))
-        if (program.mayEdit) OutlinedPillButton(stringResource(R.string.extras_action), onEdit, Modifier.fillMaxWidth())
-        if (canAssign) OutlinedPillButton(stringResource(R.string.assignment_action), onAssign, Modifier.fillMaxWidth())
+        OutlinedPillButton(stringResource(R.string.assignment_action), onAssign, Modifier.fillMaxWidth())
     }
 }
 

@@ -22,54 +22,6 @@ enum class Visibility(val api: String) {
     PARENTS("eltern"),
 }
 
-/** Die fünf Felder, die Leitende ergänzen. Leer heisst: keine Angabe, dann gilt wieder der Ort aus Google. */
-data class Extras(
-    val meetingPoint: String = "",
-    val closingLocation: String = "",
-    /** `HH:MM`. */
-    val closingTime: String = "",
-    val bringAlong: String = "",
-    val parentInfo: String = "",
-) {
-    companion object {
-        fun of(program: Program) = Extras(
-            meetingPoint = program.meetingPoint.orEmpty(),
-            closingLocation = program.closingLocation.orEmpty(),
-            // Der Server liefert «16:30:00», nimmt aber nur «16:30» an.
-            closingTime = program.closingTime.orEmpty().take(TIME_LENGTH),
-            bringAlong = program.bringAlong.orEmpty(),
-            parentInfo = program.parentInfo.orEmpty(),
-        )
-
-        private const val TIME_LENGTH = 5
-    }
-}
-
-/** Was die App prüft, bevor sie sendet. Die Grenzen sind die der API; der Server prüft trotzdem. */
-object ExtrasRules {
-    const val SHORT_MAX = 200
-    const val LONG_MAX = 2000
-    private val TIME = Regex("([01][0-9]|2[0-3]):[0-5][0-9]")
-
-    /** Leer (keine Angabe) oder `HH:MM`. */
-    fun validTime(text: String) = text.isBlank() || TIME.matches(text.trim())
-
-    /**
-     * Nur die geänderten Felder, an den Rändern von Leerzeichen befreit, als Body für `PATCH /api/v1/programme/{id}`.
-     * Ein leerer Text entfernt die Angabe. Leer heisst: nichts zu speichern.
-     */
-    fun changes(original: Extras, edited: Extras): Map<String, String> = buildMap {
-        fun add(key: String, before: String, after: String) {
-            if (before.trim() != after.trim()) put(key, after.trim())
-        }
-        add("treffpunkt", original.meetingPoint, edited.meetingPoint)
-        add("schlussOrt", original.closingLocation, edited.closingLocation)
-        add("schlussZeit", original.closingTime, edited.closingTime)
-        add("mitnehmen", original.bringAlong, edited.bringAlong)
-        add("infoEltern", original.parentInfo, edited.parentInfo)
-    }
-}
-
 /**
  * Zuordnung von Stufen und Sichtbarkeit. Admins dürfen alles, Stufenleitungen nur Stufen, in denen sie selbst Stufenleitung
  * sind. Leitende und Eltern nie. Die Entscheidung trifft der Server; eine Aktion, die er ablehnt, zeigt die App als Fehler.

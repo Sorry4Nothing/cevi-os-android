@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,7 +43,6 @@ import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.Header
 import io.github.sorry4nothing.cevios.ui.HeaderButton
-import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.LoadingSkeleton
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
@@ -55,53 +53,6 @@ import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
 private val CARD = RoundedCornerShape(16.dp)
-
-/** Die fünf Ergänzungen eines Programms bearbeiten. Gesendet werden nur die geänderten Felder. */
-@Composable
-fun ExtrasScreen(
-    program: Program,
-    edit: EditState,
-    onSave: (changes: Map<String, String>) -> Unit,
-    onBack: () -> Unit,
-) {
-    val original = remember(program) { Extras.of(program) }
-    var meetingPoint by rememberSaveable { mutableStateOf(original.meetingPoint) }
-    var closingLocation by rememberSaveable { mutableStateOf(original.closingLocation) }
-    var closingTime by rememberSaveable { mutableStateOf(original.closingTime) }
-    var bringAlong by rememberSaveable { mutableStateOf(original.bringAlong) }
-    var parentInfo by rememberSaveable { mutableStateOf(original.parentInfo) }
-
-    val changes = ExtrasRules.changes(original, Extras(meetingPoint, closingLocation, closingTime, bringAlong, parentInfo))
-    val timeValid = ExtrasRules.validTime(closingTime)
-    val googleLocation = program.googleLocation?.takeIf { it.isNotBlank() }
-
-    FormPage(program.title, stringResource(R.string.extras_title), onBack) {
-        LabeledTextField(
-            stringResource(R.string.field_meeting_point), meetingPoint, { meetingPoint = it }, ExtrasRules.SHORT_MAX,
-            hint = googleLocation?.let { stringResource(R.string.field_meeting_point_hint, it) },
-            enabled = !edit.running,
-        )
-        LabeledTextField(
-            stringResource(R.string.field_closing_location), closingLocation, { closingLocation = it }, ExtrasRules.SHORT_MAX,
-            enabled = !edit.running,
-        )
-        LabeledTextField(
-            stringResource(R.string.field_closing_time), closingTime, { closingTime = it }, TIME_INPUT_MAX,
-            hint = stringResource(R.string.field_closing_time_hint),
-            enabled = !edit.running,
-        )
-        if (!timeValid) NoticeBanner(NoticeKind.ERROR, stringResource(R.string.time_invalid))
-        LabeledTextField(
-            stringResource(R.string.field_bring_along), bringAlong, { bringAlong = it }, ExtrasRules.LONG_MAX,
-            minLines = MULTILINE, enabled = !edit.running,
-        )
-        LabeledTextField(
-            stringResource(R.string.field_parent_info), parentInfo, { parentInfo = it }, ExtrasRules.LONG_MAX,
-            minLines = MULTILINE, enabled = !edit.running,
-        )
-        SaveBar(edit, enabled = timeValid, onSave = { if (changes.isEmpty()) onBack() else onSave(changes) }, onCancel = onBack)
-    }
-}
 
 /** Stufen und Sichtbarkeit eines Programms setzen. Die App schickt den vollen neuen Stand, wie es die API verlangt. */
 @Composable
@@ -253,7 +204,7 @@ private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 6.dp).semantics { heading() })
 }
 
-/** Kopf mit Zurück und Titel, darunter der scrollende Inhalt; das Feld bleibt über der Tastatur. */
+/** Kopf mit Zurück und Titel, darunter der scrollende Inhalt; die Tastatur schiebt den Inhalt nach oben. */
 @Composable
 private fun FormPage(eyebrow: String, title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
     val back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_program), onBack)
@@ -280,6 +231,3 @@ private fun SaveBar(edit: EditState, enabled: Boolean, onSave: () -> Unit, onCan
     PrimaryButton(stringResource(R.string.save), onSave, Modifier.fillMaxWidth(), enabled = enabled && !edit.running)
     TextActionButton(stringResource(R.string.cancel), onCancel, Modifier.fillMaxWidth())
 }
-
-private const val MULTILINE = 4
-private const val TIME_INPUT_MAX = 5

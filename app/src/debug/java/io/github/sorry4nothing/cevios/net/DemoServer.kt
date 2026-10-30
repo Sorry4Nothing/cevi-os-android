@@ -25,7 +25,7 @@ import java.time.temporal.ChronoUnit
 /**
  * Antwortet im Namen des Servers, ohne Netzwerk, mit JSON in der Form der API (nur Debug-Build). Der Zustand liegt
  * im Speicher und geht mit der App verloren. Die Demo-Person ist eine Elternperson, keine Leitung. Mit `leader` ist sie
- * Stufenleitung der Demo-Stufe: Sie darf Ergänzungen und Zuordnung ändern, und «Geländespiel» ist keiner Stufe zugeordnet.
+ * Stufenleitung der Demo-Stufe: Sie darf die Zuordnung ändern, und «Geländespiel» ist keiner Stufe zugeordnet.
  */
 class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leader: Boolean = false) : Interceptor {
     private class Reply(val code: Int, val message: String, val body: JsonElement? = null)
@@ -93,7 +93,6 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
         return when {
             method == "GET" && path.size == 2 -> ok(programDetail(program))
             method == "PUT" && path.size == 3 && path[2] == "leitung" -> forbidden()
-            method == "PATCH" && path.size == 2 -> updateExtras(program, body)
             method == "PUT" && path.size == 3 && path[2] == "zuordnung" -> assign(program, body)
             method == "PUT" && path.size == 4 && path[2] == "teilnahmen" -> {
                 val child = DemoData.children.find { it.id == path[3] } ?: return notFound()
@@ -105,35 +104,6 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
             }
             else -> notFound()
         }
-    }
-
-    /** Die Leitung darf Ergänzungen ändern, wenn das Programm einer ihrer Stufen zugeordnet ist. */
-    private fun mayEdit(program: DemoProgram) = leader && DemoData.AGE_GROUP_ID in program.ageGroupIds
-
-    /** Wie `PATCH /api/v1/programme/{id}`: nur bekannte Felder, mindestens eins, ein leerer Text entfernt die Angabe. */
-    private fun updateExtras(program: DemoProgram, body: String): Reply {
-        val fields = (try { Json.parseToJsonElement(body) } catch (e: IllegalArgumentException) { null }) as? JsonObject
-        val values = fields?.mapValues { (it.value as? JsonPrimitive)?.takeIf { p -> p.isString }?.content?.trim() }
-        if (values.isNullOrEmpty() || values.any { (key, value) -> value == null || !extrasValid(key, value) }) return invalidInput()
-        if (!mayEdit(program)) return forbidden()
-        values.forEach { (key, value) ->
-            val text = value?.ifEmpty { null }
-            when (key) {
-                "treffpunkt" -> program.meetingPoint = text
-                "schlussOrt" -> program.closingLocation = text
-                "schlussZeit" -> program.closingTime = text?.let { "$it:00" }
-                "mitnehmen" -> program.bringAlong = text
-                "infoEltern" -> program.parentInfo = text
-            }
-        }
-        return Reply(204, "No Content")
-    }
-
-    private fun extrasValid(key: String, value: String) = when (key) {
-        "treffpunkt", "schlussOrt" -> value.length <= MAX_SHORT_LENGTH
-        "schlussZeit" -> value.isEmpty() || TIME.matches(value)
-        "mitnehmen", "infoEltern" -> value.length <= MAX_TEXT_LENGTH
-        else -> false
     }
 
     /**
@@ -303,7 +273,6 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
                     )
                 }
             }
-            put("darfErgaenzen", mayEdit(p))
         },
     )
 
@@ -378,9 +347,7 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
         const val DEFAULT_DELAY_MS = 400L
         private const val PAGE_SIZE = 50
         private const val MAX_TEXT_LENGTH = 2000
-        private const val MAX_SHORT_LENGTH = 200
         private val VISIBILITIES = setOf("intern", "leitende", "eltern")
-        private val TIME = Regex("([01][0-9]|2[0-3]):[0-5][0-9]")
         private val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
     }
 }

@@ -108,17 +108,6 @@
     <string name="saving">Wird gespeichert …</string>
     <string name="back_to_program">Zurück zum Programm</string>
 
-    <string name="extras_action">Ergänzungen bearbeiten</string>
-    <string name="extras_title">Ergänzungen</string>
-    <string name="field_meeting_point">Treffpunkt</string>
-    <string name="field_meeting_point_hint">Ohne Angabe gilt der Ort aus dem Kalender: %1$s</string>
-    <string name="field_closing_location">Ort am Schluss</string>
-    <string name="field_closing_time">Uhrzeit am Schluss</string>
-    <string name="field_closing_time_hint">So schreiben: 16:30. Gilt am letzten Tag.</string>
-    <string name="field_bring_along">Mitnehmen</string>
-    <string name="field_parent_info">Info für Eltern</string>
-    <string name="time_invalid">Die Uhrzeit stimmt nicht. Schreib sie so: 16:30</string>
-
     <string name="assignment_action">Stufen und Sichtbarkeit</string>
     <string name="assignment_title">Stufen und Sichtbarkeit</string>
     <string name="assignment_loading">Stufen werden geladen</string>

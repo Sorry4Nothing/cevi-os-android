@@ -29,5 +29,6 @@ enum class ApiError(@StringRes val text: Int) {
 
 sealed interface ApiResult<out T> {
     data class Ok<out T>(val value: T) : ApiResult<T>
-    data class Failure(val error: ApiError) : ApiResult<Nothing>
+    /** `code` ist der Fehlercode des Servers und nur bei 400 gefüllt (z. B. `PASSWORD_COMPROMISED`). */
+    data class Failure(val error: ApiError, val code: String? = null) : ApiResult<Nothing>
 }

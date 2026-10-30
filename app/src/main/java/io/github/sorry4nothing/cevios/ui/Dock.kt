@@ -40,10 +40,11 @@ import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.WideBreakpoint
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 
-/** Die Hauptziele des Docks. Profil kommt mit dem Profil-Issue dazu. */
+/** Die Hauptziele des Docks. */
 enum class Destination(@StringRes val text: Int, @DrawableRes val icon: Int) {
     PROGRAMS(R.string.tab_programs, R.drawable.ic_calendar),
     CHAT(R.string.tab_chat, R.drawable.ic_chat),
+    PROFILE(R.string.tab_profile, R.drawable.ic_profile),
 }
 
 private val DockShape = RoundedCornerShape(24.dp)

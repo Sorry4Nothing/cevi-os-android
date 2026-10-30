@@ -1,6 +1,11 @@
 package io.github.sorry4nothing.cevios.net
 
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -135,5 +140,37 @@ class ApiClientTest {
         server.enqueue(MockResponse.Builder().code(302).addHeader("Location", server.url("/anderswo").toString()).build())
         assertEquals(ApiResult.Failure(ApiError.UNKNOWN), runBlocking { client().get<Me>("/api/v1/ich") })
         assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun badRequestCarriesTheServerErrorCode() {
+        server.enqueue(response(400, """{"code":"PASSWORD_COMPROMISED","message":"English"}"""))
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN, "PASSWORD_COMPROMISED"), runBlocking { client().get<Me>("/x") })
+        server.enqueue(response(400, "kein json"))
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN), runBlocking { client().get<Me>("/x") })
+    }
+
+    @Test
+    fun lostSessionIsAnnouncedButAFailedSignInIsNot() = runBlocking {
+        val api = client()
+        val announced = async(start = CoroutineStart.UNDISPATCHED) { api.unauthorized.first() }
+        server.enqueue(response(401, "{}"))
+        api.post<Unit, Me>("/api/auth/sign-in/username", Unit)
+        assertNull(withTimeoutOrNull(200) { announced.await() })
+        server.enqueue(response(401, "{}"))
+        api.get<Me>("/api/v1/chats")
+        assertEquals(Unit, withTimeout(5_000) { announced.await() })
+    }
+
+    @Test
+    fun forgetSessionClearsTheCookies() {
+        storage.value = "two_factor=zwischen"
+        ApiClient(server.url("/").toString(), ApiClient.httpClient(storage, "1.2.3"), storage = storage).forgetSession()
+        assertNull(storage.value)
+    }
+
+    @Test
+    fun pageUrlPointsAtTheBackend() {
+        assertEquals(server.url("/datenschutz").toString(), client().pageUrl("/datenschutz"))
     }
 }

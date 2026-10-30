@@ -123,7 +123,7 @@ class ChatApiTest {
     }
 
     @Test
-    fun profileReadsOnlyRolesAgeGroupsAndChildren() {
+    fun profileReadsRolesAgeGroupsAndChildren() {
         server.enqueue(
             json(
                 200,
@@ -136,7 +136,7 @@ class ChatApiTest {
         val profile = (runBlocking { chat.profile() } as ApiResult.Ok).value
         assertEquals("GET /api/v1/ich HTTP/1.1", server.takeRequest().requestLine)
         assertTrue(profile.isGroupLeader("s1"))
-        assertEquals(ProfileChild("k1", "s1"), profile.children.single())
+        assertEquals(ProfileChild("k1", "s1", "Mia"), profile.children.single())
     }
 
     @Test

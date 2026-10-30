@@ -28,51 +28,51 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import io.github.sorry4nothing.cevios.ui.theme.Abstand
+import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.Eyebrow
-import io.github.sorry4nothing.cevios.ui.theme.Groesse
-import io.github.sorry4nothing.cevios.ui.theme.Voll
+import io.github.sorry4nothing.cevios.ui.theme.Sizes
+import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 
 /** Runder Knopf im Kopf. Die Beschreibung ist Pflicht: Der Knopf hat kein Wort. */
-class KopfKnopf(@DrawableRes val icon: Int, val beschreibung: String, val onClick: () -> Unit)
+class HeaderButton(@DrawableRes val icon: Int, val description: String, val onClick: () -> Unit)
 
 /**
  * Derselbe Kopf auf jedem Screen: oben Zurück links und höchstens eine Aktion rechts, darunter Überzeile und Titel.
- * Der Titel ist eine Überschrift; nach dem Öffnen springt der Fokus auf ihn (`fokusAufTitel`).
+ * Der Titel ist eine Überschrift; nach dem Öffnen springt der Fokus auf ihn (`focusOnTitle`).
  */
 @Composable
-fun Kopf(
-    titel: String?,
+fun Header(
+    title: String?,
     modifier: Modifier = Modifier,
-    ueberzeile: String? = null,
-    zurueck: KopfKnopf? = null,
-    aktion: KopfKnopf? = null,
-    titelStil: TextStyle = MaterialTheme.typography.headlineLarge,
-    fokusAufTitel: Boolean = false,
+    eyebrow: String? = null,
+    back: HeaderButton? = null,
+    action: HeaderButton? = null,
+    titleStyle: TextStyle = MaterialTheme.typography.headlineLarge,
+    focusOnTitle: Boolean = false,
 ) {
     Column(
-        modifier.fillMaxWidth().padding(start = Abstand.s3, top = Abstand.s3, end = Abstand.s3, bottom = Abstand.s4),
-        verticalArrangement = Arrangement.spacedBy(Abstand.s2),
+        modifier.fillMaxWidth().padding(start = Spacing.s3, top = Spacing.s3, end = Spacing.s3, bottom = Spacing.s4),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
     ) {
-        if (zurueck != null || aktion != null) {
-            Row(Modifier.fillMaxWidth().height(Groesse.touchZiel), horizontalArrangement = Arrangement.spacedBy(Abstand.s2)) {
-                zurueck?.let { RundKnopf(it) }
+        if (back != null || action != null) {
+            Row(Modifier.fillMaxWidth().height(Sizes.touchTarget), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                back?.let { RoundButton(it) }
                 Spacer(Modifier.weight(1f))
-                aktion?.let { RundKnopf(it) }
+                action?.let { RoundButton(it) }
             }
         }
-        if (titel != null) {
-            Column(Modifier.padding(horizontal = Abstand.s2), verticalArrangement = Arrangement.spacedBy(Abstand.s1)) {
-                ueberzeile?.let { Text(it.uppercase(), style = Eyebrow, color = MaterialTheme.cevi.accent) }
-                val fokus = remember { FocusRequester() }
-                if (fokusAufTitel) LaunchedEffect(titel) { fokus.requestFocus() }
+        if (title != null) {
+            Column(Modifier.padding(horizontal = Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
+                eyebrow?.let { Text(it.uppercase(), style = Eyebrow, color = MaterialTheme.cevi.accent) }
+                val focus = remember { FocusRequester() }
+                if (focusOnTitle) LaunchedEffect(title) { focus.requestFocus() }
                 Text(
-                    titel,
-                    style = titelStil,
+                    title,
+                    style = titleStyle,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
-                        .then(if (fokusAufTitel) Modifier.focusRequester(fokus).focusTarget() else Modifier)
+                        .then(if (focusOnTitle) Modifier.focusRequester(focus).focusTarget() else Modifier)
                         .semantics { heading() },
                 )
             }
@@ -81,16 +81,16 @@ fun Kopf(
 }
 
 @Composable
-fun RundKnopf(knopf: KopfKnopf, modifier: Modifier = Modifier) {
+fun RoundButton(button: HeaderButton, modifier: Modifier = Modifier) {
     Surface(
-        onClick = knopf.onClick,
-        modifier = modifier.size(Groesse.touchZiel).fokusRing(Voll).semantics { contentDescription = knopf.beschreibung },
-        shape = Voll,
+        onClick = button.onClick,
+        modifier = modifier.size(Sizes.touchTarget).focusRing(Pill).semantics { contentDescription = button.description },
+        shape = Pill,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Icon(
-            painterResource(knopf.icon),
+            painterResource(button.icon),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(12.dp),

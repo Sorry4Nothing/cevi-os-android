@@ -22,25 +22,25 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 
-private val RING_DICKE = 3.dp
-private val RING_ABSTAND = 2.dp
+private val RING_THICKNESS = 3.dp
+private val RING_GAP = 2.dp
 
 /**
  * Fokusring aus dem Design: 3 dp in `focus`, 2 dp Abstand zum Element (Tastatur, Switch Access, Voice Access).
  * Vor `clickable` oder `selectable` setzen, damit er den Fokus des Elements sieht.
  */
-fun Modifier.fokusRing(form: Shape): Modifier = composed {
-    var fokussiert by remember { mutableStateOf(false) }
-    val farbe = MaterialTheme.cevi.focus
-    val dichte = LocalDensity.current
-    onFocusChanged { fokussiert = it.isFocused }.drawWithContent {
+fun Modifier.focusRing(shape: Shape): Modifier = composed {
+    var focused by remember { mutableStateOf(false) }
+    val color = MaterialTheme.cevi.focus
+    val density = LocalDensity.current
+    onFocusChanged { focused = it.isFocused }.drawWithContent {
         drawContent()
-        if (fokussiert) {
-            val aussen = (RING_ABSTAND + RING_DICKE / 2).toPx()
-            val dicke = RING_DICKE.toPx()
-            val groesse = Size(size.width + 2 * aussen, size.height + 2 * aussen)
-            val umriss = form.createOutline(groesse, LayoutDirection.Ltr, dichte)
-            translate(-aussen, -aussen) { drawOutline(umriss, farbe, style = Stroke(dicke)) }
+        if (focused) {
+            val outer = (RING_GAP + RING_THICKNESS / 2).toPx()
+            val thickness = RING_THICKNESS.toPx()
+            val outlineSize = Size(size.width + 2 * outer, size.height + 2 * outer)
+            val outline = shape.createOutline(outlineSize, LayoutDirection.Ltr, density)
+            translate(-outer, -outer) { drawOutline(outline, color, style = Stroke(thickness)) }
         }
     }
 }

@@ -1,9 +1,9 @@
 package io.github.sorry4nothing.cevios.chat
 
 import io.github.sorry4nothing.cevios.net.ApiClient
-import io.github.sorry4nothing.cevios.net.ApiFehler
+import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
-import io.github.sorry4nothing.cevios.net.SitzungSpeicher
+import io.github.sorry4nothing.cevios.net.SessionStorage
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -21,11 +21,11 @@ class ChatApiTest {
     @Before
     fun start() {
         server = MockWebServer().apply { start() }
-        val speicher = object : SitzungSpeicher {
-            override fun lesen(): String? = null
-            override fun schreiben(wert: String?) = Unit
+        val storage = object : SessionStorage {
+            override fun read(): String? = null
+            override fun write(value: String?) = Unit
         }
-        chat = ChatApi(ApiClient(server.url("/").toString(), ApiClient.httpClient(speicher, "1.0.0")))
+        chat = ChatApi(ApiClient(server.url("/").toString(), ApiClient.httpClient(storage, "1.0.0")))
     }
 
     @After
@@ -34,7 +34,7 @@ class ChatApiTest {
     private fun json(code: Int, body: String) = MockResponse.Builder().code(code).body(body).build()
 
     @Test
-    fun chatsLiestGruppeUndEinzelchat() {
+    fun chatsReadsGroupAndDirectChat() {
         server.enqueue(
             json(
                 200,
@@ -45,28 +45,28 @@ class ChatApiTest {
                  "eltern":{"id":"e1","name":"Beispiel Eltern"},"stufenleitung":[]}]}""",
             ),
         )
-        val chats = (runBlocking { chat.chats() } as ApiResult.Ok).wert.chats
+        val chats = (runBlocking { chat.chats() } as ApiResult.Ok).value.chats
         assertEquals("GET /api/v1/chats HTTP/1.1", server.takeRequest().requestLine)
-        assertTrue(chats[0].istGruppe && chats[0].eltern == null)
-        assertEquals("Beispiel Leitung", chats[0].stufenleitung.single().name)
-        assertEquals("Beispiel Eltern", chats[1].eltern?.name)
-        assertTrue(!chats[1].istGruppe)
+        assertTrue(chats[0].isGroup && chats[0].parent == null)
+        assertEquals("Beispiel Leitung", chats[0].groupLeaders.single().name)
+        assertEquals("Beispiel Eltern", chats[1].parent?.name)
+        assertTrue(!chats[1].isGroup)
     }
 
     @Test
-    fun nachrichtenOhneUndMitCursor() {
+    fun messagesWithAndWithoutCursor() {
         server.enqueue(json(200, """{"nachrichten":[],"naechster":null}"""))
         server.enqueue(json(200, """{"nachrichten":[],"naechster":null}"""))
         runBlocking {
-            chat.nachrichten("c1")
-            chat.nachrichten("c1", vor = "0190a1b2")
+            chat.messages("c1")
+            chat.messages("c1", before = "0190a1b2")
         }
         assertEquals("GET /api/v1/chats/c1/nachrichten HTTP/1.1", server.takeRequest().requestLine)
         assertEquals("GET /api/v1/chats/c1/nachrichten?vor=0190a1b2 HTTP/1.1", server.takeRequest().requestLine)
     }
 
     @Test
-    fun ausgeblendeteNachrichtHatKeinenText() {
+    fun hiddenMessageHasNoText() {
         server.enqueue(
             json(
                 200,
@@ -77,72 +77,72 @@ class ChatApiTest {
                  "programm":{"id":"p1","titel":"Lager"},"ausgeblendet":false,"eigene":false}],"naechster":"m1"}""",
             ),
         )
-        val seite = (runBlocking { chat.nachrichten("c1") } as ApiResult.Ok).wert
-        assertNull(seite.nachrichten[0].text)
-        assertTrue(seite.nachrichten[0].ausgeblendet && seite.nachrichten[0].eigene)
-        assertEquals("Lager", seite.nachrichten[1].programm?.titel)
-        assertEquals("m1", seite.naechster)
+        val page = (runBlocking { chat.messages("c1") } as ApiResult.Ok).value
+        assertNull(page.messages[0].text)
+        assertTrue(page.messages[0].hidden && page.messages[0].own)
+        assertEquals("Lager", page.messages[1].program?.title)
+        assertEquals("m1", page.next)
     }
 
     @Test
-    fun sendenPostetDenTextUndLiestDieKennung() {
+    fun sendPostsTextAndReadsId() {
         server.enqueue(json(201, """{"id":"m9"}"""))
-        val ergebnis = runBlocking { chat.senden("c1", "Hallo") }
-        assertEquals(ApiResult.Ok(NachrichtKennung("m9")), ergebnis)
-        val anfrage = server.takeRequest()
-        assertEquals("POST /api/v1/chats/c1/nachrichten HTTP/1.1", anfrage.requestLine)
-        assertEquals("""{"text":"Hallo"}""", anfrage.body?.utf8())
+        val result = runBlocking { chat.send("c1", "Hallo") }
+        assertEquals(ApiResult.Ok(MessageIdResponse("m9")), result)
+        val request = server.takeRequest()
+        assertEquals("POST /api/v1/chats/c1/nachrichten HTTP/1.1", request.requestLine)
+        assertEquals("""{"text":"Hallo"}""", request.body?.utf8())
     }
 
     @Test
-    fun einzelchatDesElternteilsSendetNurDieStufe() {
+    fun parentDirectChatSendsOnlyAgeGroup() {
         server.enqueue(json(200, """{"id":"c7"}"""))
-        assertEquals(ApiResult.Ok(ChatKennung("c7")), runBlocking { chat.einzelchat("s1") })
-        val anfrage = server.takeRequest()
-        assertEquals("POST /api/v1/chats/direkt HTTP/1.1", anfrage.requestLine)
-        assertEquals("""{"stufeId":"s1"}""", anfrage.body?.utf8())
+        assertEquals(ApiResult.Ok(ChatIdResponse("c7")), runBlocking { chat.directChat("s1") })
+        val request = server.takeRequest()
+        assertEquals("POST /api/v1/chats/direkt HTTP/1.1", request.requestLine)
+        assertEquals("""{"stufeId":"s1"}""", request.body?.utf8())
     }
 
     @Test
-    fun einzelchatDerStufenleitungNenntDasElternteil() {
+    fun groupLeaderDirectChatNamesParent() {
         server.enqueue(json(200, """{"id":"c7"}"""))
-        runBlocking { chat.einzelchat("s1", "e1") }
+        runBlocking { chat.directChat("s1", "e1") }
         assertEquals("""{"stufeId":"s1","elternUserId":"e1"}""", server.takeRequest().body?.utf8())
     }
 
     @Test
-    fun ausblendenUndMeldenPostenOhneBody() {
+    fun hideAndReportPostWithoutBody() {
         server.enqueue(MockResponse.Builder().code(204).build())
         server.enqueue(MockResponse.Builder().code(204).build())
         runBlocking {
-            assertEquals(ApiResult.Ok(Unit), chat.ausblenden("m1"))
-            assertEquals(ApiResult.Ok(Unit), chat.melden("m1"))
+            assertEquals(ApiResult.Ok(Unit), chat.hide("m1"))
+            assertEquals(ApiResult.Ok(Unit), chat.report("m1"))
         }
-        val ausblenden = server.takeRequest()
-        assertEquals("POST /api/v1/nachrichten/m1/ausblenden HTTP/1.1", ausblenden.requestLine)
-        assertEquals(0, ausblenden.body?.size ?: 0)
+        val hide = server.takeRequest()
+        assertEquals("POST /api/v1/nachrichten/m1/ausblenden HTTP/1.1", hide.requestLine)
+        assertEquals(0, hide.body?.size ?: 0)
         assertEquals("POST /api/v1/nachrichten/m1/melden HTTP/1.1", server.takeRequest().requestLine)
     }
 
     @Test
-    fun ausblendenOhneRechtIst403() {
+    fun hideWithoutPermissionIs403() {
         server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"x"}"""))
-        assertEquals(ApiResult.Fehler(ApiFehler.KEINE_BERECHTIGUNG), runBlocking { chat.ausblenden("m1") })
+        assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), runBlocking { chat.hide("m1") })
     }
 
     @Test
-    fun hilfeLiestDenTextOderKeinen() {
+    fun helpReadsTextOrNone() {
         server.enqueue(json(200, """{"vertrauenspersonen":"Vertrauensperson: Beispiel, erreichbar am Abend."}"""))
         server.enqueue(json(200, """{"vertrauenspersonen":null}"""))
         runBlocking {
-            assertEquals("Vertrauensperson: Beispiel, erreichbar am Abend.", (chat.hilfe() as ApiResult.Ok).wert.vertrauenspersonen)
-            assertNull((chat.hilfe() as ApiResult.Ok).wert.vertrauenspersonen)
+            assertEquals("Vertrauensperson: Beispiel, erreichbar am Abend.", (chat.help() as ApiResult.Ok).value.trustedPersons)
+            assertNull((chat.help() as ApiResult.Ok).value.trustedPersons)
         }
         assertEquals("GET /api/v1/hilfe HTTP/1.1", server.takeRequest().requestLine)
     }
 
     @Test
-    fun profilLiestNurRollenStufenUndKinderDerStufen() {
+    fun profileReadsOnlyRolesAgeGroupsAndChildren() {
         server.enqueue(
             json(
                 200,
@@ -152,21 +152,21 @@ class ChatApiTest {
                 "kinder":[{"id":"k1","vorname":"Mia","nachname":"Muster","stufeId":"s1"}]}""",
             ),
         )
-        val profil = (runBlocking { chat.profil() } as ApiResult.Ok).wert
+        val profile = (runBlocking { chat.profile() } as ApiResult.Ok).value
         assertEquals("GET /api/v1/ich HTTP/1.1", server.takeRequest().requestLine)
-        assertTrue(profil.istStufenleitung("s1"))
-        assertEquals(ProfilKind("k1", "s1"), profil.kinder.single())
+        assertTrue(profile.isGroupLeader("s1"))
+        assertEquals(ProfileChild("k1", "s1"), profile.children.single())
     }
 
     @Test
-    fun zuVieleNachrichtenGibtDenFehlerFuerZuVieleAnfragen() {
+    fun tooManyMessagesGivesTooManyRequestsError() {
         server.enqueue(json(429, """{"code":"ZU_VIELE_ANFRAGEN","message":"x"}"""))
-        assertEquals(ApiResult.Fehler(ApiFehler.ZU_VIELE_ANFRAGEN), runBlocking { chat.senden("c1", "Hallo") })
+        assertEquals(ApiResult.Failure(ApiError.TOO_MANY_REQUESTS), runBlocking { chat.send("c1", "Hallo") })
     }
 
     @Test
-    fun keinMitgliedIstNichtGefunden() {
+    fun nonMemberIsNotFound() {
         server.enqueue(json(404, """{"code":"NICHT_GEFUNDEN","message":"x"}"""))
-        assertEquals(ApiResult.Fehler(ApiFehler.NICHT_GEFUNDEN), runBlocking { chat.nachrichten("fremd") })
+        assertEquals(ApiResult.Failure(ApiError.NOT_FOUND), runBlocking { chat.messages("fremd") })
     }
 }

@@ -22,11 +22,11 @@ import io.github.sorry4nothing.cevios.net.ApiResult
 
 /** Ladeanzeige, die der Screenreader ansagt. */
 @Composable
-fun Laden() {
-    val beschreibung = stringResource(R.string.laden)
+fun Loading() {
+    val description = stringResource(R.string.loading)
     Box(
         Modifier.fillMaxWidth().padding(32.dp).semantics {
-            contentDescription = beschreibung
+            contentDescription = description
             liveRegion = LiveRegionMode.Polite
         },
         contentAlignment = Alignment.Center,
@@ -35,12 +35,12 @@ fun Laden() {
 
 /** Fehlertext (wird angesagt) mit «Nochmals versuchen». */
 @Composable
-fun FehlerAnzeige(fehler: ApiResult.Fehler, onNochmals: () -> Unit) {
+fun ErrorDisplay(error: ApiResult.Failure, onRetry: () -> Unit) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
-            stringResource(fehler.fehler.text),
+            stringResource(error.error.text),
             Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
         )
-        Button(onClick = onNochmals) { Text(stringResource(R.string.nochmals)) }
+        Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
     }
 }

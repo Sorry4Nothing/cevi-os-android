@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
  * Kein Zustand nur über Farbe: Jede dieser Farben steht immer mit Icon und Wort.
  */
 @Immutable
-data class CeviFarben(
+data class CeviColors(
     /** Links, Überzeilen und Icons in Detailzeilen. */
     val accent: Color,
     /** Rot als Text oder Linie; `primary` ist nur als Fläche gedacht. */
@@ -25,42 +25,42 @@ data class CeviFarben(
     val onSuccessContainer: Color,
     val warningContainer: Color,
     val onWarningContainer: Color,
-    val stufeContainer: Color,
-    val onStufeContainer: Color,
+    val ageGroupContainer: Color,
+    val onAgeGroupContainer: Color,
     /** Fokusring: 3 dp, 2 dp Abstand. */
     val focus: Color,
 )
 
-val LocalCeviFarben = staticCompositionLocalOf { CeviNacht.extra }
+val LocalCeviColors = staticCompositionLocalOf { CeviNight.extra }
 
 /** Die zusätzlichen Rollen des aktuellen Themes: `MaterialTheme.cevi.accent`. */
-val MaterialTheme.cevi: CeviFarben
-    @Composable @ReadOnlyComposable get() = LocalCeviFarben.current
+val MaterialTheme.cevi: CeviColors
+    @Composable @ReadOnlyComposable get() = LocalCeviColors.current
 
-internal class Palette(val scheme: ColorScheme, val extra: CeviFarben)
+internal class Palette(val scheme: ColorScheme, val extra: CeviColors)
 
-private val CeviRot = Color(0xFFC41333)
-private val CeviBlau = Color(0xFF323394)
-private val Weiss = Color(0xFFFFFFFF)
+private val CeviRed = Color(0xFFC41333)
+private val CeviBlue = Color(0xFF323394)
+private val PureWhite = Color(0xFFFFFFFF)
 
 /** «Nacht»: blau getöntes Dunkel, die Hauptrichtung. */
-internal val CeviNacht: Palette = run {
+internal val CeviNight: Palette = run {
     val surface = Color(0xFF161620)
     val container = Color(0xFF1E1F38)
     val containerHigh = Color(0xFF23244A)
     Palette(
         scheme = darkColorScheme(
-            primary = CeviRot,
-            onPrimary = Weiss,
-            primaryContainer = CeviRot,
-            onPrimaryContainer = Weiss,
+            primary = CeviRed,
+            onPrimary = PureWhite,
+            primaryContainer = CeviRed,
+            onPrimaryContainer = PureWhite,
             inversePrimary = Color(0xFFFF7A8A),
-            secondary = CeviBlau,
-            onSecondary = Weiss,
+            secondary = CeviBlue,
+            onSecondary = PureWhite,
             secondaryContainer = containerHigh,
             onSecondaryContainer = Color(0xFFDCDDF9),
-            tertiary = CeviBlau,
-            onTertiary = Weiss,
+            tertiary = CeviBlue,
+            onTertiary = PureWhite,
             background = surface,
             onBackground = Color(0xFFEDEDEB),
             surface = surface,
@@ -85,7 +85,7 @@ internal val CeviNacht: Palette = run {
             surfaceContainerHigh = containerHigh,
             surfaceContainerHighest = containerHigh,
         ),
-        extra = CeviFarben(
+        extra = CeviColors(
             accent = Color(0xFFA9ABF2),
             primaryText = Color(0xFFFF7A8A),
             onSecondaryMuted = Color(0xFFDCDDF9),
@@ -93,31 +93,31 @@ internal val CeviNacht: Palette = run {
             onSuccessContainer = Color(0xFF6FD39A),
             warningContainer = Color(0xFF2A2312),
             onWarningContainer = Color(0xFFF2C063),
-            stufeContainer = Color(0xFF0F2A31),
-            onStufeContainer = Color(0xFF7FD0E3),
+            ageGroupContainer = Color(0xFF0F2A31),
+            onAgeGroupContainer = Color(0xFF7FD0E3),
             focus = Color(0xFFA9ABF2),
         ),
     )
 }
 
 /** «Tag»: der Hellmodus. Cevi-Rot und Cevi-Blau bleiben gleich. */
-internal val CeviTag: Palette = run {
+internal val CeviDay: Palette = run {
     val surface = Color(0xFFF7F7FC)
     val container = Color(0xFFECECF8)
     val containerHigh = Color(0xFFDFDFF3)
     Palette(
         scheme = lightColorScheme(
-            primary = CeviRot,
-            onPrimary = Weiss,
-            primaryContainer = CeviRot,
-            onPrimaryContainer = Weiss,
+            primary = CeviRed,
+            onPrimary = PureWhite,
+            primaryContainer = CeviRed,
+            onPrimaryContainer = PureWhite,
             inversePrimary = Color(0xFFA30F2A),
-            secondary = CeviBlau,
-            onSecondary = Weiss,
+            secondary = CeviBlue,
+            onSecondary = PureWhite,
             secondaryContainer = container,
-            onSecondaryContainer = CeviBlau,
-            tertiary = CeviBlau,
-            onTertiary = Weiss,
+            onSecondaryContainer = CeviBlue,
+            tertiary = CeviBlue,
+            onTertiary = PureWhite,
             background = surface,
             onBackground = Color(0xFF141412),
             surface = surface,
@@ -128,31 +128,31 @@ internal val CeviTag: Palette = run {
             inverseSurface = Color(0xFF141412),
             inverseOnSurface = surface,
             error = Color(0xFF9E1B2C),
-            onError = Weiss,
+            onError = PureWhite,
             errorContainer = Color(0xFFFCE9EC),
             onErrorContainer = Color(0xFF9E1B2C),
             outline = Color(0xFF7A7A74),
             outlineVariant = Color(0xFFE2E2EC),
             scrim = Color.Black,
-            surfaceBright = Weiss,
+            surfaceBright = PureWhite,
             surfaceDim = containerHigh,
-            surfaceContainerLowest = Weiss,
-            surfaceContainerLow = Weiss,
+            surfaceContainerLowest = PureWhite,
+            surfaceContainerLow = PureWhite,
             surfaceContainer = container,
             surfaceContainerHigh = containerHigh,
             surfaceContainerHighest = containerHigh,
         ),
-        extra = CeviFarben(
-            accent = CeviBlau,
+        extra = CeviColors(
+            accent = CeviBlue,
             primaryText = Color(0xFFA30F2A),
             onSecondaryMuted = Color(0xFFDCDDF9),
             successContainer = Color(0xFFE7F4EC),
             onSuccessContainer = Color(0xFF17703A),
             warningContainer = Color(0xFFFFF4D6),
             onWarningContainer = Color(0xFF8A5A00),
-            stufeContainer = Color(0xFFE3F2F6),
-            onStufeContainer = Color(0xFF1D6274),
-            focus = CeviBlau,
+            ageGroupContainer = Color(0xFFE3F2F6),
+            onAgeGroupContainer = Color(0xFF1D6274),
+            focus = CeviBlue,
         ),
     )
 }

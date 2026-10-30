@@ -20,126 +20,126 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.sorry4nothing.cevios.chat.ChatApi
-import io.github.sorry4nothing.cevios.chat.ChatListeScreen
-import io.github.sorry4nothing.cevios.chat.ChatVerlaufScreen
+import io.github.sorry4nothing.cevios.chat.ChatListScreen
+import io.github.sorry4nothing.cevios.chat.ChatConversationScreen
 import io.github.sorry4nothing.cevios.chat.ChatViewModel
-import io.github.sorry4nothing.cevios.chat.HilfeScreen
-import io.github.sorry4nothing.cevios.chat.chatTitel
+import io.github.sorry4nothing.cevios.chat.HelpScreen
+import io.github.sorry4nothing.cevios.chat.chatTitle
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
-import io.github.sorry4nothing.cevios.programme.ProgrammDetailScreen
-import io.github.sorry4nothing.cevios.programme.ProgrammeApi
-import io.github.sorry4nothing.cevios.programme.ProgrammeListeScreen
-import io.github.sorry4nothing.cevios.programme.ProgrammeViewModel
-import io.github.sorry4nothing.cevios.ui.HauptGeruest
-import io.github.sorry4nothing.cevios.ui.Ziel
+import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
+import io.github.sorry4nothing.cevios.programs.ProgramsApi
+import io.github.sorry4nothing.cevios.programs.ProgramListScreen
+import io.github.sorry4nothing.cevios.programs.ProgramsViewModel
+import io.github.sorry4nothing.cevios.ui.MainScaffold
+import io.github.sorry4nothing.cevios.ui.Destination
 import io.github.sorry4nothing.cevios.ui.theme.CeviTheme
 import kotlinx.coroutines.delay
 
 /** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist. */
-private const val CHAT_TAKT_MS = 15_000L
+private const val CHAT_POLL_INTERVAL_MS = 15_000L
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val client = ApiClient.erstellen(applicationContext)
-        setContent { CeviTheme { Haupt(ProgrammeApi(client), ChatApi(client)) } }
+        val client = ApiClient.create(applicationContext)
+        setContent { CeviTheme { MainContent(ProgramsApi(client), ChatApi(client)) } }
     }
 }
 
 @Composable
-private fun Haupt(programmeApi: ProgrammeApi, chatApi: ChatApi) {
-    val programme = viewModel { ProgrammeViewModel(programmeApi) }
+private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
+    val programs = viewModel { ProgramsViewModel(programsApi) }
     val chat = viewModel { ChatViewModel(chatApi) }
-    var ziel by rememberSaveable { mutableStateOf(Ziel.PROGRAMME) }
-    var offenesProgramm by rememberSaveable { mutableStateOf<String?>(null) }
-    var offenerChat by rememberSaveable { mutableStateOf<String?>(null) }
-    var hilfeOffen by rememberSaveable { mutableStateOf(false) }
+    var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
+    var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
+    var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
+    var helpOpen by rememberSaveable { mutableStateOf(false) }
 
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
-    LaunchedEffect(offenesProgramm) { offenesProgramm?.let(programme::detailLaden) }
-    LaunchedEffect(hilfeOffen) { if (hilfeOffen) chat.hilfeLaden() }
-    LaunchedEffect(offenerChat) {
-        val id = offenerChat
-        if (id == null) chat.chatSchliessen() else chat.chatOeffnen(id)
+    LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
+    LaunchedEffect(helpOpen) { if (helpOpen) chat.loadHelp() }
+    LaunchedEffect(openedChat) {
+        val id = openedChat
+        if (id == null) chat.closeChat() else chat.openChat(id)
     }
-    LaunchedEffect(ziel, offenerChat) { if (ziel == Ziel.CHAT && offenerChat == null) chat.listeLaden(still = true) }
+    LaunchedEffect(destination, openedChat) { if (destination == Destination.CHAT && openedChat == null) chat.loadList(silent = true) }
 
     Surface(Modifier.fillMaxSize()) {
-        val programmId = offenesProgramm
-        val chatId = offenerChat
+        val programId = openedProgram
+        val chatId = openedChat
         when {
-            programmId != null -> {
-                BackHandler { offenesProgramm = null }
-                HauptGeruest(Ziel.PROGRAMME, onZiel = { ziel = it; offenesProgramm = null }) {
-                    ProgrammDetailScreen(
-                        programme.detail.collectAsState().value,
-                        programme.antwort.collectAsState().value,
-                        onKind = { kindId, ja -> programme.kindAntworten(programmId, kindId, ja) },
-                        onLeitung = { ja -> programme.leitungAntworten(programmId, ja) },
-                        onZurueck = { offenesProgramm = null },
-                        onNochmals = { programme.detailLaden(programmId) },
+            programId != null -> {
+                BackHandler { openedProgram = null }
+                MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }) {
+                    ProgramDetailScreen(
+                        programs.detail.collectAsState().value,
+                        programs.rsvp.collectAsState().value,
+                        onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
+                        onLeader = { attending -> programs.rsvpLeader(programId, attending) },
+                        onBack = { openedProgram = null },
+                        onRetry = { programs.loadDetail(programId) },
                     )
                 }
             }
             chatId != null -> {
-                BackHandler { offenerChat = null }
-                val lebenszyklus = LocalLifecycleOwner.current.lifecycle
+                BackHandler { openedChat = null }
+                val lifecycle = LocalLifecycleOwner.current.lifecycle
                 LaunchedEffect(chatId) {
-                    lebenszyklus.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                         while (true) {
-                            delay(CHAT_TAKT_MS)
-                            chat.aktualisieren()
+                            delay(CHAT_POLL_INTERVAL_MS)
+                            chat.refresh()
                         }
                     }
                 }
-                val liste by chat.liste.collectAsState()
-                val profil by chat.profil.collectAsState()
-                val chatEintrag = (liste as? ApiResult.Ok)?.wert?.chats?.firstOrNull { it.id == chatId }
-                ChatVerlaufScreen(
-                    titel = chatTitel(chatEintrag),
-                    chat = chatEintrag,
-                    profil = (profil as? ApiResult.Ok)?.wert,
-                    zustand = chat.verlauf.collectAsState().value,
-                    aeltereLaedt = chat.aeltereLaedt.collectAsState().value,
-                    senden = chat.senden.collectAsState().value,
-                    aktion = chat.aktion.collectAsState().value,
-                    onSenden = chat::senden,
-                    onAeltere = chat::aeltereLaden,
-                    onAktualisieren = chat::aktualisieren,
-                    onAusblenden = chat::ausblenden,
-                    onMelden = chat::melden,
-                    onEinzelchat = { stufeId, elternId -> chat.einzelchatOeffnen(stufeId, elternId) { offenerChat = it } },
-                    onZurueck = { offenerChat = null },
-                    onNochmals = { chat.chatOeffnen(chatId) },
+                val list by chat.list.collectAsState()
+                val profile by chat.profile.collectAsState()
+                val chatEntry = (list as? ApiResult.Ok)?.value?.chats?.firstOrNull { it.id == chatId }
+                ChatConversationScreen(
+                    title = chatTitle(chatEntry),
+                    chat = chatEntry,
+                    profile = (profile as? ApiResult.Ok)?.value,
+                    state = chat.conversation.collectAsState().value,
+                    loadingOlder = chat.loadingOlder.collectAsState().value,
+                    send = chat.send.collectAsState().value,
+                    action = chat.action.collectAsState().value,
+                    onSend = chat::send,
+                    onOlder = chat::loadOlder,
+                    onRefresh = chat::refresh,
+                    onHide = chat::hide,
+                    onReport = chat::report,
+                    onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },
+                    onBack = { openedChat = null },
+                    onRetry = { chat.openChat(chatId) },
                 )
             }
-            hilfeOffen -> {
-                BackHandler { hilfeOffen = false }
-                HilfeScreen(
-                    chat.hilfe.collectAsState().value,
-                    onZurueck = { hilfeOffen = false },
-                    onNochmals = chat::hilfeLaden,
+            helpOpen -> {
+                BackHandler { helpOpen = false }
+                HelpScreen(
+                    chat.help.collectAsState().value,
+                    onBack = { helpOpen = false },
+                    onRetry = chat::loadHelp,
                 )
             }
-            else -> HauptGeruest(ziel, onZiel = { ziel = it }) {
-                if (ziel == Ziel.PROGRAMME) {
-                    ProgrammeListeScreen(
-                        programme.liste.collectAsState().value,
-                        onOeffnen = { offenesProgramm = it },
-                        onNochmals = programme::listeLaden,
+            else -> MainScaffold(destination, onDestination = { destination = it }) {
+                if (destination == Destination.PROGRAMS) {
+                    ProgramListScreen(
+                        programs.list.collectAsState().value,
+                        onOpen = { openedProgram = it },
+                        onRetry = programs::loadList,
                     )
                 } else {
-                    ChatListeScreen(
-                        chat.liste.collectAsState().value,
-                        (chat.profil.collectAsState().value as? ApiResult.Ok)?.wert,
-                        chat.aktion.collectAsState().value,
-                        onOeffnen = { offenerChat = it },
-                        onEinzelchat = { stufeId -> chat.einzelchatOeffnen(stufeId, null) { offenerChat = it } },
-                        onHilfe = { hilfeOffen = true },
-                        onNochmals = { chat.listeLaden() },
+                    ChatListScreen(
+                        chat.list.collectAsState().value,
+                        (chat.profile.collectAsState().value as? ApiResult.Ok)?.value,
+                        chat.action.collectAsState().value,
+                        onOpen = { openedChat = it },
+                        onDirectChat = { ageGroupId -> chat.openDirectChat(ageGroupId, null) { openedChat = it } },
+                        onHelp = { helpOpen = true },
+                        onRetry = { chat.loadList() },
                     )
                 }
             }

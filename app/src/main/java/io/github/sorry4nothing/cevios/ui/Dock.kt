@@ -33,38 +33,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
-import io.github.sorry4nothing.cevios.ui.theme.Abstand
-import io.github.sorry4nothing.cevios.ui.theme.BreitAb
-import io.github.sorry4nothing.cevios.ui.theme.Groesse
+import io.github.sorry4nothing.cevios.ui.theme.Spacing
+import io.github.sorry4nothing.cevios.ui.theme.WideBreakpoint
+import io.github.sorry4nothing.cevios.ui.theme.Sizes
 
 /** Die Hauptziele des Docks. Profil kommt mit dem Profil-Issue dazu. */
-enum class Ziel(@StringRes val text: Int, @DrawableRes val icon: Int) {
-    PROGRAMME(R.string.tab_programme, R.drawable.ic_kalender),
+enum class Destination(@StringRes val text: Int, @DrawableRes val icon: Int) {
+    PROGRAMS(R.string.tab_programs, R.drawable.ic_calendar),
     CHAT(R.string.tab_chat, R.drawable.ic_chat),
 }
 
-private val DockForm = RoundedCornerShape(24.dp)
-private val ZielForm = RoundedCornerShape(18.dp)
+private val DockShape = RoundedCornerShape(24.dp)
+private val DestinationShape = RoundedCornerShape(18.dp)
 
 /**
- * Gerüst mit schwebendem Dock: unten im Hochformat, ab [BreitAb] senkrecht links (Querformat, Tablet).
+ * Gerüst mit schwebendem Dock: unten im Hochformat, ab [WideBreakpoint] senkrecht links (Querformat, Tablet).
  * Das Dock sitzt unter dem Inhalt, nichts scrollt dahinter durch.
  */
 @Composable
-fun HauptGeruest(aktiv: Ziel, onZiel: (Ziel) -> Unit, content: @Composable () -> Unit) {
+fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, content: @Composable () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-        if (maxWidth >= BreitAb) {
-            Row(Modifier.fillMaxSize().padding(start = Abstand.s3)) {
-                Dock(aktiv, onZiel, senkrecht = true, Modifier.padding(vertical = Abstand.s3).width(Groesse.dockBreite))
-                Spacer(Modifier.width(Abstand.s4))
+        if (maxWidth >= WideBreakpoint) {
+            Row(Modifier.fillMaxSize().padding(start = Spacing.s3)) {
+                Dock(active, onDestination, vertical = true, Modifier.padding(vertical = Spacing.s3).width(Sizes.dockWidth))
+                Spacer(Modifier.width(Spacing.s4))
                 content()
             }
         } else {
             Column(Modifier.fillMaxSize()) {
                 Column(Modifier.weight(1f)) { content() }
                 Dock(
-                    aktiv, onZiel, senkrecht = false,
-                    Modifier.padding(start = Abstand.s3, end = Abstand.s3, top = Abstand.s2, bottom = Abstand.s3),
+                    active, onDestination, vertical = false,
+                    Modifier.padding(start = Spacing.s3, end = Spacing.s3, top = Spacing.s2, bottom = Spacing.s3),
                 )
             }
         }
@@ -72,43 +72,43 @@ fun HauptGeruest(aktiv: Ziel, onZiel: (Ziel) -> Unit, content: @Composable () ->
 }
 
 @Composable
-private fun Dock(aktiv: Ziel, onZiel: (Ziel) -> Unit, senkrecht: Boolean, modifier: Modifier) {
-    val huelle = modifier
-        .clip(DockForm)
+private fun Dock(active: Destination, onDestination: (Destination) -> Unit, vertical: Boolean, modifier: Modifier) {
+    val shell = modifier
+        .clip(DockShape)
         .background(MaterialTheme.colorScheme.surfaceContainer)
-        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, DockForm)
+        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, DockShape)
         .padding(6.dp)
         .selectableGroup()
-    if (senkrecht) {
-        Column(huelle, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Ziel.entries.forEach { DockZiel(it, it == aktiv, onZiel, Modifier.fillMaxWidth().height(64.dp)) }
+    if (vertical) {
+        Column(shell, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Destination.entries.forEach { DockDestination(it, it == active, onDestination, Modifier.fillMaxWidth().height(64.dp)) }
         }
     } else {
-        Row(huelle.height(Groesse.footer), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Ziel.entries.forEach { DockZiel(it, it == aktiv, onZiel, Modifier.weight(1f).fillMaxHeight()) }
+        Row(shell.height(Sizes.footer), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Destination.entries.forEach { DockDestination(it, it == active, onDestination, Modifier.weight(1f).fillMaxHeight()) }
         }
     }
 }
 
 /** Ein Ziel über die ganze Fläche (mindestens 48 dp): aktiv Cevi-Blau mit weissem Wort, inaktiv ruhig. Das Wort steht immer da. */
 @Composable
-private fun DockZiel(ziel: Ziel, aktiv: Boolean, onZiel: (Ziel) -> Unit, modifier: Modifier) {
-    val farbe = if (aktiv) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+private fun DockDestination(destination: Destination, active: Boolean, onDestination: (Destination) -> Unit, modifier: Modifier) {
+    val color = if (active) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         modifier
-            .fokusRing(ZielForm)
-            .clip(ZielForm)
-            .then(if (aktiv) Modifier.background(MaterialTheme.colorScheme.secondary) else Modifier)
-            .selectable(selected = aktiv, role = Role.Tab, onClick = { onZiel(ziel) }),
+            .focusRing(DestinationShape)
+            .clip(DestinationShape)
+            .then(if (active) Modifier.background(MaterialTheme.colorScheme.secondary) else Modifier)
+            .selectable(selected = active, role = Role.Tab, onClick = { onDestination(destination) }),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
-        Icon(painterResource(ziel.icon), contentDescription = null, tint = farbe, modifier = Modifier.padding(0.dp))
+        Icon(painterResource(destination.icon), contentDescription = null, tint = color, modifier = Modifier.padding(0.dp))
         Text(
-            stringResource(ziel.text),
+            stringResource(destination.text),
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = if (aktiv) FontWeight.Bold else FontWeight.Normal,
-            color = farbe,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+            color = color,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )

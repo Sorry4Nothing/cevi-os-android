@@ -20,75 +20,75 @@ import kotlin.coroutines.resume
 
 /** Dünner Zugang zur Cevi-OS-API. Antworten kommen als [ApiResult], nie als Exception. */
 class ApiClient(
-    basisUrl: String,
+    baseUrl: String,
     private val http: OkHttpClient,
     val json: Json = Json { ignoreUnknownKeys = true },
 ) {
-    private val basis: HttpUrl = basisUrl.toHttpUrl()
+    private val base: HttpUrl = baseUrl.toHttpUrl()
 
-    /** Anfrage an `pfad` (mit führendem `/`, Query erlaubt). Header und Cookie setzt der [SitzungInterceptor]. */
-    fun anfrage(pfad: String): Request.Builder =
-        Request.Builder().url(requireNotNull(basis.resolve(pfad)) { "Ungültiger Pfad" })
+    /** Anfrage an `path` (mit führendem `/`, Query erlaubt). Header und Cookie setzt der [SessionInterceptor]. */
+    fun request(path: String): Request.Builder =
+        Request.Builder().url(requireNotNull(base.resolve(path)) { "Ungültiger Pfad" })
 
-    fun jsonBody(text: String): RequestBody = text.toRequestBody(JSON_TYP)
+    fun jsonBody(text: String): RequestBody = text.toRequestBody(JSON_TYPE)
 
-    suspend inline fun <reified T> get(pfad: String): ApiResult<T> =
-        senden(anfrage(pfad).get().build()) { json.decodeFromString<T>(it) }
+    suspend inline fun <reified T> get(path: String): ApiResult<T> =
+        send(request(path).get().build()) { json.decodeFromString<T>(it) }
 
-    suspend inline fun <reified B, reified T> post(pfad: String, body: B): ApiResult<T> =
-        senden(anfrage(pfad).post(jsonBody(json.encodeToString(body))).build()) { json.decodeFromString<T>(it) }
+    suspend inline fun <reified B, reified T> post(path: String, body: B): ApiResult<T> =
+        send(request(path).post(jsonBody(json.encodeToString(body))).build()) { json.decodeFromString<T>(it) }
 
     /** PUT mit JSON-Body; die Antwort hat keinen Inhalt (204). */
-    suspend inline fun <reified B> put(pfad: String, body: B): ApiResult<Unit> =
-        senden(anfrage(pfad).put(jsonBody(json.encodeToString(body))).build()) { }
+    suspend inline fun <reified B> put(path: String, body: B): ApiResult<Unit> =
+        send(request(path).put(jsonBody(json.encodeToString(body))).build()) { }
 
     /** POST ohne Body; die Antwort hat keinen Inhalt (204). */
-    suspend fun postOhneBody(pfad: String): ApiResult<Unit> =
-        senden(anfrage(pfad).post(ByteArray(0).toRequestBody()).build()) { }
+    suspend fun postWithoutBody(path: String): ApiResult<Unit> =
+        send(request(path).post(ByteArray(0).toRequestBody()).build()) { }
 
     /** Für Antworten ohne Inhalt oder ohne Interesse am Inhalt: `decode = { }`. */
-    suspend fun <T> senden(anfrage: Request, decode: (String) -> T): ApiResult<T> =
-        suspendCancellableCoroutine { fortsetzung ->
-            val aufruf = http.newCall(anfrage)
-            fortsetzung.invokeOnCancellation { aufruf.cancel() }
-            aufruf.enqueue(object : Callback {
+    suspend fun <T> send(request: Request, decode: (String) -> T): ApiResult<T> =
+        suspendCancellableCoroutine { continuation ->
+            val httpCall = http.newCall(request)
+            continuation.invokeOnCancellation { httpCall.cancel() }
+            httpCall.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    val fehler = if (e.cause is GeneralSecurityException) ApiFehler.UNBEKANNT else ApiFehler.NETZWERK
-                    fortsetzung.resume(ApiResult.Fehler(fehler))
+                    val error = if (e.cause is GeneralSecurityException) ApiError.UNKNOWN else ApiError.NETWORK
+                    continuation.resume(ApiResult.Failure(error))
                 }
 
                 // Darf nie werfen, sonst bleibt die Fortsetzung hängen.
                 override fun onResponse(call: Call, response: Response) {
-                    fortsetzung.resume(response.use { auswerten(it, decode) })
+                    continuation.resume(response.use { evaluate(it, decode) })
                 }
             })
         }
 
-    private fun <T> auswerten(antwort: Response, decode: (String) -> T): ApiResult<T> {
-        if (!antwort.isSuccessful) return ApiResult.Fehler(ApiFehler.vonStatus(antwort.code))
+    private fun <T> evaluate(response: Response, decode: (String) -> T): ApiResult<T> {
+        if (!response.isSuccessful) return ApiResult.Failure(ApiError.fromStatus(response.code))
         return try {
-            ApiResult.Ok(decode(antwort.body.string()))
+            ApiResult.Ok(decode(response.body.string()))
         } catch (e: IOException) {
-            ApiResult.Fehler(ApiFehler.NETZWERK)
+            ApiResult.Failure(ApiError.NETWORK)
         } catch (e: IllegalArgumentException) { // auch SerializationException
-            ApiResult.Fehler(ApiFehler.UNBEKANNT)
+            ApiResult.Failure(ApiError.UNKNOWN)
         }
     }
 
     companion object {
-        private val JSON_TYP = "application/json; charset=utf-8".toMediaType()
+        private val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
 
         /** Ohne Weiterleitungen: OkHttp würde den Cookie-Header sonst auch an fremde Hosts mitschicken. */
-        fun httpClient(speicher: SitzungSpeicher, appVersion: String): OkHttpClient =
+        fun httpClient(storage: SessionStorage, appVersion: String): OkHttpClient =
             OkHttpClient.Builder()
                 .followRedirects(false)
                 .followSslRedirects(false)
-                .addInterceptor(SitzungInterceptor(speicher, appVersion))
+                .addInterceptor(SessionInterceptor(storage, appVersion))
                 .build()
 
-        fun erstellen(context: Context): ApiClient = ApiClient(
+        fun create(context: Context): ApiClient = ApiClient(
             BuildConfig.API_BASE_URL,
-            httpClient(KeystoreSitzungSpeicher(context), BuildConfig.VERSION_NAME),
+            httpClient(KeystoreSessionStorage(context), BuildConfig.VERSION_NAME),
         )
     }
 }

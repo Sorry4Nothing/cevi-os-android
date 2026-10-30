@@ -1,75 +1,76 @@
 package io.github.sorry4nothing.cevios.chat
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class ChatPerson(val id: String, val name: String)
 
 @Serializable
-data class ChatStufe(val id: String, val name: String, val kuerzel: String)
+data class ChatAgeGroup(val id: String, val name: String, @SerialName("kuerzel") val abbreviation: String)
 
-/** Ein Chat der Person: `typ` ist «stufe» (Gruppenchat) oder «direkt» (Einzelchat Eltern und Stufenleitung). */
+/** Ein Chat der Person: `type` ist «stufe» (Gruppenchat) oder «direkt» (Einzelchat Eltern und Stufenleitung). */
 @Serializable
 data class Chat(
     val id: String,
-    val typ: String,
-    val stufe: ChatStufe,
-    val eltern: ChatPerson? = null,
-    val stufenleitung: List<ChatPerson> = emptyList(),
+    @SerialName("typ") val type: String,
+    @SerialName("stufe") val ageGroup: ChatAgeGroup,
+    @SerialName("eltern") val parent: ChatPerson? = null,
+    @SerialName("stufenleitung") val groupLeaders: List<ChatPerson> = emptyList(),
 ) {
-    val istGruppe get() = typ == "stufe"
+    val isGroup get() = type == "stufe"
 }
 
 @Serializable
-data class ChatListe(val chats: List<Chat>)
+data class ChatList(val chats: List<Chat>)
 
 @Serializable
-data class ProgrammBezug(val id: String, val titel: String)
+data class ProgramRef(val id: String, @SerialName("titel") val title: String)
 
 /** `text` ist `null`, wenn die Nachricht ausgeblendet ist (nur die Autorin oder der Autor sieht sie dann noch). */
 @Serializable
-data class ChatNachricht(
+data class ChatMessage(
     val id: String,
     val text: String? = null,
-    val erstelltAm: String,
-    val autor: ChatPerson,
-    val programm: ProgrammBezug? = null,
-    val ausgeblendet: Boolean = false,
-    val eigene: Boolean = false,
+    @SerialName("erstelltAm") val createdAt: String,
+    @SerialName("autor") val author: ChatPerson,
+    @SerialName("programm") val program: ProgramRef? = null,
+    @SerialName("ausgeblendet") val hidden: Boolean = false,
+    @SerialName("eigene") val own: Boolean = false,
 )
 
 @Serializable
-data class NachrichtenSeite(val nachrichten: List<ChatNachricht>, val naechster: String? = null)
+data class MessagePage(@SerialName("nachrichten") val messages: List<ChatMessage>, @SerialName("naechster") val next: String? = null)
 
 @Serializable
-data class NachrichtAnfrage(val text: String)
+data class SendMessageRequest(val text: String)
 
 @Serializable
-data class NachrichtKennung(val id: String)
+data class MessageIdResponse(val id: String)
 
 
 /**
  * Die geladenen Nachrichten eines Chats, neueste zuerst. Die IDs sind UUIDv7 in Kleinbuchstaben und
  * ordnen sich als Text nach der Zeit.
  */
-data class Verlauf(val nachrichten: List<ChatNachricht> = emptyList(), val naechster: String? = null) {
+data class Conversation(val messages: List<ChatMessage> = emptyList(), val next: String? = null) {
     /**
      * Arbeitet die neueste Seite ein, ohne bereits geladene ältere Nachrichten zu verlieren.
      * Kamen seit dem letzten Laden mehr neue Nachrichten, als eine Seite fasst, bleibt eine Lücke: Dann gilt nur
      * die neue Seite, die älteren holt «Ältere laden» nach.
      */
-    fun mitNeuesterSeite(seite: NachrichtenSeite): Verlauf {
-        val aelteste = seite.nachrichten.lastOrNull()?.id ?: return Verlauf()
-        val neuesteBekannte = nachrichten.firstOrNull()?.id
-        if (neuesteBekannte == null || neuesteBekannte < aelteste) return Verlauf(seite.nachrichten, seite.naechster)
-        val aeltere = nachrichten.filter { it.id < aelteste }
-        return Verlauf(seite.nachrichten + aeltere, if (aeltere.isEmpty()) seite.naechster else naechster)
+    fun withNewestPage(page: MessagePage): Conversation {
+        val oldest = page.messages.lastOrNull()?.id ?: return Conversation()
+        val newestKnown = messages.firstOrNull()?.id
+        if (newestKnown == null || newestKnown < oldest) return Conversation(page.messages, page.next)
+        val older = messages.filter { it.id < oldest }
+        return Conversation(page.messages + older, if (older.isEmpty()) page.next else next)
     }
 
     /** Hängt eine ältere Seite an. */
-    fun mitAelterer(seite: NachrichtenSeite): Verlauf {
-        val aelteste = nachrichten.lastOrNull()?.id
-        val neu = if (aelteste == null) seite.nachrichten else seite.nachrichten.filter { it.id < aelteste }
-        return Verlauf(nachrichten + neu, seite.naechster)
+    fun withOlder(page: MessagePage): Conversation {
+        val oldest = messages.lastOrNull()?.id
+        val fresh = if (oldest == null) page.messages else page.messages.filter { it.id < oldest }
+        return Conversation(messages + fresh, page.next)
     }
 }

@@ -6,7 +6,7 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 /** Abstände aus dem Design (4-dp-Raster). */
-object Abstand {
+object Spacing {
     val s1 = 4.dp // Icon und Text in Chips
     val s2 = 8.dp // zwischen Kacheln und Pillen
     val s3 = 12.dp // zwischen Karten in Listen, Footer-Rand
@@ -16,22 +16,22 @@ object Abstand {
     val s8 = 32.dp // über grossen Titeln
 }
 
-/** Feste Grössen aus dem Design. Jedes bedienbare Element ist mindestens `touchZiel` gross. */
-object Groesse {
-    val touchZiel = 48.dp
+/** Feste Grössen aus dem Design. Jedes bedienbare Element ist mindestens `touchTarget` gross. */
+object Sizes {
+    val touchTarget = 48.dp
     val icon = 24.dp
     val footer = 68.dp
     val button = 56.dp // Haupt-Buttons
-    val feld = 52.dp // Textfelder
-    val inhaltMax = 640.dp // maximale Textbreite im Querformat
-    val dockBreite = 96.dp // Dock links ab 600 dp
+    val textField = 52.dp // Textfelder
+    val contentMaxWidth = 640.dp // maximale Textbreite im Querformat
+    val dockWidth = 96.dp // Dock links ab 600 dp
 }
 
 /** Ab dieser Breite steht das Dock links und Liste und Detail stehen nebeneinander. */
-val BreitAb = 600.dp
+val WideBreakpoint = 600.dp
 
-/** Ecken: Felder `sm`, Karten `md`, Chat-Blasen `lg`, Dock, Login und Dialoge `xl`; Buttons, Pillen und Avatare [Voll]. */
-internal val CeviFormen = Shapes(
+/** Ecken: Felder `sm`, Karten `md`, Chat-Blasen `lg`, Dock, Login und Dialoge `xl`; Buttons, Pillen und Avatare [Pill]. */
+internal val CeviShapes = Shapes(
     extraSmall = RoundedCornerShape(12.dp),
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
@@ -39,4 +39,4 @@ internal val CeviFormen = Shapes(
     extraLarge = RoundedCornerShape(24.dp),
 )
 
-val Voll = CircleShape
+val Pill = CircleShape

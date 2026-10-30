@@ -10,19 +10,19 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
-private class MemorySpeicher(var wert: String? = null) : SitzungSpeicher {
-    override fun lesen() = wert
-    override fun schreiben(wert: String?) {
-        this.wert = wert
+private class MemoryStorage(var value: String? = null) : SessionStorage {
+    override fun read() = value
+    override fun write(value: String?) {
+        this.value = value
     }
 }
 
 @Serializable
-private data class Ich(val name: String)
+private data class Me(val name: String)
 
 class ApiClientTest {
     private lateinit var server: MockWebServer
-    private val speicher = MemorySpeicher()
+    private val storage = MemoryStorage()
 
     @Before
     fun start() {
@@ -32,31 +32,31 @@ class ApiClientTest {
     @After
     fun stop() = server.close()
 
-    private fun client(s: SitzungSpeicher = speicher) =
+    private fun client(s: SessionStorage = storage) =
         ApiClient(server.url("/").toString(), ApiClient.httpClient(s, "1.2.3"))
 
-    private fun antwort(code: Int = 200, body: String = "{}", vararg cookies: String) =
+    private fun response(code: Int = 200, body: String = "{}", vararg cookies: String) =
         MockResponse.Builder().code(code).body(body).apply { cookies.forEach { addHeader("Set-Cookie", it) } }.build()
 
     @Test
-    fun schicktVersionUndHerkunftUndKeinCookieOhneSitzung() {
-        server.enqueue(antwort())
+    fun sendsVersionAndOriginAndNoCookieWithoutSession() {
+        server.enqueue(response())
         runBlocking { client().get<Unit>("/api/v1/ich") }
-        val anfrage = server.takeRequest()
-        assertEquals("1.2.3", anfrage.headers["X-App-Version"])
-        assertEquals("cevi-os://", anfrage.headers["Origin"])
-        assertNull(anfrage.headers["Cookie"])
+        val request = server.takeRequest()
+        assertEquals("1.2.3", request.headers["X-App-Version"])
+        assertEquals("cevi-os://", request.headers["Origin"])
+        assertNull(request.headers["Cookie"])
     }
 
     @Test
-    fun merktCookieAusAntwortUndSchicktEsDanach() {
+    fun remembersCookieFromResponseAndSendsItAfterwards() {
         val cookie = "__Secure-better-auth.session_token=abc%3Ddef"
-        server.enqueue(antwort(200, "{}", "$cookie; Path=/; Max-Age=7776000; HttpOnly; Secure; SameSite=Lax"))
-        server.enqueue(antwort())
+        server.enqueue(response(200, "{}", "$cookie; Path=/; Max-Age=7776000; HttpOnly; Secure; SameSite=Lax"))
+        server.enqueue(response())
         runBlocking {
             val api = client()
             api.get<Unit>("/api/auth/get-session")
-            assertEquals(cookie, speicher.wert)
+            assertEquals(cookie, storage.value)
             api.get<Unit>("/api/v1/ich")
         }
         server.takeRequest()
@@ -64,76 +64,76 @@ class ApiClientTest {
     }
 
     @Test
-    fun neuesCookieErsetztAltesUndMaxAgeNullLoeschtEs() {
-        speicher.wert = "a=1; b=2"
-        server.enqueue(antwort(200, "{}", "a=neu; Path=/", "b=; Max-Age=0; Path=/"))
+    fun newCookieReplacesOldAndMaxAgeZeroDeletesIt() {
+        storage.value = "a=1; b=2"
+        server.enqueue(response(200, "{}", "a=neu; Path=/", "b=; Max-Age=0; Path=/"))
         runBlocking { client().get<Unit>("/api/auth/get-session") }
-        assertEquals("a=neu", speicher.wert)
+        assertEquals("a=neu", storage.value)
     }
 
     @Test
-    fun letztesCookieGeloescht_speicherLeer() {
-        speicher.wert = "a=1"
-        server.enqueue(antwort(200, "{}", "a=; Max-Age=0; Path=/"))
+    fun lastCookieDeleted_storageEmpty() {
+        storage.value = "a=1"
+        server.enqueue(response(200, "{}", "a=; Max-Age=0; Path=/"))
         runBlocking { client().get<Unit>("/api/auth/sign-out") }
-        assertNull(speicher.wert)
+        assertNull(storage.value)
     }
 
     @Test
-    fun decodiertJsonUndIgnoriertUnbekannteFelder() {
-        server.enqueue(antwort(200, """{"name":"Test","extra":1}"""))
-        val ergebnis = runBlocking { client().get<Ich>("/api/v1/ich") }
-        assertEquals(ApiResult.Ok(Ich("Test")), ergebnis)
+    fun decodesJsonAndIgnoresUnknownFields() {
+        server.enqueue(response(200, """{"name":"Test","extra":1}"""))
+        val result = runBlocking { client().get<Me>("/api/v1/ich") }
+        assertEquals(ApiResult.Ok(Me("Test")), result)
     }
 
     @Test
-    fun postSendetJson() {
-        server.enqueue(antwort(200, """{"name":"Test"}"""))
-        val ergebnis = runBlocking { client().post<Ich, Ich>("/api/v1/x", Ich("Test")) }
-        assertEquals(ApiResult.Ok(Ich("Test")), ergebnis)
-        val anfrage = server.takeRequest()
-        assertEquals("POST", anfrage.method)
-        assertEquals("""{"name":"Test"}""", anfrage.body?.utf8())
-        assertEquals("application/json; charset=utf-8", anfrage.headers["Content-Type"])
+    fun postSendsJson() {
+        server.enqueue(response(200, """{"name":"Test"}"""))
+        val result = runBlocking { client().post<Me, Me>("/api/v1/x", Me("Test")) }
+        assertEquals(ApiResult.Ok(Me("Test")), result)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("""{"name":"Test"}""", request.body?.utf8())
+        assertEquals("application/json; charset=utf-8", request.headers["Content-Type"])
     }
 
     @Test
-    fun statusWirdZuEinheitlichemFehler() {
-        val erwartet = mapOf(
-            401 to ApiFehler.NICHT_ANGEMELDET,
-            403 to ApiFehler.KEINE_BERECHTIGUNG,
-            404 to ApiFehler.NICHT_GEFUNDEN,
-            409 to ApiFehler.ANMELDUNG_GESCHLOSSEN,
-            426 to ApiFehler.APP_VERALTET,
-            429 to ApiFehler.ZU_VIELE_ANFRAGEN,
-            500 to ApiFehler.UNBEKANNT,
+    fun statusBecomesUniformError() {
+        val expected = mapOf(
+            401 to ApiError.NOT_SIGNED_IN,
+            403 to ApiError.FORBIDDEN,
+            404 to ApiError.NOT_FOUND,
+            409 to ApiError.REGISTRATION_CLOSED,
+            426 to ApiError.APP_OUTDATED,
+            429 to ApiError.TOO_MANY_REQUESTS,
+            500 to ApiError.UNKNOWN,
         )
-        erwartet.forEach { (status, fehler) ->
-            server.enqueue(antwort(status, """{"code":"X","message":"Server-Text"}"""))
-            assertEquals("Status $status", ApiResult.Fehler(fehler), runBlocking { client().get<Ich>("/api/v1/ich") })
+        expected.forEach { (status, error) ->
+            server.enqueue(response(status, """{"code":"X","message":"Server-Text"}"""))
+            assertEquals("Status $status", ApiResult.Failure(error), runBlocking { client().get<Me>("/api/v1/ich") })
         }
     }
 
     @Test
-    fun kaputtesJsonIstUnbekannterFehler() {
-        server.enqueue(antwort(200, "kein json"))
-        assertEquals(ApiResult.Fehler(ApiFehler.UNBEKANNT), runBlocking { client().get<Ich>("/api/v1/ich") })
+    fun brokenJsonIsUnknownError() {
+        server.enqueue(response(200, "kein json"))
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN), runBlocking { client().get<Me>("/api/v1/ich") })
     }
 
     @Test
-    fun ausgefalleneVerbindungIstNetzwerkfehler() {
-        val tot = MockWebServer().apply { start() }
-        val url = tot.url("/").toString()
-        tot.close()
-        val api = ApiClient(url, ApiClient.httpClient(speicher, "1.2.3"))
-        assertEquals(ApiResult.Fehler(ApiFehler.NETZWERK), runBlocking { api.get<Ich>("/api/v1/ich") })
+    fun failedConnectionIsNetworkError() {
+        val dead = MockWebServer().apply { start() }
+        val url = dead.url("/").toString()
+        dead.close()
+        val api = ApiClient(url, ApiClient.httpClient(storage, "1.2.3"))
+        assertEquals(ApiResult.Failure(ApiError.NETWORK), runBlocking { api.get<Me>("/api/v1/ich") })
     }
 
     @Test
-    fun weiterleitungWirdNichtGefolgt() {
-        speicher.wert = "a=1"
+    fun redirectIsNotFollowed() {
+        storage.value = "a=1"
         server.enqueue(MockResponse.Builder().code(302).addHeader("Location", server.url("/anderswo").toString()).build())
-        assertEquals(ApiResult.Fehler(ApiFehler.UNBEKANNT), runBlocking { client().get<Ich>("/api/v1/ich") })
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN), runBlocking { client().get<Me>("/api/v1/ich") })
         assertEquals(1, server.requestCount)
     }
 }

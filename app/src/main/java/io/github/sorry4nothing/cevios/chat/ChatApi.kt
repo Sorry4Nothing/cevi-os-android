@@ -4,26 +4,26 @@ import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
 
 class ChatApi(private val api: ApiClient) {
-    suspend fun chats(): ApiResult<ChatListe> = api.get("/api/v1/chats")
+    suspend fun chats(): ApiResult<ChatList> = api.get("/api/v1/chats")
 
-    /** Eine Seite zu 50 Nachrichten, neueste zuerst. `vor` ist der Cursor `naechster` der vorherigen Seite. */
-    suspend fun nachrichten(chatId: String, vor: String? = null): ApiResult<NachrichtenSeite> =
-        api.get("/api/v1/chats/$chatId/nachrichten" + if (vor == null) "" else "?vor=$vor")
+    /** Eine Seite zu 50 Nachrichten, neueste zuerst. `before` ist der Cursor `next` der vorherigen Seite. */
+    suspend fun messages(chatId: String, before: String? = null): ApiResult<MessagePage> =
+        api.get("/api/v1/chats/$chatId/nachrichten" + if (before == null) "" else "?vor=$before")
 
-    suspend fun senden(chatId: String, text: String): ApiResult<NachrichtKennung> =
-        api.post("/api/v1/chats/$chatId/nachrichten", NachrichtAnfrage(text))
+    suspend fun send(chatId: String, text: String): ApiResult<MessageIdResponse> =
+        api.post("/api/v1/chats/$chatId/nachrichten", SendMessageRequest(text))
 
-    /** Legt den Einzelchat an oder liefert den bestehenden (idempotent). Nur Stufenleitungen nennen `elternUserId`. */
-    suspend fun einzelchat(stufeId: String, elternUserId: String? = null): ApiResult<ChatKennung> =
-        api.post("/api/v1/chats/direkt", EinzelchatAnfrage(stufeId, elternUserId))
+    /** Legt den Einzelchat an oder liefert den bestehenden (idempotent). Nur Stufenleitungen nennen `parentUserId`. */
+    suspend fun directChat(ageGroupId: String, parentUserId: String? = null): ApiResult<ChatIdResponse> =
+        api.post("/api/v1/chats/direkt", DirectChatRequest(ageGroupId, parentUserId))
 
-    suspend fun ausblenden(nachrichtId: String): ApiResult<Unit> =
-        api.postOhneBody("/api/v1/nachrichten/$nachrichtId/ausblenden")
+    suspend fun hide(messageId: String): ApiResult<Unit> =
+        api.postWithoutBody("/api/v1/nachrichten/$messageId/ausblenden")
 
-    suspend fun melden(nachrichtId: String): ApiResult<Unit> =
-        api.postOhneBody("/api/v1/nachrichten/$nachrichtId/melden")
+    suspend fun report(messageId: String): ApiResult<Unit> =
+        api.postWithoutBody("/api/v1/nachrichten/$messageId/melden")
 
-    suspend fun hilfe(): ApiResult<HilfeAntwort> = api.get("/api/v1/hilfe")
+    suspend fun help(): ApiResult<HelpResponse> = api.get("/api/v1/hilfe")
 
-    suspend fun profil(): ApiResult<Profil> = api.get("/api/v1/ich")
+    suspend fun profile(): ApiResult<Profile> = api.get("/api/v1/ich")
 }

@@ -69,16 +69,11 @@
     <string name="actions_title">Nachricht von %1$s</string>
     <string name="action_direct_chat">Einzelchat mit %1$s öffnen</string>
     <string name="action_hide">Nachricht ausblenden</string>
-    <string name="action_report">Nachricht melden</string>
     <string name="hide_title">Nachricht ausblenden?</string>
-    <string name="report_title">Nachricht melden?</string>
     <string name="hide_question">Soll die Nachricht für alle ausgeblendet werden? Wer sie geschrieben hat, sieht dann nur noch einen Hinweis.</string>
-    <string name="report_question">Soll die Nachricht den Admins gemeldet werden? Sie sehen dann den Text der Nachricht.</string>
     <string name="action_confirm_hide">Ausblenden</string>
-    <string name="action_confirm_report">Melden</string>
     <string name="action_running">Wird ausgeführt …</string>
     <string name="action_hidden">Die Nachricht wurde ausgeblendet.</string>
-    <string name="action_reported">Die Nachricht wurde den Admins gemeldet.</string>
     <string name="help_button">Hilfe und Vertrauenspersonen</string>
     <string name="help_title">Hilfe</string>
     <string name="help_empty">Die Abteilung hat noch keine Vertrauenspersonen eingetragen.</string>

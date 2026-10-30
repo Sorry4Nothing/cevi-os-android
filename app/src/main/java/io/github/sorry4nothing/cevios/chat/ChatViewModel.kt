@@ -19,7 +19,7 @@ data class SendState(val running: Boolean = false, val error: ApiError? = null)
 /** Zustand beim Speichern der eigenen Telefonnummer. */
 data class PhoneState(val running: Boolean = false, val error: ApiError? = null)
 
-/** Zustand von Ausblenden, Melden und Einzelchat-Öffnen. `done` ist der Text der Bestätigung. */
+/** Zustand von Ausblenden und Einzelchat-Öffnen. `done` ist der Text der Bestätigung. */
 data class ActionState(val running: Boolean = false, val error: ApiError? = null, @StringRes val done: Int? = null)
 
 /** `null` heisst: wird geladen. Nachrichten und Namen bleiben nur im Arbeitsspeicher. */
@@ -180,9 +180,6 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     fun hide(messageId: String) = action(R.string.action_hidden) {
         api.hide(messageId).also { if (it is ApiResult.Ok) refresh() }
     }
-
-    /** Meldet eine Nachricht den Admins. */
-    fun report(messageId: String) = action(R.string.action_reported) { api.report(messageId) }
 
     /**
      * Öffnet den Einzelchat der Stufe (für Stufenleitungen mit dem Elternteil) und lädt die Chatliste neu,

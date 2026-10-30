@@ -279,7 +279,6 @@ fun ChatConversationScreen(
     onSend: (text: String, onSent: () -> Unit) -> Unit,
     onOlder: () -> Unit,
     onHide: (messageId: String) -> Unit,
-    onReport: (messageId: String) -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
     onLoadContacts: (ageGroupId: String) -> Unit,
     onBack: () -> Unit,
@@ -334,7 +333,7 @@ fun ChatConversationScreen(
                     is ApiResult.Failure -> ErrorState(state.error, onRetry, notFoundText = R.string.state_chat_not_found_text)
                     is ApiResult.Ok ->
                         Box(Modifier.fillMaxSize()) {
-                            Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onReport, onDirectChat)
+                            Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onDirectChat)
                             NewMessagesAnnouncer(state.value)
                         }
                 }
@@ -412,7 +411,6 @@ private fun Messages(
     loadingOlder: Boolean,
     onOlder: () -> Unit,
     onHide: (String) -> Unit,
-    onReport: (String) -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
 ) {
     if (conversation.messages.isEmpty()) {
@@ -420,15 +418,14 @@ private fun Messages(
         return
     }
     var selected by remember { mutableStateOf<ChatMessage?>(null) }
-    var question by remember { mutableStateOf<ConfirmQuestion?>(null) }
+    var hideId by remember { mutableStateOf<String?>(null) }
     val items = remember(conversation.messages) { withDayDividers(conversation.messages) }
     val today = LocalDate.now(SWISS_ZONE)
 
     fun perform(message: ChatMessage, action: MessageAction) {
         when (action) {
             MessageAction.OPEN_DIRECT_CHAT -> chat?.let { onDirectChat(it.ageGroup.id, message.author.id) }
-            MessageAction.HIDE -> question = ConfirmQuestion(ConfirmKind.HIDE, message.id)
-            MessageAction.REPORT -> question = ConfirmQuestion(ConfirmKind.REPORT, message.id)
+            MessageAction.HIDE -> hideId = message.id
         }
     }
 
@@ -494,33 +491,25 @@ private fun Messages(
         }
     }
 
-    question?.let { f ->
+    hideId?.let { id ->
         CeviDialog(
-            title = stringResource(f.kind.title),
-            onDismiss = { question = null },
+            title = stringResource(R.string.hide_title),
+            onDismiss = { hideId = null },
             confirmButton = {
-                DangerButton(stringResource(f.kind.confirm), {
-                    question = null
-                    if (f.kind == ConfirmKind.HIDE) onHide(f.messageId) else onReport(f.messageId)
+                DangerButton(stringResource(R.string.action_confirm_hide), {
+                    hideId = null
+                    onHide(id)
                 })
             },
-            dismissButton = { TextActionButton(stringResource(R.string.cancel), { question = null }, Modifier.initialFocus()) },
-        ) { DialogText(stringResource(f.kind.question)) }
+            dismissButton = { TextActionButton(stringResource(R.string.cancel), { hideId = null }, Modifier.initialFocus()) },
+        ) { DialogText(stringResource(R.string.hide_question)) }
     }
 }
-
-private enum class ConfirmKind(@StringRes val title: Int, @StringRes val question: Int, @StringRes val confirm: Int) {
-    HIDE(R.string.hide_title, R.string.hide_question, R.string.action_confirm_hide),
-    REPORT(R.string.report_title, R.string.report_question, R.string.action_confirm_report),
-}
-
-private data class ConfirmQuestion(val kind: ConfirmKind, val messageId: String)
 
 @Composable
 private fun actionLabel(action: MessageAction, message: ChatMessage): String = when (action) {
     MessageAction.OPEN_DIRECT_CHAT -> stringResource(R.string.action_direct_chat, message.author.name)
     MessageAction.HIDE -> stringResource(R.string.action_hide)
-    MessageAction.REPORT -> stringResource(R.string.action_report)
 }
 
 @Composable
@@ -539,7 +528,7 @@ private fun DayDividerText(label: DayLabel) {
 }
 
 /**
- * Eine Nachricht als Blase, höchstens 80 % breit; fremde Nachrichten haben links einen Avatar. Die Aktionen (Einzelchat öffnen, ausblenden, melden) liegen auf langem
+ * Eine Nachricht als Blase, höchstens 80 % breit; fremde Nachrichten haben links einen Avatar. Die Aktionen (Einzelchat öffnen, ausblenden) liegen auf langem
  * Drücken und als Screenreader-Aktionen; ohne erlaubte Aktion gibt es keine.
  */
 @OptIn(ExperimentalFoundationApi::class)

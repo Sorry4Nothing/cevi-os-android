@@ -153,7 +153,6 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
                     onSend = chat::send,
                     onOlder = chat::loadOlder,
                     onHide = chat::hide,
-                    onReport = chat::report,
                     onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },
                     onLoadContacts = chat::loadContacts,
                     onBack = { openedChat = null },

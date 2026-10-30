@@ -34,13 +34,6 @@ class ChatRulesTest {
     }
 
     @Test
-    fun reportExceptOwnVisibleMessage() {
-        assertTrue(ChatRules.mayReport(message()))
-        assertFalse(ChatRules.mayReport(message(own = true)))
-        assertTrue(ChatRules.mayReport(message(own = true, hidden = true)))
-    }
-
-    @Test
     fun groupLeaderOpensDirectChatViaParentMessage() {
         assertTrue(ChatRules.mayOpenDirectChat(group, message(), groupLeader))
         assertFalse("eigene Nachricht", ChatRules.mayOpenDirectChat(group, message(own = true), groupLeader))
@@ -52,10 +45,10 @@ class ChatRulesTest {
     @Test
     fun actionsListOnlyWhatIsAllowed() {
         assertEquals(
-            listOf(MessageAction.OPEN_DIRECT_CHAT, MessageAction.HIDE, MessageAction.REPORT),
+            listOf(MessageAction.OPEN_DIRECT_CHAT, MessageAction.HIDE),
             ChatRules.actions(group, message(), groupLeader),
         )
-        assertEquals(listOf(MessageAction.REPORT), ChatRules.actions(group, message(), parent))
+        assertEquals("Eltern haben keine Aktion", emptyList<MessageAction>(), ChatRules.actions(group, message(), parent))
         assertEquals("eigene sichtbare Nachricht: keine Aktion", emptyList<MessageAction>(), ChatRules.actions(group, message(own = true), parent))
         assertEquals(emptyList<MessageAction>(), ChatRules.actions(null, message(own = true), null))
     }

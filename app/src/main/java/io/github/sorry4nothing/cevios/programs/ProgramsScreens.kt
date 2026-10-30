@@ -68,6 +68,7 @@ fun ProgramListScreen(
         Header(
             title = stringResource(R.string.programs_title),
             action = HeaderButton(R.drawable.ic_refresh, stringResource(R.string.refresh), onRetry),
+            focusOnTitle = true,
         )
         when (state) {
             null -> LoadingSkeleton(stringResource(R.string.programs_loading))

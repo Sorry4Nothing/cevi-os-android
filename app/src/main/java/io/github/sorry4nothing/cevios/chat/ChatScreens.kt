@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -64,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
+import kotlinx.coroutines.delay
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
 import io.github.sorry4nothing.cevios.programs.dayAndMonth
@@ -74,6 +77,7 @@ import io.github.sorry4nothing.cevios.ui.DangerButton
 import io.github.sorry4nothing.cevios.ui.DashedButton
 import io.github.sorry4nothing.cevios.ui.DialogText
 import io.github.sorry4nothing.cevios.ui.InitialText
+import io.github.sorry4nothing.cevios.ui.scaledWithFont
 import io.github.sorry4nothing.cevios.ui.EmptyState
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.Header
@@ -113,7 +117,7 @@ fun ChatListScreen(
     onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        Header(title = stringResource(R.string.chat_title))
+        Header(title = stringResource(R.string.chat_title), focusOnTitle = true)
         TextActionButton(stringResource(R.string.help_button), onHelp, Modifier.padding(horizontal = Spacing.s3))
         ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
         when (state) {
@@ -267,13 +271,41 @@ fun ChatConversationScreen(
                 null -> Loading()
                 is ApiResult.Failure -> ErrorState(state.error, onRetry, notFoundText = R.string.state_chat_not_found_text)
                 is ApiResult.Ok ->
-                    Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onReport, onDirectChat)
+                    Box(Modifier.fillMaxSize()) {
+                        Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onReport, onDirectChat)
+                        NewMessagesAnnouncer(state.value)
+                    }
             }
         }
         ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
         MessageInput(send, onSend)
     }
 }
+
+/**
+ * Sagt neue Nachrichten anderer gesammelt an («2 neue Nachrichten»), ohne eine laufende Ansage abzubrechen. Es gibt dafür
+ * eine winzige, unsichtbare Fläche mit Live-Region; der Text steht kurz da und wird dann geleert, damit dieselbe Ansage
+ * beim nächsten Mal wieder gesprochen wird.
+ */
+@Composable
+private fun NewMessagesAnnouncer(conversation: Conversation) {
+    var known by remember { mutableStateOf<String?>(null) }
+    var count by remember { mutableIntStateOf(0) }
+    val newest = conversation.messages.firstOrNull()?.id
+    LaunchedEffect(newest) {
+        val added = conversation.newFromOthers(known)
+        known = newest
+        if (added > 0) {
+            count = added
+            delay(ANNOUNCEMENT_MS)
+            count = 0
+        }
+    }
+    val text = if (count > 0) pluralStringResource(R.plurals.new_messages, count, count) else ""
+    Box(Modifier.size(1.dp).semantics { liveRegion = LiveRegionMode.Polite; contentDescription = text })
+}
+
+private const val ANNOUNCEMENT_MS = 3_000L
 
 /** Hinweis im Einzelchat: Die Nachricht geht an die ganze Stufenleitung. Die Avatare sind dekorativ. */
 @Composable
@@ -294,7 +326,7 @@ private fun ReadAlongNote(leaders: List<ChatPerson>, modifier: Modifier = Modifi
         Row(Modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
             leaders.take(3).forEach { leader ->
                 Box(
-                    Modifier.size(28.dp).background(scheme.secondary, Pill).border(2.dp, scheme.secondaryContainer, Pill),
+                    Modifier.size(scaledWithFont(28.dp)).background(scheme.secondary, Pill).border(2.dp, scheme.secondaryContainer, Pill),
                     contentAlignment = Alignment.Center,
                 ) {
                     // Eine Initiale: zwei Buchstaben würde der nächste Kreis überdecken.

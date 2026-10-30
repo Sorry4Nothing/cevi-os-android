@@ -67,6 +67,10 @@ data class Conversation(val messages: List<ChatMessage> = emptyList(), val next:
         return Conversation(page.messages + older, if (older.isEmpty()) page.next else next)
     }
 
+    /** Wie viele sichtbare Nachrichten anderer neuer sind als `knownNewestId` (für die Ansage «2 neue Nachrichten»). */
+    fun newFromOthers(knownNewestId: String?): Int =
+        if (knownNewestId == null) 0 else messages.count { it.id > knownNewestId && !it.own && !it.hidden }
+
     /** Hängt eine ältere Seite an. */
     fun withOlder(page: MessagePage): Conversation {
         val oldest = messages.lastOrNull()?.id

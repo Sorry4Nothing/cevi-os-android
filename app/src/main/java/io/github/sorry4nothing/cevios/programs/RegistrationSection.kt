@@ -166,7 +166,7 @@ private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, nam
             .border(borderSpec.first, borderSpec.second, Pill)
             .selectable(selected = selected, enabled = active, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 18.dp)
-            .semantics { contentDescription = "$name, $word" },
+            .semantics { contentDescription = "$word, $name" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))

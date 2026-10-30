@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
@@ -114,6 +116,10 @@ private fun DockDestination(destination: Destination, active: Boolean, onDestina
             fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
             color = color,
             textAlign = TextAlign.Center,
+            // Drei Reiter teilen die Breite: Bei grösster Schrift schrumpft das Wort bis 8 sp (immer noch deutlich grösser als
+            // bei Standardschrift), statt mitten im Wort umzubrechen.
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
             modifier = Modifier.fillMaxWidth(),
         )
     }

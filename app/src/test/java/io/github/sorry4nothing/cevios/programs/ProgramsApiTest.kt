@@ -224,4 +224,18 @@ class ProgramsApiTest {
         val contacts = (runBlocking { programs.contacts("p1") } as ApiResult.Ok).value
         assertEquals("/api/v1/personen/s1/bild", contacts.contacts.single().imageUrl)
     }
+
+    @Test
+    fun registrationsAreReadOnlyAGet() {
+        server.enqueue(json(200, """{"zahlen":{"kinder":{"ja":1,"nein":0,"offen":0},"leitende":{"ja":0,"nein":0,"offen":0}},"kinder":[{"id":"k1","vorname":"Lena","nachname":"Meier","stufeId":"s1","status":"ja"}],"leitende":[]}"""))
+        val result = (runBlocking { programs.registrations("p1") } as ApiResult.Ok).value
+        assertEquals(1, result.children.size)
+        assertEquals("GET /api/v1/programme/p1/teilnahmen HTTP/1.1", server.takeRequest().requestLine)
+    }
+
+    @Test
+    fun registrationsForbiddenForOtherStagesIsForbidden() {
+        server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"x"}"""))
+        assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), runBlocking { programs.registrations("p1") })
+    }
 }

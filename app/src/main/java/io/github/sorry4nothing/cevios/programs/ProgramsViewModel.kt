@@ -49,6 +49,9 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
     private val _contacts = MutableStateFlow<ApiResult<ContactList>?>(null)
     val contacts: StateFlow<ApiResult<ContactList>?> = _contacts.asStateFlow()
 
+    private val _registrations = MutableStateFlow<ApiResult<Registrations>?>(null)
+    val registrations: StateFlow<ApiResult<Registrations>?> = _registrations.asStateFlow()
+
     private val _edit = MutableStateFlow(EditState())
     val edit: StateFlow<EditState> = _edit.asStateFlow()
 
@@ -77,6 +80,12 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
             val today = LocalDate.now(SWISS_ZONE)
             _list.value = api.list(today, today.plusMonths(WINDOW_MONTHS))
         }
+    }
+
+    /** Lädt die Übersicht der Anmeldungen neu; bis die Antwort da ist, zeigt der Bildschirm das Laden. */
+    fun loadRegistrations(programId: String) {
+        _registrations.value = null
+        viewModelScope.launch { _registrations.value = api.registrations(programId) }
     }
 
     fun loadAgeGroups() {

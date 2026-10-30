@@ -128,7 +128,7 @@ class ProgramsApiTest {
     fun closedProgramGivesOwnError() {
         server.enqueue(json(409, """{"code":"PROGRAMM_GESCHLOSSEN","message":"zu"}"""))
         assertEquals(
-            ApiResult.Failure(ApiError.REGISTRATION_CLOSED),
+            ApiResult.Failure(ApiError.REGISTRATION_CLOSED, "PROGRAMM_GESCHLOSSEN"),
             runBlocking { programs.setAttendance("p1", "k1", attending = true) },
         )
     }

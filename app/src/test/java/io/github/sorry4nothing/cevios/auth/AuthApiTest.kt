@@ -159,4 +159,12 @@ class AuthApiTest {
         assertTrue(auth.privacyUrl().endsWith("/datenschutz"))
         assertTrue(auth.privacyUrl().startsWith(server.url("/").toString()))
     }
+
+    @Test
+    fun tooManySignInsCarryTheWaitTime() {
+        server.enqueue(MockResponse.Builder().code(429).addHeader("X-Retry-After", "60").body("{}").build())
+        val failure = runBlocking { auth.signIn("m.keller", "x") } as ApiResult.Failure
+        assertEquals(ApiError.TOO_MANY_REQUESTS, failure.error)
+        assertEquals(60, failure.retryAfterSeconds)
+    }
 }

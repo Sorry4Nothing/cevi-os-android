@@ -43,7 +43,7 @@ sealed interface AuthState {
 }
 
 /** Zustand eines Formulars (Anmelden, Passwort, Datenschutz): läuft gerade etwas, und was ging schief. */
-data class FormState(val running: Boolean = false, @StringRes val error: Int? = null)
+data class FormState(val running: Boolean = false, @StringRes val error: Int? = null, val waitSeconds: Int? = null)
 
 /**
  * Wer ist angemeldet, und was muss die Person noch tun. Passwörter liegen nie hier: Die Eingabe bleibt im Bildschirm und
@@ -83,7 +83,7 @@ class AuthViewModel(
         _form.value = FormState(running = true)
         viewModelScope.launch {
             when (val result = api.signIn(username.trim(), password)) {
-                is ApiResult.Failure -> _form.value = FormState(error = signInErrorText(result))
+                is ApiResult.Failure -> _form.value = failureForm(result, signInErrorText(result))
                 is ApiResult.Ok -> if (result.value.twoFactorRedirect) {
                     // Admins melden sich nur im Admin-Bereich an: kein Sitzungscookie, auch kein halbes (`two_factor`).
                     forgetSession()
@@ -101,7 +101,7 @@ class AuthViewModel(
         _form.value = FormState(running = true)
         viewModelScope.launch {
             when (val result = api.changePassword(current, new)) {
-                is ApiResult.Failure -> if (result.error != ApiError.NOT_SIGNED_IN) _form.value = FormState(error = PasswordRules.errorText(result))
+                is ApiResult.Failure -> if (result.error != ApiError.NOT_SIGNED_IN) _form.value = failureForm(result, PasswordRules.errorText(result))
                 is ApiResult.Ok -> {
                     _passwordSaved.value = true
                     resolve()
@@ -117,7 +117,7 @@ class AuthViewModel(
         _form.value = FormState(running = true)
         viewModelScope.launch {
             when (val result = api.acceptPrivacy()) {
-                is ApiResult.Failure -> if (result.error != ApiError.NOT_SIGNED_IN) _form.value = FormState(error = result.error.text)
+                is ApiResult.Failure -> if (result.error != ApiError.NOT_SIGNED_IN) _form.value = failureForm(result, result.error.text)
                 is ApiResult.Ok -> {
                     _form.value = FormState()
                     _passwordSaved.value = false
@@ -163,6 +163,14 @@ class AuthViewModel(
             }
         }
     }
+
+    /** Bei 429 mit Wartezeit sagt der Text, wie lange; sonst der Text des Aufrufs. */
+    private fun failureForm(failure: ApiResult.Failure, @StringRes text: Int) =
+        if (failure.error == ApiError.TOO_MANY_REQUESTS && failure.retryAfterSeconds != null) {
+            FormState(error = R.string.error_too_many_wait, waitSeconds = failure.retryAfterSeconds)
+        } else {
+            FormState(error = text)
+        }
 
     private fun fail(error: ApiError) {
         if (error == ApiError.NOT_SIGNED_IN) leave(expired = true) else _state.value = AuthState.Failed(error)

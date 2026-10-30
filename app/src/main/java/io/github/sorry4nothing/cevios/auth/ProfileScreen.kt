@@ -91,7 +91,7 @@ fun ProfileScreen(
                 SettingsRow(R.drawable.ic_logout, stringResource(R.string.profile_sign_out), onClick = onSignOut, loading = form.running)
             }
             SlowHint(form.running)
-            form.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it)) }
+            formErrorText(form)?.let { NoticeBanner(NoticeKind.ERROR, it) }
         }
     }
 }

@@ -50,6 +50,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -247,7 +248,7 @@ private const val USERNAME_MAX_LENGTH = 64
 @Composable
 private fun FormStatus(form: FormState) {
     SlowHint(form.running)
-    form.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it)) }
+    formErrorText(form)?.let { NoticeBanner(NoticeKind.ERROR, it) }
 }
 
 /** «Passwort anzeigen» als Schalter: Der Screenreader sagt an, ob das Passwort gerade sichtbar ist. */
@@ -460,4 +461,14 @@ private fun WelcomePoint(@DrawableRes icon: Int, @StringRes title: Int, @StringR
             Text(stringResource(text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+/** Text des Fehlers eines Formulars; bei 429 mit der Wartezeit des Servers («Bitte warte 30 Sekunden»). */
+@Composable
+internal fun formErrorText(form: FormState): String? {
+    val error = form.error ?: return null
+    val seconds = form.waitSeconds ?: return stringResource(error)
+    val time = waitTime(seconds)
+    val words = pluralStringResource(if (time.minutes) R.plurals.wait_minutes else R.plurals.wait_seconds, time.amount, time.amount)
+    return stringResource(error, words)
 }

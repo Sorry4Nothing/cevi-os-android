@@ -115,7 +115,7 @@ class ApiClientTest {
         )
         expected.forEach { (status, error) ->
             server.enqueue(response(status, """{"code":"X","message":"Server-Text"}"""))
-            assertEquals("Status $status", ApiResult.Failure(error), runBlocking { client().get<Me>("/api/v1/ich") })
+            assertEquals("Status $status", ApiResult.Failure(error, if (status == 409) "X" else null), runBlocking { client().get<Me>("/api/v1/ich") })
         }
     }
 
@@ -172,5 +172,27 @@ class ApiClientTest {
     @Test
     fun pageUrlPointsAtTheBackend() {
         assertEquals(server.url("/datenschutz").toString(), client().pageUrl("/datenschutz"))
+    }
+
+    @Test
+    fun retryAfterComesFromTheHeaderAndIsCapped() {
+        fun failure(header: String?): ApiResult<Me> {
+            val builder = MockResponse.Builder().code(429).body("{}")
+            header?.let { builder.addHeader("X-Retry-After", it) }
+            server.enqueue(builder.build())
+            return runBlocking { client().get<Me>("/x") }
+        }
+        assertEquals(ApiResult.Failure(ApiError.TOO_MANY_REQUESTS, null, 45), failure("45"))
+        assertEquals(ApiResult.Failure(ApiError.TOO_MANY_REQUESTS, null, 3600), failure("99999"))
+        assertEquals(ApiResult.Failure(ApiError.TOO_MANY_REQUESTS), failure("bald"))
+        assertEquals(ApiResult.Failure(ApiError.TOO_MANY_REQUESTS), failure(null))
+    }
+
+    @Test
+    fun startedProgramIsToldApartFromClosedProgram() {
+        server.enqueue(response(409, """{"code":"PROGRAMM_BEGONNEN","message":"x"}"""))
+        assertEquals(ApiResult.Failure(ApiError.PROGRAM_STARTED, "PROGRAMM_BEGONNEN"), runBlocking { client().get<Me>("/x") })
+        server.enqueue(response(409, """{"code":"PROGRAMM_GESCHLOSSEN","message":"x"}"""))
+        assertEquals(ApiResult.Failure(ApiError.REGISTRATION_CLOSED, "PROGRAMM_GESCHLOSSEN"), runBlocking { client().get<Me>("/x") })
     }
 }

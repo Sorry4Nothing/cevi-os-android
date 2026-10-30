@@ -17,6 +17,8 @@ data class Chat(
     @SerialName("stufe") val ageGroup: ChatAgeGroup,
     @SerialName("eltern") val parent: ChatPerson? = null,
     @SerialName("stufenleitung") val groupLeaders: List<ChatPerson> = emptyList(),
+    /** Nachrichten anderer, die die Person noch nicht gesehen hat (zählt der Server nach dem Gelesen-Stand). */
+    @SerialName("ungelesen") val unread: Int = 0,
 ) {
     val isGroup get() = type == "stufe"
 }
@@ -78,3 +80,12 @@ data class Conversation(val messages: List<ChatMessage> = emptyList(), val next:
         return Conversation(messages + fresh, page.next)
     }
 }
+
+/** Text im Zähler der Chatzeile: leer bei 0, ab 100 «99+». */
+fun unreadBadgeText(count: Int): String? = when {
+    count <= 0 -> null
+    count > MAX_UNREAD_SHOWN -> "$MAX_UNREAD_SHOWN+"
+    else -> count.toString()
+}
+
+private const val MAX_UNREAD_SHOWN = 99

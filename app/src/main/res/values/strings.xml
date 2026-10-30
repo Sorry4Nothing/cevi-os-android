@@ -40,6 +40,10 @@
     <string name="message_empty_hint">Schreib zuerst eine Nachricht</string>
     <string name="message_send">Senden</string>
     <string name="message_sending">Wird gesendet …</string>
+    <plurals name="unread_messages">
+        <item quantity="one">Eine ungelesene Nachricht</item>
+        <item quantity="other">%d ungelesene Nachrichten</item>
+    </plurals>
     <plurals name="new_messages">
         <item quantity="one">Eine neue Nachricht</item>
         <item quantity="other">%d neue Nachrichten</item>

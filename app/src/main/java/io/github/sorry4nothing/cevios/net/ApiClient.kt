@@ -43,6 +43,10 @@ class ApiClient(
     suspend inline fun <reified B> put(path: String, body: B): ApiResult<Unit> =
         send(request(path).put(jsonBody(json.encodeToString(body))).build()) { }
 
+    /** PUT ohne Body; die Antwort hat keinen Inhalt (204). */
+    suspend fun putWithoutBody(path: String): ApiResult<Unit> =
+        send(request(path).put(ByteArray(0).toRequestBody()).build()) { }
+
     /** POST ohne Body; die Antwort hat keinen Inhalt (204). */
     suspend fun postWithoutBody(path: String): ApiResult<Unit> =
         send(request(path).post(ByteArray(0).toRequestBody()).build()) { }

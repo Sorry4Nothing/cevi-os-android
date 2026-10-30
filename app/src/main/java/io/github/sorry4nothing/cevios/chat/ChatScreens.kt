@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -60,6 +61,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -187,11 +189,12 @@ private fun SectionTitle(@StringRes text: Int) {
     )
 }
 
-/** Karte einer Chatzeile. Letzte Nachricht, Uhrzeit und Ungelesen-Zähler zeigt das Design, die API liefert sie nicht. */
+/** Karte einer Chatzeile mit Zähler «ungelesen». Letzte Nachricht und Uhrzeit zeigt das Design, die API liefert sie nicht. */
 @Composable
 private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.medium
+    val unreadText = if (chat.unread > 0) pluralStringResource(R.plurals.unread_messages, chat.unread, chat.unread) else null
     Row(
         Modifier
             .fillMaxWidth()
@@ -200,6 +203,8 @@ private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
             .background(scheme.surfaceContainerLow)
             .border(1.dp, scheme.outlineVariant, shape)
             .clickable(onClickLabel = stringResource(R.string.chat_open)) { onOpen(chat.id) }
+            // Der Name der Zeile beginnt mit dem sichtbaren Titel, die Zahl folgt als Zustand.
+            .semantics { unreadText?.let { stateDescription = it } }
             .padding(14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -215,6 +220,24 @@ private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
                 )
             }
         }
+        unreadBadgeText(chat.unread)?.let { UnreadBadge(it) }
+    }
+}
+
+/** Zahl in einer roten Pille (nie nur Farbe). Wächst mit der Schrift. Für den Screenreader steht die Zahl am Zustand der Zeile. */
+@Composable
+private fun UnreadBadge(text: String) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier
+            .heightIn(min = 24.dp)
+            .widthIn(min = 24.dp)
+            .background(scheme.primary, Pill)
+            .padding(horizontal = 8.dp)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold, fontFeatureSettings = "tnum"), color = scheme.onPrimary)
     }
 }
 

@@ -45,7 +45,14 @@ internal class DemoMessage(
     val own: Boolean = false,
 )
 
-internal class DemoChat(val id: String, val direct: Boolean, val messages: MutableList<DemoMessage>)
+/** `readAt` ist der Gelesen-Stand der Demo-Person; ohne Stand zählen alle Nachrichten anderer. */
+internal class DemoChat(val id: String, val direct: Boolean, val messages: MutableList<DemoMessage>, var readAt: Instant? = null) {
+    /** Sichtbare Nachrichten anderer, die nach dem Gelesen-Stand eingingen. */
+    fun unread(): Int {
+        val read = readAt
+        return messages.count { !it.own && !it.hidden && (read == null || it.createdAt.isAfter(read)) }
+    }
+}
 
 internal object DemoData {
     const val AGE_GROUP_ID = "00000000-0000-4000-8000-000000000001"

@@ -169,4 +169,37 @@ class ChatApiTest {
         server.enqueue(json(404, """{"code":"NICHT_GEFUNDEN","message":"x"}"""))
         assertEquals(ApiResult.Failure(ApiError.NOT_FOUND), runBlocking { chat.messages("fremd") })
     }
+
+    @Test
+    fun unreadCountIsReadAndDefaultsToZero() {
+        server.enqueue(
+            json(
+                200,
+                """{"chats":[
+                {"id":"c1","typ":"stufe","stufe":{"id":"s1","name":"Pfadi","kuerzel":"PF"},"eltern":null,"stufenleitung":[],"ungelesen":3},
+                {"id":"c2","typ":"stufe","stufe":{"id":"s2","name":"Wölfe","kuerzel":"WO"},"eltern":null,"stufenleitung":[]}]}""",
+            ),
+        )
+        val chats = (runBlocking { chat.chats() } as ApiResult.Ok).value.chats
+        assertEquals(listOf(3, 0), chats.map { it.unread })
+    }
+
+    @Test
+    fun markReadIsPutWithoutBody() {
+        server.enqueue(MockResponse.Builder().code(204).build())
+        assertEquals(ApiResult.Ok(Unit), runBlocking { chat.markRead("c1") })
+        val request = server.takeRequest()
+        assertEquals("PUT /api/v1/chats/c1/gelesen HTTP/1.1", request.requestLine)
+        assertEquals(0, request.body?.size ?: 0)
+    }
+
+    @Test
+    fun badgeTextHidesZeroAndCapsAtNinetyNine() {
+        assertNull(unreadBadgeText(0))
+        assertNull(unreadBadgeText(-1))
+        assertEquals("1", unreadBadgeText(1))
+        assertEquals("99", unreadBadgeText(99))
+        assertEquals("99+", unreadBadgeText(100))
+        assertEquals("99+", unreadBadgeText(1234))
+    }
 }

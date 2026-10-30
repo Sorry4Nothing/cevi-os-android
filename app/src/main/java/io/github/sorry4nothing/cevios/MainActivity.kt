@@ -41,8 +41,11 @@ import io.github.sorry4nothing.cevios.ui.Destination
 import io.github.sorry4nothing.cevios.ui.theme.CeviTheme
 import kotlinx.coroutines.delay
 
-/** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist. */
-private const val CHAT_POLL_INTERVAL_MS = 15_000L
+/** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist (Takt laut API). */
+private const val CHAT_POLL_INTERVAL_MS = 5_000L
+
+/** So oft fragt die sichtbare Chatliste nach: So kommen die Zähler «ungelesen» an (Takt laut API). */
+private const val LIST_POLL_INTERVAL_MS = 30_000L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +78,18 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
         val id = openedChat
         if (id == null) chat.closeChat() else chat.openChat(id)
     }
-    LaunchedEffect(destination, openedChat) { if (destination == Destination.CHAT && openedChat == null) chat.loadList(silent = true) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(destination, openedChat, helpOpen) {
+        if (destination == Destination.CHAT && openedChat == null && !helpOpen) {
+            chat.loadList(silent = true)
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    delay(LIST_POLL_INTERVAL_MS)
+                    chat.loadList(silent = true)
+                }
+            }
+        }
+    }
 
     Surface(Modifier.fillMaxSize()) {
         val programId = openedProgram
@@ -112,7 +126,6 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
             }
             chatId != null -> {
                 BackHandler { openedChat = null }
-                val lifecycle = LocalLifecycleOwner.current.lifecycle
                 LaunchedEffect(chatId) {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                         while (true) {

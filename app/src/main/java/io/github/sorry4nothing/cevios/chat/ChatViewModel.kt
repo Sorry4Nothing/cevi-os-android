@@ -72,7 +72,11 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
         _loadingOlder.value = false
         _send.value = SendState()
         _action.value = ActionState()
-        conversationJob = viewModelScope.launch { _conversation.value = api.messages(id).mapConversation(Conversation()) }
+        conversationJob = viewModelScope.launch {
+            val result = api.messages(id)
+            _conversation.value = result.mapConversation(Conversation())
+            if (result is ApiResult.Ok) markRead(id)
+        }
     }
 
     fun closeChat() {
@@ -89,8 +93,19 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
             if (openedId != id) return@launch
             // Ein Fehler im Takt ersetzt einen guten Verlauf nicht; nur ein fehlender Verlauf zeigt den Fehler.
             val existing = (_conversation.value as? ApiResult.Ok)?.value
-            if (existing == null || result is ApiResult.Ok) _conversation.value = result.mapConversation(existing ?: Conversation())
+            val merged = result.mapConversation(existing ?: Conversation())
+            if (existing == null || result is ApiResult.Ok) _conversation.value = merged
+            // Was im offenen Chat neu eintrifft, ist sofort gesehen: Der Zähler in der Liste soll es nicht mitzählen.
+            val fresh = (merged as? ApiResult.Ok)?.value
+            if (existing != null && result is ApiResult.Ok && fresh != null && fresh.newFromOthers(existing.messages.firstOrNull()?.id) > 0) {
+                markRead(id)
+            }
         }
+    }
+
+    /** Meldet dem Server, bis wohin gelesen wurde. Ein Fehler stört das Lesen nicht, der Zähler stimmt dann etwas später. */
+    private fun markRead(chatId: String) {
+        viewModelScope.launch { api.markRead(chatId) }
     }
 
     fun loadOlder() {

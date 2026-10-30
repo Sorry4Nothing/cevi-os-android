@@ -42,7 +42,10 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
     private val attendance = mutableMapOf<Pair<String, String>, String>()
     private val groupChat = DemoChat(
         DemoData.GROUP_CHAT_ID, direct = false, DemoData.groupMessages(Instant.now(), programs.first()),
-    )
+    ).also { chat ->
+        // Die letzten Nachrichten sind neu: So zeigt die Chatliste einen Zähler.
+        chat.readAt = chat.messages.sortedBy { it.id }.let { it[it.size - UNREAD_IN_DEMO - 1].createdAt }
+    }
     private var directChat: DemoChat? = null
     private var nextMessageNumber = 59
 
@@ -136,11 +139,15 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
             val ageGroupId = stringField(body, "stufeId") ?: return invalidInput()
             if (ageGroupId != DemoData.AGE_GROUP_ID) return notFound()
             val chat = directChat
-                ?: DemoChat(DemoData.DIRECT_CHAT_ID, direct = true, DemoData.directMessages(Instant.now()))
+                ?: DemoChat(DemoData.DIRECT_CHAT_ID, direct = true, DemoData.directMessages(Instant.now()), readAt = Instant.now())
                     .also { directChat = it }
             return ok(buildJsonObject { put("id", chat.id) })
         }
         val chat = allChats().find { it.id == path.getOrNull(1) } ?: return notFound()
+        if (method == "PUT" && path.size == 3 && path[2] == "gelesen") {
+            chat.readAt = Instant.now()
+            return Reply(204, "No Content")
+        }
         if (path.size != 3 || path[2] != "nachrichten") return notFound()
         return when (method) {
             "GET" -> ok(messagePage(chat, request.url.queryParameter("vor")))
@@ -284,6 +291,7 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
     private fun chatJson(chat: DemoChat) = buildJsonObject {
         put("id", chat.id)
         put("typ", if (chat.direct) "direkt" else "stufe")
+        put("ungelesen", chat.unread())
         put("stufe", ageGroupJson())
         put("eltern", if (chat.direct) personJson(DemoData.me) else JsonNull)
         putJsonArray("stufenleitung") {
@@ -346,6 +354,7 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leade
         /** Damit Ladezustände sichtbar sind; Tests stellen 0 ein. */
         const val DEFAULT_DELAY_MS = 400L
         private const val PAGE_SIZE = 50
+        private const val UNREAD_IN_DEMO = 4
         private const val MAX_TEXT_LENGTH = 2000
         private val VISIBILITIES = setOf("intern", "leitende", "eltern")
         private val JSON_TYPE = "application/json; charset=utf-8".toMediaType()

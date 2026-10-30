@@ -171,4 +171,17 @@ class DemoServerTest {
         val result = runBlocking { client.get<Unit>("/api/v1/gibt-es-nicht") }
         assertEquals(ApiError.NOT_FOUND, result.failure())
     }
+
+    @Test
+    fun groupChatHasUnreadMessagesUntilMarkedRead() {
+        val before = runBlocking { chat.chats().value().chats.single() }
+        assertTrue("Die Demo zeigt einen Zähler", before.unread > 0)
+        assertEquals(Unit, runBlocking { chat.markRead(before.id) }.value())
+        assertEquals(0, runBlocking { chat.chats().value().chats.single().unread })
+    }
+
+    @Test
+    fun markReadOfUnknownChatIsNotFound() {
+        assertEquals(ApiError.NOT_FOUND, runBlocking { chat.markRead("gibt-es-nicht") }.failure())
+    }
 }

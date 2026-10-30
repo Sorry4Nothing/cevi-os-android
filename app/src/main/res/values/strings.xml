@@ -5,6 +5,7 @@
     <string name="fehler_nicht_gefunden">Das gibt es nicht mehr.</string>
     <string name="fehler_app_veraltet">Diese App ist zu alt. Bitte installiere die neue Version.</string>
     <string name="fehler_zu_viele_anfragen">Zu viele Versuche. Bitte warte kurz.</string>
+    <string name="fehler_anmeldung_geschlossen">Die Anmeldung ist geschlossen. Das Programm ist abgesagt oder hat schon begonnen.</string>
     <string name="fehler_netzwerk">Keine Verbindung. Prüfe dein Internet und versuche es nochmals.</string>
     <string name="fehler_unbekannt">Etwas ist schiefgelaufen. Bitte versuche es nochmals.</string>
 
@@ -29,4 +30,18 @@
     <string name="abschnitt_mitnehmen">Mitnehmen</string>
     <string name="abschnitt_info">Info für Eltern</string>
     <string name="abschnitt_stufen">Stufen</string>
+
+    <string name="abschnitt_anmeldung">Anmeldung</string>
+    <string name="abschnitt_anmeldung_leitung">Deine Anmeldung</string>
+    <string name="anmeldung_geschlossen">Die Anmeldung ist geschlossen.</string>
+    <string name="anmeldung_speichert">Wird gespeichert …</string>
+    <string name="antwort_offen">Noch keine Antwort</string>
+    <string name="antwort_ja">Kommt</string>
+    <string name="antwort_nein">Kommt nicht</string>
+    <string name="knopf_ja">Ja</string>
+    <string name="knopf_nein">Nein</string>
+    <string name="knopf_kind_ja">Ja, %1$s kommt</string>
+    <string name="knopf_kind_nein">Nein, %1$s kommt nicht</string>
+    <string name="knopf_leitung_ja">Ja, ich komme</string>
+    <string name="knopf_leitung_nein">Nein, ich komme nicht</string>
 </resources>

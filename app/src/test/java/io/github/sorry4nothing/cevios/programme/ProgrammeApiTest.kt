@@ -83,6 +83,56 @@ class ProgrammeApiTest {
     }
 
     @Test
+    fun detailLiestKinderUndEigeneAnmeldung() {
+        val detail = lager.replace(
+            "\"googleBeschreibung\":null",
+            """"googleBeschreibung":null,"teilnahmeOffen":true,"darfErgaenzen":false,"eigeneAnmeldung":"offen",
+               "kinder":[{"id":"k1","vorname":"Mia","status":"ja"},{"id":"k2","vorname":"Noah","status":null}]""",
+        )
+        server.enqueue(json(200, detail))
+        val p = (runBlocking { programme.lesen("x") } as ApiResult.Ok).wert
+        assertTrue(p.teilnahmeOffen)
+        assertEquals("offen", p.eigeneAnmeldung)
+        assertEquals(listOf(ProgrammKind("k1", "Mia", "ja"), ProgrammKind("k2", "Noah", null)), p.kinder)
+    }
+
+    @Test
+    fun listeneintragHatKeineKinderUndKeineAnmeldung() {
+        server.enqueue(json(200, lager))
+        val p = (runBlocking { programme.lesen("x") } as ApiResult.Ok).wert
+        assertTrue(p.kinder.isEmpty() && !p.teilnahmeOffen)
+        assertNull(p.eigeneAnmeldung)
+    }
+
+    @Test
+    fun teilnahmeSendetJaAnDenKindPfad() {
+        server.enqueue(MockResponse.Builder().code(204).build())
+        val ergebnis = runBlocking { programme.teilnahmeSetzen("p1", "k1", ja = true) }
+        assertEquals(ApiResult.Ok(Unit), ergebnis)
+        val anfrage = server.takeRequest()
+        assertEquals("PUT /api/v1/programme/p1/teilnahmen/k1 HTTP/1.1", anfrage.requestLine)
+        assertEquals("""{"status":"ja"}""", anfrage.body?.utf8())
+    }
+
+    @Test
+    fun leitungSendetNeinAnDenLeitungPfad() {
+        server.enqueue(MockResponse.Builder().code(204).build())
+        assertEquals(ApiResult.Ok(Unit), runBlocking { programme.leitungSetzen("p1", ja = false) })
+        val anfrage = server.takeRequest()
+        assertEquals("PUT /api/v1/programme/p1/leitung HTTP/1.1", anfrage.requestLine)
+        assertEquals("""{"status":"nein"}""", anfrage.body?.utf8())
+    }
+
+    @Test
+    fun geschlossenesProgrammGibtEinenEigenenFehler() {
+        server.enqueue(json(409, """{"code":"PROGRAMM_GESCHLOSSEN","message":"zu"}"""))
+        assertEquals(
+            ApiResult.Fehler(ApiFehler.ANMELDUNG_GESCHLOSSEN),
+            runBlocking { programme.teilnahmeSetzen("p1", "k1", ja = true) },
+        )
+    }
+
+    @Test
     fun ohneOrtGibtEsKeinenOrt() {
         server.enqueue(json(200, lager.replace("\"googleOrt\":\"Zeltplatz\"", "\"googleOrt\":\"  \"")))
         assertNull((runBlocking { programme.lesen("x") } as ApiResult.Ok).wert.ort)

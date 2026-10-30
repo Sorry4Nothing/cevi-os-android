@@ -10,6 +10,7 @@ enum class ApiFehler(@StringRes val text: Int) {
     NICHT_GEFUNDEN(R.string.fehler_nicht_gefunden),
     APP_VERALTET(R.string.fehler_app_veraltet),
     ZU_VIELE_ANFRAGEN(R.string.fehler_zu_viele_anfragen),
+    ANMELDUNG_GESCHLOSSEN(R.string.fehler_anmeldung_geschlossen),
     NETZWERK(R.string.fehler_netzwerk),
     UNBEKANNT(R.string.fehler_unbekannt);
 
@@ -18,6 +19,7 @@ enum class ApiFehler(@StringRes val text: Int) {
             401 -> NICHT_ANGEMELDET
             403 -> KEINE_BERECHTIGUNG
             404 -> NICHT_GEFUNDEN
+            409 -> ANMELDUNG_GESCHLOSSEN // PROGRAMM_GESCHLOSSEN oder PROGRAMM_BEGONNEN
             426 -> APP_VERALTET
             429 -> ZU_VIELE_ANFRAGEN
             else -> UNBEKANNT

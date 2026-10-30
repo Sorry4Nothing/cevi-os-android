@@ -2,46 +2,53 @@ package io.github.sorry4nothing.cevios
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.sorry4nothing.cevios.net.ApiClient
+import io.github.sorry4nothing.cevios.programme.ProgrammDetailScreen
+import io.github.sorry4nothing.cevios.programme.ProgrammeApi
+import io.github.sorry4nothing.cevios.programme.ProgrammeListeScreen
+import io.github.sorry4nothing.cevios.programme.ProgrammeViewModel
 import io.github.sorry4nothing.cevios.ui.theme.CeviTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { CeviTheme { StartScreen() } }
+        val api = ProgrammeApi(ApiClient.erstellen(applicationContext))
+        setContent { CeviTheme { Programme(api) } }
     }
 }
 
 @Composable
-fun StartScreen() {
+private fun Programme(api: ProgrammeApi) {
+    val modell = viewModel { ProgrammeViewModel(api) }
+    val liste by modell.liste.collectAsState()
+    val detail by modell.detail.collectAsState()
+    var offen by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Auch nach Drehen oder Prozess-Ende lädt das offene Programm neu: Daten bleiben nur im Arbeitsspeicher.
+    LaunchedEffect(offen) { offen?.let(modell::detailLaden) }
+
     Surface(Modifier.fillMaxSize()) {
-        Column(Modifier.safeDrawingPadding().padding(24.dp)) {
-            Text(
-                stringResource(R.string.start_titel),
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.semantics { heading() },
-            )
-            Text(stringResource(R.string.start_hinweis), Modifier.padding(top = 8.dp))
+        val id = offen
+        if (id == null) {
+            ProgrammeListeScreen(liste, onOeffnen = { offen = it }, onNochmals = modell::listeLaden)
+        } else {
+            BackHandler { offen = null }
+            ProgrammDetailScreen(detail, onZurueck = { offen = null }, onNochmals = { modell.detailLaden(id) })
         }
     }
 }
-
-@Preview
-@Composable
-private fun StartScreenPreview() = CeviTheme { StartScreen() }

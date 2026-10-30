@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +43,8 @@ import io.github.sorry4nothing.cevios.ui.Header
 import io.github.sorry4nothing.cevios.ui.InitialText
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
+import io.github.sorry4nothing.cevios.ui.SlowHint
+import io.github.sorry4nothing.cevios.ui.Spinner
 import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.scaledWithFont
 import io.github.sorry4nothing.cevios.ui.theme.Eyebrow
@@ -85,8 +88,9 @@ fun ProfileScreen(
             SettingsCard {
                 SettingsRow(R.drawable.ic_lock, stringResource(R.string.profile_change_password), onClick = onChangePassword, chevron = true)
                 SettingsDivider()
-                SettingsRow(R.drawable.ic_logout, stringResource(R.string.profile_sign_out), onClick = onSignOut, enabled = !form.running)
+                SettingsRow(R.drawable.ic_logout, stringResource(R.string.profile_sign_out), onClick = onSignOut, loading = form.running)
             }
+            SlowHint(form.running)
             form.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it)) }
         }
     }
@@ -166,21 +170,24 @@ private fun SettingsRow(
     onClick: (() -> Unit)? = null,
     clickLabel: String? = null,
     chevron: Boolean = false,
-    enabled: Boolean = true,
+    loading: Boolean = false,
 ) {
+    val working = stringResource(R.string.working)
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.touchTarget)
             .then(
-                if (onClick != null) Modifier.focusRing(MaterialTheme.shapes.medium).clickable(enabled = enabled, onClickLabel = clickLabel, role = Role.Button, onClick = onClick)
+                if (onClick != null) Modifier.focusRing(MaterialTheme.shapes.medium).clickable(enabled = !loading, onClickLabel = clickLabel, role = Role.Button, onClick = onClick)
+                    .semantics { if (loading) stateDescription = working }
                 else Modifier.semantics(mergeDescendants = true) {},
             )
             .padding(horizontal = 14.dp, vertical = Spacing.s2),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.cevi.accent)
+        if (loading) Spinner(size = 24.dp, color = MaterialTheme.cevi.accent)
+        else Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.cevi.accent)
         Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f))
         value?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (chevron) Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

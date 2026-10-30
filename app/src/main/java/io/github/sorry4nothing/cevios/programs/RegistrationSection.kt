@@ -36,6 +36,8 @@ import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.ui.ChipKind
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
+import io.github.sorry4nothing.cevios.ui.SlowHint
+import io.github.sorry4nothing.cevios.ui.Spinner
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
@@ -71,6 +73,7 @@ fun RegistrationSection(
                 answer = child.status,
                 isOpen = program.attendanceOpen,
                 locked = rsvp.running,
+                pending = rsvp.pendingAttending.takeIf { rsvp.pendingKey == child.id },
                 sentAt = rsvp.sentAt[child.id],
                 onRsvp = { onChild(child.id, it) },
             )
@@ -81,18 +84,13 @@ fun RegistrationSection(
                 answer = leader.takeIf { it == "ja" || it == "nein" },
                 isOpen = program.attendanceOpen,
                 locked = rsvp.running,
+                pending = rsvp.pendingAttending.takeIf { rsvp.pendingKey == LEADER_KEY },
                 sentAt = rsvp.sentAt[LEADER_KEY],
                 onRsvp = onLeader,
             )
         }
 
-        if (rsvp.running) {
-            Text(
-                stringResource(R.string.registration_saving),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            )
-        }
+        SlowHint(rsvp.running)
         rsvp.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it.text)) }
     }
 }
@@ -104,12 +102,14 @@ private fun RsvpRow(
     answer: String?,
     isOpen: Boolean,
     locked: Boolean,
+    pending: Boolean?,
     sentAt: String?,
     onRsvp: (Boolean) -> Unit,
 ) {
     val colors = MaterialTheme.cevi
     val scheme = MaterialTheme.colorScheme
     val (statusText, statusColor) = when {
+        pending != null -> stringResource(R.string.registration_saving) to scheme.onSurfaceVariant
         sentAt != null -> stringResource(R.string.rsvp_sent, sentAt) to colors.onSuccessContainer
         answer == "ja" -> stringResource(R.string.rsvp_yes) to colors.onSuccessContainer
         answer == "nein" -> stringResource(R.string.rsvp_no) to scheme.onErrorContainer
@@ -124,14 +124,14 @@ private fun RsvpRow(
                     statusText,
                     style = MaterialTheme.typography.bodySmall,
                     color = statusColor,
-                    modifier = Modifier.semantics { if (sentAt != null) liveRegion = LiveRegionMode.Polite },
+                    modifier = Modifier.semantics { if (sentAt != null || pending != null) liveRegion = LiveRegionMode.Polite },
                 )
             }
         }
         if (isOpen) {
             Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                RsvpPill(attending = true, selected = answer == "ja", active = !locked, name = name) { onRsvp(true) }
-                RsvpPill(attending = false, selected = answer == "nein", active = !locked, name = name) { onRsvp(false) }
+                RsvpPill(attending = true, selected = answer == "ja", active = !locked, loading = pending == true, name = name) { onRsvp(true) }
+                RsvpPill(attending = false, selected = answer == "nein", active = !locked, loading = pending == false, name = name) { onRsvp(false) }
             }
         } else {
             when (answer) {
@@ -148,7 +148,7 @@ private fun RsvpRow(
  * Der Zustand steht in Form, Icon und Wort, nicht nur in der Farbe. TalkBack: «Lena, Ja, nicht ausgewählt».
  */
 @Composable
-private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, name: String, onClick: () -> Unit) {
+private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, loading: Boolean, name: String, onClick: () -> Unit) {
     val colors = MaterialTheme.cevi
     val scheme = MaterialTheme.colorScheme
     val contentColor: Color
@@ -173,7 +173,7 @@ private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, nam
             .clearAndSetSemantics { contentDescription = "$word, $name" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
+        if (loading) Spinner(color = contentColor) else Icon(painterResource(icon), contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(6.dp))
         Text(word, style = MaterialTheme.typography.labelLarge, color = contentColor, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold)
     }

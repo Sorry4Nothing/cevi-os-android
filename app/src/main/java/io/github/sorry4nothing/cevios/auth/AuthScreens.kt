@@ -68,9 +68,10 @@ import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
-import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
+import io.github.sorry4nothing.cevios.ui.SlowHint
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
 import io.github.sorry4nothing.cevios.ui.theme.Eyebrow
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
@@ -176,8 +177,8 @@ fun LoginScreen(form: FormState, onSignIn: (String, String) -> Unit) {
     var username by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visible by remember { mutableStateOf(false) }
-    val ready = username.isNotBlank() && password.isNotEmpty() && !form.running
-    val submit = { if (ready) onSignIn(username, password) }
+    val ready = username.isNotBlank() && password.isNotEmpty()
+    val submit = { if (ready && !form.running) onSignIn(username, password) }
     LogoPage(
         top = {
             DepartmentEyebrow()
@@ -226,6 +227,8 @@ fun LoginScreen(form: FormState, onSignIn: (String, String) -> Unit) {
                     onClick = submit,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = ready,
+                    loading = form.running,
+                    loadingText = stringResource(R.string.login_running),
                 )
                 Text(
                     stringResource(R.string.login_forgot),
@@ -240,17 +243,10 @@ fun LoginScreen(form: FormState, onSignIn: (String, String) -> Unit) {
 
 private const val USERNAME_MAX_LENGTH = 64
 
-/** Zustand eines Formulars unter den Feldern: «läuft» wird höflich angesagt, ein Fehler sofort und mit Icon. */
+/** Zustand eines Formulars unter den Feldern: Was läuft, zeigt der Knopf; dauert es lange, sagt es ein Hinweis; ein Fehler kommt sofort und mit Icon. */
 @Composable
 private fun FormStatus(form: FormState) {
-    if (form.running) {
-        Text(
-            stringResource(R.string.login_running),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        )
-    }
+    SlowHint(form.running)
     form.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it)) }
 }
 
@@ -285,8 +281,8 @@ fun PasswordScreen(first: Boolean, form: FormState, onSave: (String, String) -> 
     var current by remember { mutableStateOf("") }
     var new by remember { mutableStateOf("") }
     var visible by remember { mutableStateOf(false) }
-    val ready = PasswordRules.valid(current, new) && !form.running
-    val save = { if (ready) onSave(current, new) }
+    val ready = PasswordRules.valid(current, new)
+    val save = { if (ready && !form.running) onSave(current, new) }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Header(
@@ -341,7 +337,10 @@ fun PasswordScreen(first: Boolean, form: FormState, onSave: (String, String) -> 
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CardShape)
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 20.dp),
         ) {
-            PrimaryButton(stringResource(R.string.password_save), onClick = save, modifier = Modifier.fillMaxWidth(), enabled = ready)
+            PrimaryButton(
+                stringResource(R.string.password_save), onClick = save, modifier = Modifier.fillMaxWidth(), enabled = ready,
+                loading = form.running, loadingText = stringResource(R.string.saving),
+            )
         }
     }
 }
@@ -383,7 +382,7 @@ fun WelcomeScreen(
     onAccept: () -> Unit,
 ) {
     var acknowledged by rememberSaveable { mutableStateOf(false) }
-    val ready = acknowledged && !form.running
+    val ready = acknowledged
     LogoPage(
         top = {
             if (passwordSaved) {
@@ -438,7 +437,10 @@ fun WelcomeScreen(
                     Text(stringResource(R.string.welcome_privacy_check), style = MaterialTheme.typography.bodyMedium)
                 }
                 FormStatus(form)
-                PrimaryButton(stringResource(R.string.welcome_start), onClick = onAccept, modifier = Modifier.fillMaxWidth(), enabled = ready)
+                PrimaryButton(
+                    stringResource(R.string.welcome_start), onClick = onAccept, modifier = Modifier.fillMaxWidth(), enabled = ready,
+                    loading = form.running,
+                )
             }
         },
     )

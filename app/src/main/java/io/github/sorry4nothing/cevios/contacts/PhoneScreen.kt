@@ -11,17 +11,14 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.chat.PhoneState
@@ -32,6 +29,7 @@ import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
+import io.github.sorry4nothing.cevios.ui.SlowHint
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
@@ -49,6 +47,8 @@ fun PhoneScreen(
     onBack: () -> Unit,
 ) {
     var input by rememberSaveable { mutableStateOf(phone.orEmpty()) }
+    // Welcher Knopf läuft: «Entfernen» und «Speichern» schicken beide dieselbe Anfrage.
+    var removing by remember { mutableStateOf(false) }
     val trimmed = input.trim()
     val invalid = trimmed.isNotEmpty() && !PhoneRules.valid(trimmed)
     val changed = trimmed != phone.orEmpty().trim()
@@ -73,26 +73,24 @@ fun PhoneScreen(
                 enabled = canSet && !state.running,
             )
             if (invalid) NoticeBanner(NoticeKind.ERROR, stringResource(R.string.phone_invalid))
-            if (state.running) {
-                Text(
-                    stringResource(R.string.saving),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                )
-            }
+            SlowHint(state.running)
             state.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it.text)) }
             PrimaryButton(
                 stringResource(R.string.save),
-                onClick = { onSave(trimmed) },
+                onClick = { removing = false; onSave(trimmed) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = canSet && changed && trimmed.isNotEmpty() && !invalid && !state.running,
+                enabled = canSet && changed && trimmed.isNotEmpty() && !invalid && (!state.running || !removing),
+                loading = state.running && !removing,
+                loadingText = stringResource(R.string.saving),
             )
             if (!phone.isNullOrBlank()) {
                 OutlinedPillButton(
                     stringResource(R.string.phone_remove),
-                    onClick = { onSave("") },
+                    onClick = { removing = true; onSave("") },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !state.running,
+                    enabled = !state.running || removing,
+                    loading = state.running && removing,
+                    loadingText = stringResource(R.string.saving),
                 )
             }
             TextActionButton(stringResource(R.string.cancel), onBack, Modifier.fillMaxWidth())

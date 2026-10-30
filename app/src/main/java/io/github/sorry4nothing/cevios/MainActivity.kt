@@ -27,6 +27,8 @@ import io.github.sorry4nothing.cevios.chat.HelpScreen
 import io.github.sorry4nothing.cevios.chat.chatTitle
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.programs.AssignmentRules
+import io.github.sorry4nothing.cevios.programs.AssignmentScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import io.github.sorry4nothing.cevios.programs.ProgramListScreen
@@ -38,7 +40,6 @@ import kotlinx.coroutines.delay
 
 /** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist. */
 private const val CHAT_POLL_INTERVAL_MS = 15_000L
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,9 +58,11 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var helpOpen by rememberSaveable { mutableStateOf(false) }
+    var assigning by rememberSaveable { mutableStateOf(false) }
 
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
+    LaunchedEffect(assigning) { if (assigning) programs.loadAgeGroups() }
     LaunchedEffect(helpOpen) { if (helpOpen) chat.loadHelp() }
     LaunchedEffect(openedChat) {
         val id = openedChat
@@ -70,15 +73,31 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
     Surface(Modifier.fillMaxSize()) {
         val programId = openedProgram
         val chatId = openedChat
+        val detail by programs.detail.collectAsState()
+        val programProfile = (programs.profile.collectAsState().value as? ApiResult.Ok)?.value
+        val assignedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
         when {
+            programId != null && assigning && assignedProgram != null -> {
+                val leave = { assigning = false; programs.resetEdit() }
+                BackHandler(onBack = leave)
+                val edit = programs.edit.collectAsState().value
+                AssignmentScreen(
+                    assignedProgram, programs.ageGroups.collectAsState().value, programProfile, edit,
+                    onSave = { request -> programs.saveAssignment(programId, request, leave) },
+                    onBack = leave,
+                    onRetry = programs::loadAgeGroups,
+                )
+            }
             programId != null -> {
                 BackHandler { openedProgram = null }
                 MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }) {
                     ProgramDetailScreen(
-                        programs.detail.collectAsState().value,
+                        detail,
                         programs.rsvp.collectAsState().value,
+                        canAssign = AssignmentRules.mayAssign(programProfile),
                         onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                         onLeader = { attending -> programs.rsvpLeader(programId, attending) },
+                        onAssign = { assigning = true },
                         onBack = { openedProgram = null },
                         onRetry = { programs.loadDetail(programId) },
                     )

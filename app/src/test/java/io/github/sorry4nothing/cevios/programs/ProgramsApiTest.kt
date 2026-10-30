@@ -9,6 +9,7 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -130,6 +131,52 @@ class ProgramsApiTest {
             ApiResult.Failure(ApiError.REGISTRATION_CLOSED),
             runBlocking { programs.setAttendance("p1", "k1", attending = true) },
         )
+    }
+
+    @Test
+    fun detailReadsVisibility() {
+        server.enqueue(json(200, camp))
+        val p = (runBlocking { programs.read("x") } as ApiResult.Ok).value
+        assertEquals("eltern", p.visibility)
+        assertFalse(p.unassigned)
+    }
+
+    @Test
+    fun programWithoutAgeGroupsIsUnassigned() {
+        server.enqueue(json(200, camp.replace("\"stufen\":[{\"id\":\"a1\",\"name\":\"Stufe A\"}]", "\"stufen\":[]")))
+        assertTrue((runBlocking { programs.read("x") } as ApiResult.Ok).value.unassigned)
+    }
+
+    @Test
+    fun assignmentSendsFullStateAsPut() {
+        server.enqueue(MockResponse.Builder().code(204).build())
+        val result = runBlocking { programs.assign("p1", AssignmentRequest(listOf("s1", "s2"), "leitende")) }
+        assertEquals(ApiResult.Ok(Unit), result)
+        val request = server.takeRequest()
+        assertEquals("PUT /api/v1/programme/p1/zuordnung HTTP/1.1", request.requestLine)
+        assertEquals("""{"stufen":["s1","s2"],"sichtbarkeit":"leitende"}""", request.body?.utf8())
+    }
+
+    @Test
+    fun forbiddenAssignmentIsAnError() {
+        server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"nein"}"""))
+        assertEquals(
+            ApiResult.Failure(ApiError.FORBIDDEN),
+            runBlocking { programs.assign("p1", AssignmentRequest(emptyList(), "intern")) },
+        )
+    }
+
+    @Test
+    fun ageGroupsAndProfileAreRead() {
+        server.enqueue(json(200, """{"stufen":[{"id":"s1","name":"Pfadi","kuerzel":"PF","reihenfolge":1}]}"""))
+        assertEquals(
+            listOf(ProgramAgeGroup("s1", "Pfadi")),
+            (runBlocking { programs.ageGroups() } as ApiResult.Ok).value.ageGroups,
+        )
+        assertEquals("GET /api/v1/stufen HTTP/1.1", server.takeRequest().requestLine)
+        server.enqueue(json(200, """{"id":"u1","admin":true,"rollen":[{"stufeId":"s1","typ":"stufenleitung"}]}"""))
+        val profile = (runBlocking { programs.profile() } as ApiResult.Ok).value
+        assertTrue(profile.admin && profile.isGroupLeader("s1"))
     }
 
     @Test

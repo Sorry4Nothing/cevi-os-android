@@ -24,6 +24,8 @@ data class Program(
     val id: String,
     @SerialName("titel") val title: String,
     val status: String,
+    /** «intern», «leitende» oder «eltern»: wer das Programm ausser Admins und Stufenleitungen sieht. */
+    @SerialName("sichtbarkeit") val visibility: String = "intern",
     @SerialName("ganztaegig") val allDay: Boolean,
     @SerialName("beginn") val start: String? = null,
     @SerialName("ende") val end: String? = null,
@@ -44,6 +46,7 @@ data class Program(
 ) {
     val cancelled get() = status == "abgesagt"
     val inReview get() = status == "pruefen"
+    val unassigned get() = ageGroups.isEmpty()
 
     /** Der Treffpunkt der Leitung, sonst der Ort aus dem Google-Kalender. */
     val location get() = meetingPoint?.takeIf { it.isNotBlank() } ?: googleLocation?.takeIf { it.isNotBlank() }

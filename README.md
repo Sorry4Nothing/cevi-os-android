@@ -32,6 +32,7 @@ Die Adresse des Servers kommt nicht aus dem Repo, sondern lokal aus `~/.gradle/g
 Ohne Login zeigt die App sonst nur Fehlerseiten. Im Debug-Build antwortet deshalb der `DemoServer` anstelle des Netzwerks, mit erfundenen Daten in der Form der API: eine Elternperson mit zwei Kindern, sechs Programme, ein Gruppenchat mit 55 Nachrichten und ein Hilfetext.
 
 - Automatisch an, wenn `ceviApiBaseUrl` fehlt. Mit echter Adresse aus. Im Release-Build nie (der Code liegt nur unter `app/src/debug`).
+- Mit `-PdemoLeader` (zum Beispiel `./gradlew installDebug -PdemoLeader`) ist die Demo-Person Stufenleitung der Demo-Stufe: Sie darf die Zuordnung ändern, «Geländespiel» ist keiner Stufe zugeordnet, eine zweite Stufe ist nicht änderbar.
 - Alles liegt im Speicher und ist nach dem Neustart der App zurückgesetzt. Ändern lässt sich: Zu- und Absagen für die Kinder, Nachrichten senden, den Einzelchat öffnen, Nachrichten melden. Ausblenden und die Anmeldung als Leitung antworten mit 403.
 
 ## Push

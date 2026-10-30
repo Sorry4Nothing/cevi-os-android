@@ -24,13 +24,21 @@ import java.time.temporal.ChronoUnit
 
 /**
  * Antwortet im Namen des Servers, ohne Netzwerk, mit JSON in der Form der API (nur Debug-Build). Der Zustand liegt
- * im Speicher und geht mit der App verloren. Die Demo-Person ist eine Elternperson, keine Leitung.
+ * im Speicher und geht mit der App verloren. Die Demo-Person ist eine Elternperson, keine Leitung. Mit `leader` ist sie
+ * Stufenleitung der Demo-Stufe: Sie darf die Zuordnung ändern, und «Geländespiel» ist keiner Stufe zugeordnet.
  */
-class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
+class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS, private val leader: Boolean = false) : Interceptor {
     private class Reply(val code: Int, val message: String, val body: JsonElement? = null)
 
     private val lock = Any()
-    private val programs = DemoData.programs(LocalDate.now(SWISS_ZONE))
+    private val programs = DemoData.programs(LocalDate.now(SWISS_ZONE)).also { list ->
+        if (leader) {
+            list.single { it.status == "pruefen" }.apply {
+                ageGroupIds = emptySet()
+                visibility = "intern"
+            }
+        }
+    }
     private val attendance = mutableMapOf<Pair<String, String>, String>()
     private val groupChat = DemoChat(
         DemoData.GROUP_CHAT_ID, direct = false, DemoData.groupMessages(Instant.now(), programs.first()),
@@ -67,6 +75,7 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
         val body = request.body?.let { Buffer().apply { it.writeTo(this) }.readUtf8() }.orEmpty()
         return when {
             method == "GET" && path == listOf("ich") -> ok(profile())
+            method == "GET" && path == listOf("stufen") -> ok(ageGroupsJson())
             method == "GET" && path == listOf("hilfe") ->
                 ok(buildJsonObject { put("vertrauenspersonen", DemoData.TRUSTED_PERSONS) })
             path[0] == "programme" -> programRoute(method, path, body)
@@ -84,6 +93,7 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
         return when {
             method == "GET" && path.size == 2 -> ok(programDetail(program))
             method == "PUT" && path.size == 3 && path[2] == "leitung" -> forbidden()
+            method == "PUT" && path.size == 3 && path[2] == "zuordnung" -> assign(program, body)
             method == "PUT" && path.size == 4 && path[2] == "teilnahmen" -> {
                 val child = DemoData.children.find { it.id == path[3] } ?: return notFound()
                 val status = stringField(body, "status")?.takeIf { it == "ja" || it == "nein" }
@@ -94,6 +104,27 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
             }
             else -> notFound()
         }
+    }
+
+    /**
+     * Wie `PUT /api/v1/programme/{id}/zuordnung`: voller neuer Stand. Eine Stufenleitung ändert nur ihre eigene Stufe,
+     * und die Sichtbarkeit nur, wenn alle bisherigen und neuen Stufen ihr gehören.
+     */
+    private fun assign(program: DemoProgram, body: String): Reply {
+        val fields = (try { Json.parseToJsonElement(body) } catch (e: IllegalArgumentException) { null }) as? JsonObject
+        val ids = (fields?.get("stufen") as? JsonArray)?.map { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content }
+        val visibility = stringField(body, "sichtbarkeit")?.takeIf { it in VISIBILITIES }
+        if (ids == null || ids.any { it == null } || ids.toSet().size != ids.size || visibility == null) return invalidInput()
+        if (!leader) return forbidden()
+        val next = ids.filterNotNull().toSet()
+        val own = setOf(DemoData.AGE_GROUP_ID)
+        val changed = (program.ageGroupIds - next) + (next - program.ageGroupIds)
+        if (!own.containsAll(changed)) return forbidden()
+        if (visibility != program.visibility && !own.containsAll(program.ageGroupIds + next)) return forbidden()
+        if (!DemoData.ageGroupNames.keys.containsAll(next) || (next.isEmpty() && visibility != "intern")) return invalidInput()
+        program.ageGroupIds = next
+        program.visibility = visibility
+        return Reply(204, "No Content")
     }
 
     private fun chatRoute(request: Request, path: List<String>, body: String): Reply {
@@ -153,7 +184,16 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
         put("pushProgramme", true)
         put("admin", false)
         put("zweiterFaktor", false)
-        put("rollen", JsonArray(emptyList()))
+        putJsonArray("rollen") {
+            if (leader) {
+                add(
+                    buildJsonObject {
+                        put("stufeId", DemoData.AGE_GROUP_ID)
+                        put("typ", "stufenleitung")
+                    },
+                )
+            }
+        }
         putJsonArray("stufen") { add(ageGroupJson()) }
         putJsonArray("kinder") {
             DemoData.children.forEach {
@@ -175,11 +215,26 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
         put("kuerzel", DemoData.AGE_GROUP_ABBREVIATION)
     }
 
+    /** `GET /api/v1/stufen`: alle Stufen der Abteilung, mit `reihenfolge`. */
+    private fun ageGroupsJson() = buildJsonObject {
+        putJsonArray("stufen") {
+            add(JsonObject(ageGroupJson() + buildJsonObject { put("reihenfolge", 1) }))
+            add(
+                buildJsonObject {
+                    put("id", DemoData.OTHER_AGE_GROUP_ID)
+                    put("name", DemoData.OTHER_AGE_GROUP_NAME)
+                    put("kuerzel", DemoData.OTHER_AGE_GROUP_ABBREVIATION)
+                    put("reihenfolge", 2)
+                },
+            )
+        }
+    }
+
     private fun programJson(p: DemoProgram) = buildJsonObject {
         put("id", p.id)
         put("titel", p.title)
         put("status", p.status)
-        put("sichtbarkeit", "eltern")
+        put("sichtbarkeit", p.visibility)
         put("ganztaegig", p.allDay)
         put("beginn", p.start?.toString())
         put("ende", p.end?.toString())
@@ -193,12 +248,14 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
         put("infoEltern", p.parentInfo)
         put("googleBeschreibung", null as String?)
         putJsonArray("stufen") {
-            add(
-                buildJsonObject {
-                    put("id", DemoData.AGE_GROUP_ID)
-                    put("name", DemoData.AGE_GROUP_NAME)
-                },
-            )
+            p.ageGroupIds.sorted().forEach { id ->
+                add(
+                    buildJsonObject {
+                        put("id", id)
+                        put("name", DemoData.ageGroupNames.getValue(id))
+                    },
+                )
+            }
         }
     }
 
@@ -216,7 +273,6 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
                     )
                 }
             }
-            put("darfErgaenzen", false)
         },
     )
 
@@ -291,6 +347,7 @@ class DemoServer(private val delayMs: Long = DEFAULT_DELAY_MS) : Interceptor {
         const val DEFAULT_DELAY_MS = 400L
         private const val PAGE_SIZE = 50
         private const val MAX_TEXT_LENGTH = 2000
+        private val VISIBILITIES = setOf("intern", "leitende", "eltern")
         private val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
     }
 }

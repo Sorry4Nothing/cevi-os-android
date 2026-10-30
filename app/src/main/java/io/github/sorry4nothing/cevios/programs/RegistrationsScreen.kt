@@ -161,7 +161,7 @@ private fun Count(@DrawableRes icon: Int, text: String, color: Color) {
 
 /** Reiter als Pille (mindestens 48 dp hoch): gewählt hell gefüllt, sonst mit Rand. Rolle «Reiter», Auswahl wird angesagt. */
 @Composable
-private fun TabPill(text: String, selected: Boolean, onClick: () -> Unit) {
+internal fun TabPill(text: String, selected: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Box(
         Modifier

@@ -15,6 +15,9 @@ enum class ApiError(@StringRes val text: Int) {
     /** 409 `PROGRAMM_BEGONNEN`: Die Leitung kann sich nach dem Beginn nicht mehr ändern (abgesagte Programme gehen noch). */
     PROGRAM_STARTED(R.string.error_program_started),
 
+    /** 409 `ANWESENHEIT_GESCHLOSSEN`: Erfassen geht ab Beginn des Programms und bis 14 Tage danach. */
+    ATTENDANCE_CLOSED(R.string.error_attendance_closed),
+
     /** 404 beim Einzelchat: Der Server sagt nicht, ob die Stufe, das Elternteil oder das Recht fehlt. */
     DIRECT_CHAT_UNAVAILABLE(R.string.error_direct_chat_unavailable),
 
@@ -29,7 +32,11 @@ enum class ApiError(@StringRes val text: Int) {
             401 -> NOT_SIGNED_IN
             403 -> FORBIDDEN
             404 -> NOT_FOUND
-            409 -> if (code == "PROGRAMM_BEGONNEN") PROGRAM_STARTED else REGISTRATION_CLOSED // sonst PROGRAMM_GESCHLOSSEN
+            409 -> when (code) {
+                "PROGRAMM_BEGONNEN" -> PROGRAM_STARTED
+                "ANWESENHEIT_GESCHLOSSEN" -> ATTENDANCE_CLOSED
+                else -> REGISTRATION_CLOSED // sonst PROGRAMM_GESCHLOSSEN
+            }
             426 -> APP_OUTDATED
             429 -> TOO_MANY_REQUESTS
             else -> UNKNOWN

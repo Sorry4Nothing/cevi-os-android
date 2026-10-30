@@ -108,7 +108,6 @@
     <string name="section_meeting_point">Treffpunkt</string>
     <string name="section_closing">Schluss</string>
     <string name="section_bring_along">Mitnehmen</string>
-    <string name="section_info">Info für Eltern</string>
 
     <string name="section_leader_registration">Deine Anmeldung</string>
     <string name="registration_closed">Die Anmeldung ist geschlossen.</string>

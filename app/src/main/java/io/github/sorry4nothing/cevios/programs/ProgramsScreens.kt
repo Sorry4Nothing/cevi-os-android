@@ -314,12 +314,14 @@ private fun LeaderSection(
 @Composable
 private fun Tiles(program: Program) {
     val closing = program.closingTime?.let { runCatching { LocalTime.parse(it) }.getOrNull() }
-    val meetingTime = when (val time = program.time()) {
+    val meeting = parseMeetingPoint(program.meetingPoint)
+    // Nennt die Webseite eine Zeit, gilt sie; sonst der Beginn aus dem Kalender.
+    val meetingTime = meeting.time ?: when (val time = program.time()) {
         is Timing.Timed -> TIME_FORMAT.format(time.start)
         is Timing.AllDay -> stringResource(R.string.time_list_all_day)
         null -> null
     }
-    val meetingPoint = program.meetingPoint?.takeIf { it.isNotBlank() }
+    val meetingPoint = meeting.place
     val closingLocation = program.closingLocation?.takeIf { it.isNotBlank() }
     Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
         if (meetingTime != null || meetingPoint != null) {
@@ -348,13 +350,12 @@ private fun Tile(label: String, time: String?, location: String?, modifier: Modi
     }
 }
 
-/** Liste mit Ort, Mitnehmen und Info, je mit Icon. Felder ohne Inhalt fallen weg. */
+/** Liste mit Ort und Mitnehmen, je mit Icon. Felder ohne Inhalt fallen weg. */
 @Composable
 private fun Facts(program: Program) {
     val rows = listOf(
         Triple(R.drawable.ic_location, R.string.fact_location, program.googleLocation?.takeIf { it.isNotBlank() }),
         Triple(R.drawable.ic_bring_along, R.string.section_bring_along, program.bringAlong?.takeIf { it.isNotBlank() }),
-        Triple(R.drawable.ic_info, R.string.section_info, program.parentInfo?.takeIf { it.isNotBlank() }),
     ).filter { it.third != null }
     if (rows.isEmpty()) return
     Column(

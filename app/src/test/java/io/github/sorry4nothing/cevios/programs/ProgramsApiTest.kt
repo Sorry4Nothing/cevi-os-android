@@ -38,8 +38,8 @@ class ProgramsApiTest {
     private val camp = """
         {"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","titel":"Sommerlager","status":"aktiv","sichtbarkeit":"eltern",
          "ganztaegig":true,"beginn":null,"ende":null,"tagVon":"2027-07-10","tagBis":"2027-07-17",
-         "googleOrt":"Zeltplatz","treffpunkt":null,"schlussOrt":"Bahnhof","schlussZeit":"16:30:00",
-         "mitnehmen":"Schlafsack","infoEltern":null,"stufen":[{"id":"a1","name":"Stufe A"}],"googleBeschreibung":null}
+         "googleOrt":"Zeltplatz","treffpunkt":null,"schlussOrt":"Bahnhof","schlussZeit":"16:30",
+         "mitnehmen":"Schlafsack","stufen":[{"id":"a1","name":"Stufe A"}],"googleBeschreibung":null}
     """.trimIndent()
 
     @Test
@@ -51,14 +51,15 @@ class ProgramsApiTest {
         assertEquals("Sommerlager", p.title)
         assertEquals("Zeltplatz", p.location)
         assertEquals("Stufe A", p.ageGroups.single().name)
-        assertEquals("16:30:00", p.closingTime)
+        assertEquals("16:30", p.closingTime)
     }
 
     @Test
     fun detailReadsOneProgram() {
-        server.enqueue(json(200, camp.replace("\"infoEltern\":null", "\"infoEltern\":\"Bitte pünktlich\"")))
+        server.enqueue(json(200, camp))
         val p = (runBlocking { programs.read("7c9e6679-7425-40de-944b-e07fc1f90ae7") } as ApiResult.Ok).value
-        assertEquals("Bitte pünktlich", p.parentInfo)
+        assertEquals("Schlafsack", p.bringAlong)
+        assertEquals("Bahnhof", p.closingLocation)
         assertEquals("GET /api/v1/programme/7c9e6679-7425-40de-944b-e07fc1f90ae7 HTTP/1.1", server.takeRequest().requestLine)
     }
 
@@ -71,8 +72,17 @@ class ProgramsApiTest {
 
     @Test
     fun meetingPointBeatsGoogleLocation() {
-        server.enqueue(json(200, camp.replace("\"treffpunkt\":null", "\"treffpunkt\":\"Pfadiheim\"")))
+        server.enqueue(json(200, camp.replace("\"treffpunkt\":null", "\"treffpunkt\":\"14:00 Uhr\\nPfadiheim\"")))
         assertEquals("Pfadiheim", (runBlocking { programs.read("x") } as ApiResult.Ok).value.location)
+    }
+
+    @Test
+    fun meetingPointTextSplitsIntoTimeAndPlace() {
+        assertEquals(MeetingPoint("14:00", "Pfadiheim\nEingang Nord"), parseMeetingPoint("14:00 Uhr\nPfadiheim\nEingang Nord"))
+        assertEquals(MeetingPoint("09:30", null), parseMeetingPoint("09:30 Uhr"))
+        assertEquals(MeetingPoint(null, "Bahnhof"), parseMeetingPoint("Bahnhof"))
+        assertEquals(MeetingPoint(null, null), parseMeetingPoint(null))
+        assertEquals(MeetingPoint(null, null), parseMeetingPoint("  \n "))
     }
 
     @Test

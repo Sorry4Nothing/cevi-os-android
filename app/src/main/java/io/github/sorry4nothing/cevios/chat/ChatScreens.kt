@@ -81,7 +81,6 @@ import io.github.sorry4nothing.cevios.programs.dayAndMonth
 import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.CeviDialog
 import io.github.sorry4nothing.cevios.ui.avatarInitial
-import io.github.sorry4nothing.cevios.ui.DangerButton
 import io.github.sorry4nothing.cevios.ui.DashedButton
 import io.github.sorry4nothing.cevios.ui.DialogText
 import io.github.sorry4nothing.cevios.ui.InitialText
@@ -97,7 +96,6 @@ import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.dashedBorder
 import io.github.sorry4nothing.cevios.ui.focusRing
-import io.github.sorry4nothing.cevios.ui.initialFocus
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
@@ -317,7 +315,6 @@ fun ChatConversationScreen(
     action: ActionState,
     onSend: (text: String, onSent: () -> Unit) -> Unit,
     onOlder: () -> Unit,
-    onHide: (messageId: String) -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
     onLoadContacts: (ageGroupId: String) -> Unit,
     onBack: () -> Unit,
@@ -372,7 +369,7 @@ fun ChatConversationScreen(
                     is ApiResult.Failure -> ErrorState(state.error, onRetry, notFoundText = R.string.state_chat_not_found_text)
                     is ApiResult.Ok ->
                         Box(Modifier.fillMaxSize()) {
-                            Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onDirectChat)
+                            Messages(state.value, chat, profile, loadingOlder, onOlder, onDirectChat)
                             NewMessagesAnnouncer(state.value)
                         }
                 }
@@ -449,7 +446,6 @@ private fun Messages(
     profile: Profile?,
     loadingOlder: Boolean,
     onOlder: () -> Unit,
-    onHide: (String) -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
 ) {
     if (conversation.messages.isEmpty()) {
@@ -457,14 +453,12 @@ private fun Messages(
         return
     }
     var selected by remember { mutableStateOf<ChatMessage?>(null) }
-    var hideId by remember { mutableStateOf<String?>(null) }
     val items = remember(conversation.messages) { withDayDividers(conversation.messages) }
     val today = LocalDate.now(SWISS_ZONE)
 
     fun perform(message: ChatMessage, action: MessageAction) {
         when (action) {
             MessageAction.OPEN_DIRECT_CHAT -> chat?.let { onDirectChat(it.ageGroup.id, message.author.id) }
-            MessageAction.HIDE -> hideId = message.id
         }
     }
 
@@ -529,26 +523,11 @@ private fun Messages(
             }
         }
     }
-
-    hideId?.let { id ->
-        CeviDialog(
-            title = stringResource(R.string.hide_title),
-            onDismiss = { hideId = null },
-            confirmButton = {
-                DangerButton(stringResource(R.string.action_confirm_hide), {
-                    hideId = null
-                    onHide(id)
-                })
-            },
-            dismissButton = { TextActionButton(stringResource(R.string.cancel), { hideId = null }, Modifier.initialFocus()) },
-        ) { DialogText(stringResource(R.string.hide_question)) }
-    }
 }
 
 @Composable
 private fun actionLabel(action: MessageAction, message: ChatMessage): String = when (action) {
     MessageAction.OPEN_DIRECT_CHAT -> stringResource(R.string.action_direct_chat, message.author.name)
-    MessageAction.HIDE -> stringResource(R.string.action_hide)
 }
 
 @Composable
@@ -567,8 +546,8 @@ private fun DayDividerText(label: DayLabel) {
 }
 
 /**
- * Eine Nachricht als Blase, höchstens 80 % breit; fremde Nachrichten haben links einen Avatar. Die Aktionen (Einzelchat öffnen, ausblenden) liegen auf langem
- * Drücken und als Screenreader-Aktionen; ohne erlaubte Aktion gibt es keine.
+ * Eine Nachricht als Blase, höchstens 80 % breit; fremde Nachrichten haben links einen Avatar. Die Aktion (Einzelchat öffnen) liegt auf langem
+ * Drücken und als Screenreader-Aktion; ohne erlaubte Aktion gibt es keine.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -663,14 +642,13 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
     }
 }
 
-/** Läuft, Fehler oder Bestätigung einer Aktion als Banner; angesagt als Live-Region. Ohne Anlass bleibt nichts stehen. */
+/** Läuft oder Fehler einer Aktion als Banner; angesagt als Live-Region. Ohne Anlass bleibt nichts stehen. */
 @Composable
 private fun ActionNotice(action: ActionState, modifier: Modifier = Modifier) {
     val polite = modifier.semantics { liveRegion = LiveRegionMode.Polite }
     when {
         action.error != null -> NoticeBanner(NoticeKind.ERROR, stringResource(action.error.text), modifier)
         action.running -> NoticeBanner(NoticeKind.INFO, stringResource(R.string.action_running), polite)
-        action.done != null -> NoticeBanner(NoticeKind.INFO, stringResource(action.done), polite)
     }
 }
 

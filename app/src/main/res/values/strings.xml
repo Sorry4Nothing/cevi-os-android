@@ -74,12 +74,7 @@
     <string name="direct_chat_start">Einzelchat mit der Stufenleitung %1$s starten</string>
     <string name="actions_title">Nachricht von %1$s</string>
     <string name="action_direct_chat">Einzelchat mit %1$s öffnen</string>
-    <string name="action_hide">Nachricht ausblenden</string>
-    <string name="hide_title">Nachricht ausblenden?</string>
-    <string name="hide_question">Soll die Nachricht für alle ausgeblendet werden? Wer sie geschrieben hat, sieht dann nur noch einen Hinweis.</string>
-    <string name="action_confirm_hide">Ausblenden</string>
     <string name="action_running">Wird ausgeführt …</string>
-    <string name="action_hidden">Die Nachricht wurde ausgeblendet.</string>
     <string name="help_button">Hilfe und Vertrauenspersonen</string>
     <string name="help_title">Hilfe</string>
     <string name="help_empty">Die Abteilung hat noch keine Vertrauenspersonen eingetragen.</string>

@@ -54,8 +54,6 @@ data class ChatMessage(
     @SerialName("autor") val author: ChatPerson,
     @SerialName("programm") val program: ProgramRef? = null,
     @SerialName("ausgeblendet") val hidden: Boolean = false,
-    /** Der Server sagt, ob die Person diese Nachricht ausblenden darf (Stufenleitung im Gruppenchat der eigenen Stufe). */
-    @SerialName("darfAusblenden") val mayHide: Boolean = false,
     @SerialName("eigene") val own: Boolean = false,
 )
 

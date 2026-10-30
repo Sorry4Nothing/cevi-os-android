@@ -1,6 +1,5 @@
 package io.github.sorry4nothing.cevios.chat
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sorry4nothing.cevios.R
@@ -19,8 +18,8 @@ data class SendState(val running: Boolean = false, val error: ApiError? = null)
 /** Zustand beim Speichern der eigenen Telefonnummer. */
 data class PhoneState(val running: Boolean = false, val error: ApiError? = null)
 
-/** Zustand von Ausblenden und Einzelchat-Öffnen. `done` ist der Text der Bestätigung. */
-data class ActionState(val running: Boolean = false, val error: ApiError? = null, @StringRes val done: Int? = null)
+/** Zustand beim Öffnen eines Einzelchats. */
+data class ActionState(val running: Boolean = false, val error: ApiError? = null)
 
 /** `null` heisst: wird geladen. Nachrichten und Namen bleiben nur im Arbeitsspeicher. */
 class ChatViewModel(private val api: ChatApi) : ViewModel() {
@@ -176,11 +175,6 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
         }
     }
 
-    /** Blendet eine Nachricht für alle aus (nur Stufenleitung im Gruppenchat; der Server entscheidet). */
-    fun hide(messageId: String) = action(R.string.action_hidden) {
-        api.hide(messageId).also { if (it is ApiResult.Ok) refresh() }
-    }
-
     /**
      * Öffnet den Einzelchat der Stufe (für Stufenleitungen mit dem Elternteil) und lädt die Chatliste neu,
      * damit der Titel stimmt. `onChat` bekommt die ID des Chats.
@@ -196,21 +190,6 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
                     _list.value = api.chats()
                     onChat(result.value.id)
                 }
-            }
-        }
-    }
-
-    fun acknowledgeAction() {
-        _action.value = ActionState()
-    }
-
-    private fun action(@StringRes done: Int? = null, block: suspend () -> ApiResult<Unit>) {
-        if (_action.value.running) return
-        _action.value = ActionState(running = true)
-        viewModelScope.launch {
-            _action.value = when (val result = block()) {
-                is ApiResult.Failure -> ActionState(error = result.error)
-                is ApiResult.Ok -> ActionState(done = done)
             }
         }
     }

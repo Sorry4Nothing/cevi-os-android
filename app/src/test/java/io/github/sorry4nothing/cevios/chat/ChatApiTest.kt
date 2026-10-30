@@ -112,21 +112,6 @@ class ChatApiTest {
     }
 
     @Test
-    fun hidePostsWithoutBody() {
-        server.enqueue(MockResponse.Builder().code(204).build())
-        assertEquals(ApiResult.Ok(Unit), runBlocking { chat.hide("m1") })
-        val hide = server.takeRequest()
-        assertEquals("POST /api/v1/nachrichten/m1/ausblenden HTTP/1.1", hide.requestLine)
-        assertEquals(0, hide.body?.size ?: 0)
-    }
-
-    @Test
-    fun hideWithoutPermissionIs403() {
-        server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"x"}"""))
-        assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), runBlocking { chat.hide("m1") })
-    }
-
-    @Test
     fun helpReadsTextOrNone() {
         server.enqueue(json(200, """{"vertrauenspersonen":"Vertrauensperson: Beispiel, erreichbar am Abend."}"""))
         server.enqueue(json(200, """{"vertrauenspersonen":null}"""))
@@ -253,19 +238,19 @@ class ChatApiTest {
     }
 
     @Test
-    fun messagesReadHideFlagAndLeaderRoleOfTheAuthor() {
+    fun messagesReadTheLeaderRoleOfTheAuthor() {
         server.enqueue(
             json(
                 200,
                 """{"nachrichten":[
                 {"id":"m2","text":"Hallo","erstelltAm":"2027-01-01T10:00:00Z","autor":{"id":"l1","name":"Beispiel Leitung","stufenleitung":true},
-                 "programm":null,"ausgeblendet":false,"darfAusblenden":true,"eigene":false},
+                 "programm":null,"ausgeblendet":false,"eigene":false},
                 {"id":"m1","text":"Hi","erstelltAm":"2027-01-01T09:00:00Z","autor":{"id":"e1","name":"Beispiel Eltern","stufenleitung":false},
-                 "programm":null,"ausgeblendet":false,"darfAusblenden":false,"eigene":false}],"naechster":null}""",
+                 "programm":null,"ausgeblendet":false,"eigene":false}],"naechster":null}""",
             ),
         )
         val messages = (runBlocking { chat.messages("c1") } as ApiResult.Ok).value.messages
-        assertTrue(messages[0].mayHide && messages[0].author.groupLeader)
-        assertFalse(messages[1].mayHide || messages[1].author.groupLeader)
+        assertTrue(messages[0].author.groupLeader)
+        assertFalse(messages[1].author.groupLeader)
     }
 }

@@ -92,20 +92,6 @@ fun DashedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     }
 }
 
-/** Zerstörerische Aktion im Dialog, z. B. «Ausblenden»: klein (48 dp), mit Rand, damit sie nicht nur über Farbe auffällt. */
-@Composable
-fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val scheme = MaterialTheme.colorScheme
-    Button(
-        onClick = onClick,
-        modifier = modifier.heightIn(min = Sizes.touchTarget).focusRing(Pill),
-        shape = Pill,
-        colors = ButtonDefaults.buttonColors(containerColor = scheme.errorContainer, contentColor = scheme.onErrorContainer),
-        border = BorderStroke(1.dp, scheme.onErrorContainer),
-        contentPadding = PaddingValues(horizontal = 18.dp),
-    ) { Text(text, style = MaterialTheme.typography.labelLarge) }
-}
-
 @Composable
 private fun RowScope.ButtonContent(text: String, @DrawableRes icon: Int?) {
     icon?.let {

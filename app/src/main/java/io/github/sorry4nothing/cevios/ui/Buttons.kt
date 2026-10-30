@@ -19,53 +19,53 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import io.github.sorry4nothing.cevios.ui.theme.Groesse
-import io.github.sorry4nothing.cevios.ui.theme.Voll
+import io.github.sorry4nothing.cevios.ui.theme.Sizes
+import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 
 /** Die eine Hauptaktion pro Screen, in Cevi-Rot: 56 dp hoch, pillenförmig. */
 @Composable
-fun HauptKnopf(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null) {
+fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null) {
     Button(
         onClick = onClick,
-        modifier = modifier.heightIn(min = Groesse.button).fokusRing(Voll),
-        shape = Voll,
+        modifier = modifier.heightIn(min = Sizes.button).focusRing(Pill),
+        shape = Pill,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ),
         contentPadding = PaddingValues(horizontal = 24.dp),
-    ) { Inhalt(text, icon) }
+    ) { ButtonContent(text, icon) }
 }
 
 /** Nebenaktion mit Rand, z. B. «Nochmals versuchen». */
 @Composable
-fun RandKnopf(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null, enabled: Boolean = true) {
+fun OutlinedPillButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null, enabled: Boolean = true) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.heightIn(min = Groesse.touchZiel).fokusRing(Voll),
+        modifier = modifier.heightIn(min = Sizes.touchTarget).focusRing(Pill),
         enabled = enabled,
-        shape = Voll,
+        shape = Pill,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
         contentPadding = PaddingValues(horizontal = 18.dp),
-    ) { Inhalt(text, icon) }
+    ) { ButtonContent(text, icon) }
 }
 
 /** Ruhige Aktion in `accent`, z. B. «Abbrechen» oder «Zu den Programmen». */
 @Composable
-fun TextKnopf(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TextActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     TextButton(
         onClick = onClick,
-        modifier = modifier.heightIn(min = Groesse.touchZiel).fokusRing(Voll),
-        shape = Voll,
+        modifier = modifier.heightIn(min = Sizes.touchTarget).focusRing(Pill),
+        shape = Pill,
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.cevi.accent),
         contentPadding = PaddingValues(horizontal = 12.dp),
     ) { Text(text, style = MaterialTheme.typography.labelLarge) }
 }
 
 @Composable
-private fun RowScope.Inhalt(text: String, @DrawableRes icon: Int?) {
+private fun RowScope.ButtonContent(text: String, @DrawableRes icon: Int?) {
     icon?.let {
         Icon(painterResource(it), contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))

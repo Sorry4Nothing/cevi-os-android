@@ -1,6 +1,6 @@
 <resources>
     <!-- Hintergrund wie das Compose-Theme, damit beim Start nichts aufblitzt. -->
     <style name="Theme.CeviOS" parent="android:Theme.DeviceDefault.Light.NoActionBar">
-        <item name="android:windowBackground">@color/fenster_hintergrund</item>
+        <item name="android:windowBackground">@color/window_background</item>
     </style>
 </resources>

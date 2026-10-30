@@ -41,62 +41,62 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.net.ApiResult
-import io.github.sorry4nothing.cevios.programme.SCHWEIZ
-import io.github.sorry4nothing.cevios.ui.FehlerAnzeige
-import io.github.sorry4nothing.cevios.ui.Laden
+import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
+import io.github.sorry4nothing.cevios.ui.ErrorDisplay
+import io.github.sorry4nothing.cevios.ui.Loading
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Locale
 
-private const val MAX_ZEICHEN = 2000
-private val ZEIT = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(Locale.forLanguageTag("de-CH"))
+private const val MAX_CHARS = 2000
+private val DATE_TIME_FORMAT = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(Locale.forLanguageTag("de-CH"))
 
 @Composable
-fun chatTitel(chat: Chat?): String = when {
-    chat == null -> stringResource(R.string.chat_titel)
-    chat.istGruppe -> stringResource(R.string.chat_gruppe, chat.stufe.name)
-    else -> stringResource(R.string.chat_einzel, chat.eltern?.name.orEmpty()).trim()
+fun chatTitle(chat: Chat?): String = when {
+    chat == null -> stringResource(R.string.chat_title)
+    chat.isGroup -> stringResource(R.string.chat_group, chat.ageGroup.name)
+    else -> stringResource(R.string.chat_direct, chat.parent?.name.orEmpty()).trim()
 }
 
 @Composable
-fun ChatListeScreen(
-    zustand: ApiResult<ChatListe>?,
-    profil: Profil?,
-    aktion: Aktionsstand,
-    onOeffnen: (String) -> Unit,
-    onEinzelchat: (stufeId: String) -> Unit,
-    onHilfe: () -> Unit,
-    onNochmals: () -> Unit,
+fun ChatListScreen(
+    state: ApiResult<ChatList>?,
+    profile: Profile?,
+    action: ActionState,
+    onOpen: (String) -> Unit,
+    onDirectChat: (ageGroupId: String) -> Unit,
+    onHelp: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
         Text(
-            stringResource(R.string.chat_titel),
+            stringResource(R.string.chat_title),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(16.dp).semantics { heading() },
         )
-        TextButton(onClick = onHilfe, Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.hilfe_knopf)) }
-        AktionsMeldung(aktion)
-        when (zustand) {
-            null -> Laden()
-            is ApiResult.Fehler -> FehlerAnzeige(zustand, onNochmals)
+        TextButton(onClick = onHelp, Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.help_button)) }
+        ActionMessage(action)
+        when (state) {
+            null -> Loading()
+            is ApiResult.Failure -> ErrorDisplay(state, onRetry)
             is ApiResult.Ok -> {
-                val starten = ChatRegeln.stufenFuerEinzelchat(profil, zustand.wert.chats)
-                if (zustand.wert.chats.isEmpty() && starten.isEmpty()) {
-                    Text(stringResource(R.string.chat_leer), Modifier.padding(16.dp))
+                val startable = ChatRules.ageGroupsForDirectChat(profile, state.value.chats)
+                if (state.value.chats.isEmpty() && startable.isEmpty()) {
+                    Text(stringResource(R.string.chat_empty), Modifier.padding(16.dp))
                 } else {
                     LazyColumn {
-                        items(zustand.wert.chats, key = { it.id }) { chat ->
-                            ChatZeile(chat, onOeffnen)
+                        items(state.value.chats, key = { it.id }) { chat ->
+                            ChatRow(chat, onOpen)
                             HorizontalDivider()
                         }
-                        items(starten, key = { "starten-" + it.id }) { stufe ->
+                        items(startable, key = { "start-" + it.id }) { ageGroup ->
                             OutlinedButton(
-                                onClick = { onEinzelchat(stufe.id) },
-                                enabled = !aktion.laeuft,
+                                onClick = { onDirectChat(ageGroup.id) },
+                                enabled = !action.running,
                                 modifier = Modifier.padding(16.dp),
-                            ) { Text(stringResource(R.string.einzelchat_starten, stufe.name)) }
+                            ) { Text(stringResource(R.string.direct_chat_start, ageGroup.name)) }
                         }
                     }
                 }
@@ -106,230 +106,230 @@ fun ChatListeScreen(
 }
 
 @Composable
-private fun ChatZeile(chat: Chat, onOeffnen: (String) -> Unit) {
+private fun ChatRow(chat: Chat, onOpen: (String) -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = stringResource(R.string.chat_oeffnen)) { onOeffnen(chat.id) }
+            .clickable(onClickLabel = stringResource(R.string.chat_open)) { onOpen(chat.id) }
             .heightIn(min = 48.dp)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(chatTitel(chat), style = MaterialTheme.typography.titleMedium)
-        if (!chat.istGruppe) Text(stringResource(R.string.chat_stufe, chat.stufe.name))
+        Text(chatTitle(chat), style = MaterialTheme.typography.titleMedium)
+        if (!chat.isGroup) Text(stringResource(R.string.chat_age_group, chat.ageGroup.name))
     }
 }
 
 @Composable
-fun ChatVerlaufScreen(
-    titel: String,
+fun ChatConversationScreen(
+    title: String,
     chat: Chat?,
-    profil: Profil?,
-    zustand: ApiResult<Verlauf>?,
-    aeltereLaedt: Boolean,
-    senden: Sendestand,
-    aktion: Aktionsstand,
-    onSenden: (text: String, onGesendet: () -> Unit) -> Unit,
-    onAeltere: () -> Unit,
-    onAktualisieren: () -> Unit,
-    onAusblenden: (nachrichtId: String) -> Unit,
-    onMelden: (nachrichtId: String) -> Unit,
-    onEinzelchat: (stufeId: String, elternUserId: String) -> Unit,
-    onZurueck: () -> Unit,
-    onNochmals: () -> Unit,
+    profile: Profile?,
+    state: ApiResult<Conversation>?,
+    loadingOlder: Boolean,
+    send: SendState,
+    action: ActionState,
+    onSend: (text: String, onSent: () -> Unit) -> Unit,
+    onOlder: () -> Unit,
+    onRefresh: () -> Unit,
+    onHide: (messageId: String) -> Unit,
+    onReport: (messageId: String) -> Unit,
+    onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
+    onBack: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     // Safe-Drawing-Padding enthält die Tastatur: Die Eingabe bleibt sichtbar.
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = onZurueck) { Text(stringResource(R.string.zurueck)) }
-            TextButton(onClick = onAktualisieren) { Text(stringResource(R.string.aktualisieren)) }
+            TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+            TextButton(onClick = onRefresh) { Text(stringResource(R.string.refresh)) }
         }
         Text(
-            titel,
+            title,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { heading() },
         )
         // Im Einzelchat lesen alle Stufenleitungen der Stufe mit; das steht im Kopf, nicht erst im Kleingedruckten.
-        if (chat != null && !chat.istGruppe && chat.stufenleitung.isNotEmpty()) {
+        if (chat != null && !chat.isGroup && chat.groupLeaders.isNotEmpty()) {
             Text(
-                stringResource(R.string.chat_mitlesen, chat.stufenleitung.joinToString(", ") { it.name }),
+                stringResource(R.string.chat_read_along, chat.groupLeaders.joinToString(", ") { it.name }),
                 Modifier.padding(horizontal = 16.dp),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
         Column(Modifier.weight(1f)) {
-            when (zustand) {
-                null -> Laden()
-                is ApiResult.Fehler -> FehlerAnzeige(zustand, onNochmals)
+            when (state) {
+                null -> Loading()
+                is ApiResult.Failure -> ErrorDisplay(state, onRetry)
                 is ApiResult.Ok ->
-                    Nachrichten(zustand.wert, chat, profil, aeltereLaedt, onAeltere, onAusblenden, onMelden, onEinzelchat)
+                    Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onReport, onDirectChat)
             }
         }
-        AktionsMeldung(aktion)
-        Eingabe(senden, onSenden)
+        ActionMessage(action)
+        MessageInput(send, onSend)
     }
 }
 
 @Composable
-private fun Nachrichten(
-    verlauf: Verlauf,
+private fun Messages(
+    conversation: Conversation,
     chat: Chat?,
-    profil: Profil?,
-    aeltereLaedt: Boolean,
-    onAeltere: () -> Unit,
-    onAusblenden: (String) -> Unit,
-    onMelden: (String) -> Unit,
-    onEinzelchat: (stufeId: String, elternUserId: String) -> Unit,
+    profile: Profile?,
+    loadingOlder: Boolean,
+    onOlder: () -> Unit,
+    onHide: (String) -> Unit,
+    onReport: (String) -> Unit,
+    onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
 ) {
-    if (verlauf.nachrichten.isEmpty()) {
-        Text(stringResource(R.string.nachrichten_leer), Modifier.padding(16.dp))
+    if (conversation.messages.isEmpty()) {
+        Text(stringResource(R.string.messages_empty), Modifier.padding(16.dp))
         return
     }
-    var gewaehlt by remember { mutableStateOf<ChatNachricht?>(null) }
-    var frage by remember { mutableStateOf<Frage?>(null) }
+    var selected by remember { mutableStateOf<ChatMessage?>(null) }
+    var question by remember { mutableStateOf<ConfirmQuestion?>(null) }
 
     // Neueste zuerst und von unten nach oben: so wächst der Verlauf wie in jedem Chat nach oben.
     LazyColumn(reverseLayout = true, contentPadding = PaddingValues(16.dp)) {
-        items(verlauf.nachrichten, key = { it.id }) { nachricht ->
-            NachrichtZeile(nachricht, onAktionen = { gewaehlt = nachricht })
+        items(conversation.messages, key = { it.id }) { message ->
+            MessageRow(message, onActions = { selected = message })
         }
-        if (verlauf.naechster != null) {
+        if (conversation.next != null) {
             item {
-                OutlinedButton(onClick = onAeltere, enabled = !aeltereLaedt, modifier = Modifier.padding(vertical = 8.dp)) {
-                    Text(stringResource(if (aeltereLaedt) R.string.laden else R.string.nachrichten_aeltere))
+                OutlinedButton(onClick = onOlder, enabled = !loadingOlder, modifier = Modifier.padding(vertical = 8.dp)) {
+                    Text(stringResource(if (loadingOlder) R.string.loading else R.string.messages_older))
                 }
             }
         }
     }
 
-    gewaehlt?.let { nachricht ->
+    selected?.let { message ->
         AlertDialog(
-            onDismissRequest = { gewaehlt = null },
-            title = { Text(stringResource(R.string.aktionen_titel, nachricht.autor.name)) },
+            onDismissRequest = { selected = null },
+            title = { Text(stringResource(R.string.actions_title, message.author.name)) },
             text = {
                 Column {
-                    if (ChatRegeln.darfEinzelchatOeffnen(chat, nachricht, profil)) {
+                    if (ChatRules.mayOpenDirectChat(chat, message, profile)) {
                         TextButton(onClick = {
-                            gewaehlt = null
-                            chat?.let { onEinzelchat(it.stufe.id, nachricht.autor.id) }
-                        }) { Text(stringResource(R.string.aktion_einzelchat, nachricht.autor.name)) }
+                            selected = null
+                            chat?.let { onDirectChat(it.ageGroup.id, message.author.id) }
+                        }) { Text(stringResource(R.string.action_direct_chat, message.author.name)) }
                     }
-                    if (ChatRegeln.darfAusblenden(chat, nachricht, profil)) {
+                    if (ChatRules.mayHide(chat, message, profile)) {
                         TextButton(onClick = {
-                            gewaehlt = null
-                            frage = Frage(Art.AUSBLENDEN, nachricht.id)
-                        }) { Text(stringResource(R.string.aktion_ausblenden)) }
+                            selected = null
+                            question = ConfirmQuestion(ConfirmKind.HIDE, message.id)
+                        }) { Text(stringResource(R.string.action_hide)) }
                     }
-                    if (ChatRegeln.darfMelden(nachricht)) {
+                    if (ChatRules.mayReport(message)) {
                         TextButton(onClick = {
-                            gewaehlt = null
-                            frage = Frage(Art.MELDEN, nachricht.id)
-                        }) { Text(stringResource(R.string.aktion_melden)) }
+                            selected = null
+                            question = ConfirmQuestion(ConfirmKind.REPORT, message.id)
+                        }) { Text(stringResource(R.string.action_report)) }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { gewaehlt = null }) { Text(stringResource(R.string.abbrechen)) } },
+            confirmButton = { TextButton(onClick = { selected = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 
-    frage?.let { f ->
+    question?.let { f ->
         AlertDialog(
-            onDismissRequest = { frage = null },
-            title = { Text(stringResource(f.art.titel)) },
-            text = { Text(stringResource(f.art.frage)) },
+            onDismissRequest = { question = null },
+            title = { Text(stringResource(f.kind.title)) },
+            text = { Text(stringResource(f.kind.question)) },
             confirmButton = {
                 Button(onClick = {
-                    frage = null
-                    if (f.art == Art.AUSBLENDEN) onAusblenden(f.nachrichtId) else onMelden(f.nachrichtId)
-                }) { Text(stringResource(f.art.bestaetigen)) }
+                    question = null
+                    if (f.kind == ConfirmKind.HIDE) onHide(f.messageId) else onReport(f.messageId)
+                }) { Text(stringResource(f.kind.confirm)) }
             },
-            dismissButton = { TextButton(onClick = { frage = null }) { Text(stringResource(R.string.abbrechen)) } },
+            dismissButton = { TextButton(onClick = { question = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
 
-private enum class Art(@StringRes val titel: Int, @StringRes val frage: Int, @StringRes val bestaetigen: Int) {
-    AUSBLENDEN(R.string.aktion_ausblenden, R.string.ausblenden_frage, R.string.aktion_bestaetigen_ausblenden),
-    MELDEN(R.string.aktion_melden, R.string.melden_frage, R.string.aktion_bestaetigen_melden),
+private enum class ConfirmKind(@StringRes val title: Int, @StringRes val question: Int, @StringRes val confirm: Int) {
+    HIDE(R.string.action_hide, R.string.hide_question, R.string.action_confirm_hide),
+    REPORT(R.string.action_report, R.string.report_question, R.string.action_confirm_report),
 }
 
-private data class Frage(val art: Art, val nachrichtId: String)
+private data class ConfirmQuestion(val kind: ConfirmKind, val messageId: String)
 
 @Composable
-private fun NachrichtZeile(nachricht: ChatNachricht, onAktionen: () -> Unit) {
+private fun MessageRow(message: ChatMessage, onActions: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        val autor = if (nachricht.eigene) stringResource(R.string.nachricht_du) else nachricht.autor.name
-        Text("$autor, ${zeitText(nachricht.erstelltAm)}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+        val author = if (message.own) stringResource(R.string.message_you) else message.author.name
+        Text("$author, ${timeText(message.createdAt)}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
         // Ausgeblendet steht als Hinweis da, nie als leere Zeile.
         Text(
-            if (nachricht.ausgeblendet) stringResource(R.string.nachricht_ausgeblendet) else nachricht.text.orEmpty(),
+            if (message.hidden) stringResource(R.string.message_hidden) else message.text.orEmpty(),
             style = MaterialTheme.typography.bodyLarge,
         )
-        nachricht.programm?.let { Text(stringResource(R.string.nachricht_programm, it.titel), style = MaterialTheme.typography.bodyMedium) }
-        val beschreibung = stringResource(R.string.aktionen_beschreibung, autor)
-        TextButton(onClick = onAktionen, Modifier.semantics { contentDescription = beschreibung }) {
-            Text(stringResource(R.string.aktionen_knopf))
+        message.program?.let { Text(stringResource(R.string.message_program, it.title), style = MaterialTheme.typography.bodyMedium) }
+        val description = stringResource(R.string.actions_description, author)
+        TextButton(onClick = onActions, Modifier.semantics { contentDescription = description }) {
+            Text(stringResource(R.string.actions_button))
         }
     }
 }
 
 /** Läuft, Fehler oder Bestätigung einer Aktion, angesagt als Live-Region. */
 @Composable
-private fun AktionsMeldung(aktion: Aktionsstand) {
+private fun ActionMessage(action: ActionState) {
     val text = when {
-        aktion.laeuft -> stringResource(R.string.aktion_laeuft)
-        aktion.fehler != null -> stringResource(aktion.fehler.text)
-        aktion.erledigt != null -> stringResource(aktion.erledigt)
+        action.running -> stringResource(R.string.action_running)
+        action.error != null -> stringResource(action.error.text)
+        action.done != null -> stringResource(action.done)
         else -> return
     }
     Text(
         text,
         Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics {
-            liveRegion = if (aktion.fehler != null) LiveRegionMode.Assertive else LiveRegionMode.Polite
+            liveRegion = if (action.error != null) LiveRegionMode.Assertive else LiveRegionMode.Polite
         },
     )
 }
 
 @Composable
-private fun Eingabe(senden: Sendestand, onSenden: (String, () -> Unit) -> Unit) {
-    var entwurf by rememberSaveable { mutableStateOf("") }
+private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) {
+    var draft by rememberSaveable { mutableStateOf("") }
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (senden.laeuft) {
-            Text(stringResource(R.string.nachricht_sendet), Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+        if (send.running) {
+            Text(stringResource(R.string.message_sending), Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         }
-        senden.fehler?.let {
+        send.error?.let {
             Text(stringResource(it.text), Modifier.semantics { liveRegion = LiveRegionMode.Assertive })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
             OutlinedTextField(
-                value = entwurf,
-                onValueChange = { if (it.length <= MAX_ZEICHEN) entwurf = it },
-                label = { Text(stringResource(R.string.nachricht_eingabe)) },
+                value = draft,
+                onValueChange = { if (it.length <= MAX_CHARS) draft = it },
+                label = { Text(stringResource(R.string.message_input)) },
                 maxLines = 4,
                 modifier = Modifier.weight(1f),
             )
             Button(
-                onClick = { onSenden(entwurf) { entwurf = "" } },
-                enabled = entwurf.isNotBlank() && !senden.laeuft,
-            ) { Text(stringResource(R.string.nachricht_senden)) }
+                onClick = { onSend(draft) { draft = "" } },
+                enabled = draft.isNotBlank() && !send.running,
+            ) { Text(stringResource(R.string.message_send)) }
         }
     }
 }
 
 @Composable
-fun HilfeScreen(zustand: ApiResult<HilfeAntwort>?, onZurueck: () -> Unit, onNochmals: () -> Unit) {
+fun HelpScreen(state: ApiResult<HelpResponse>?, onBack: () -> Unit, onRetry: () -> Unit) {
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        TextButton(onClick = onZurueck, Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.zurueck)) }
+        TextButton(onClick = onBack, Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.back)) }
         Text(
-            stringResource(R.string.hilfe_titel),
+            stringResource(R.string.help_title),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { heading() },
         )
-        when (zustand) {
-            null -> Laden()
-            is ApiResult.Fehler -> FehlerAnzeige(zustand, onNochmals)
+        when (state) {
+            null -> Loading()
+            is ApiResult.Failure -> ErrorDisplay(state, onRetry)
             is ApiResult.Ok -> Text(
-                zustand.wert.vertrauenspersonen?.takeIf { it.isNotBlank() } ?: stringResource(R.string.hilfe_leer),
+                state.value.trustedPersons?.takeIf { it.isNotBlank() } ?: stringResource(R.string.help_empty),
                 Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
                 style = MaterialTheme.typography.bodyLarge,
             )
@@ -337,9 +337,9 @@ fun HilfeScreen(zustand: ApiResult<HilfeAntwort>?, onZurueck: () -> Unit, onNoch
     }
 }
 
-private fun zeitText(iso: String): String =
+private fun timeText(iso: String): String =
     try {
-        ZEIT.format(Instant.parse(iso).atZone(SCHWEIZ))
+        DATE_TIME_FORMAT.format(Instant.parse(iso).atZone(SWISS_ZONE))
     } catch (e: DateTimeParseException) {
         ""
     }

@@ -19,35 +19,35 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
-import io.github.sorry4nothing.cevios.ui.theme.Abstand
+import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 
-enum class HinweisArt(@DrawableRes val icon: Int) {
+enum class NoticeKind(@DrawableRes val icon: Int) {
     /** Bleibt stehen und wird angesagt. */
-    FEHLER(R.drawable.ic_warndreieck),
+    ERROR(R.drawable.ic_warning),
     INFO(R.drawable.ic_info),
-    WARNUNG(R.drawable.ic_warndreieck),
+    WARNING(R.drawable.ic_warning),
 }
 
 /** Banner im Inhalt: erklärt, warum etwas so ist, oder sagt, was schiefging. Immer Icon und Text. */
 @Composable
-fun HinweisBanner(art: HinweisArt, text: String, modifier: Modifier = Modifier) {
-    val schema = MaterialTheme.colorScheme
-    val (flaeche, inhalt) = when (art) {
-        HinweisArt.FEHLER -> schema.errorContainer to schema.onErrorContainer
-        HinweisArt.INFO -> schema.secondaryContainer to schema.onSecondaryContainer
-        HinweisArt.WARNUNG -> MaterialTheme.cevi.warningContainer to MaterialTheme.cevi.onWarningContainer
+fun NoticeBanner(kind: NoticeKind, text: String, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val (surfaceColor, contentColor) = when (kind) {
+        NoticeKind.ERROR -> scheme.errorContainer to scheme.onErrorContainer
+        NoticeKind.INFO -> scheme.secondaryContainer to scheme.onSecondaryContainer
+        NoticeKind.WARNING -> MaterialTheme.cevi.warningContainer to MaterialTheme.cevi.onWarningContainer
     }
     Row(
         modifier
             .fillMaxWidth()
-            .background(flaeche, MaterialTheme.shapes.medium)
-            .padding(horizontal = Abstand.s4, vertical = Abstand.s3)
-            .semantics { if (art == HinweisArt.FEHLER) liveRegion = LiveRegionMode.Assertive },
-        horizontalArrangement = Arrangement.spacedBy(Abstand.s3),
+            .background(surfaceColor, MaterialTheme.shapes.medium)
+            .padding(horizontal = Spacing.s4, vertical = Spacing.s3)
+            .semantics { if (kind == NoticeKind.ERROR) liveRegion = LiveRegionMode.Assertive },
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         verticalAlignment = Alignment.Top,
     ) {
-        Icon(painterResource(art.icon), contentDescription = null, tint = inhalt, modifier = Modifier.size(18.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = inhalt)
+        Icon(painterResource(kind.icon), contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = contentColor)
     }
 }

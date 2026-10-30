@@ -24,20 +24,50 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 
 | Design | Compose | Stand |
 | --- | --- | --- |
-| Farben `tokens.json` (Nacht, Tag) | `ui/theme/Farben.kt`: `ColorScheme` und `CeviFarben` (`MaterialTheme.cevi`) | umgesetzt |
-| Schrift und Stile | `ui/theme/Schrift.kt`, Schrift in `res/font/archivo.ttf` (Lizenz in `assets/licenses`) | umgesetzt |
-| Abstände, Grössen, Ecken | `ui/theme/Masse.kt` (`Abstand`, `Groesse`, `CeviFormen`, `Voll`) | umgesetzt |
+| Farben `tokens.json` (Nacht, Tag) | `ui/theme/Colors.kt`: `ColorScheme` und `CeviColors` (`MaterialTheme.cevi`) | umgesetzt |
+| Schrift und Stile | `ui/theme/Typography.kt`, Schrift in `res/font/archivo.ttf` (Lizenz in `assets/licenses`) | umgesetzt |
+| Abstände, Grössen, Ecken | `ui/theme/Dimensions.kt` (`Spacing`, `Sizes`, `CeviShapes`, `Pill`) | umgesetzt |
 | Theme | `ui/theme/Theme.kt`: `CeviTheme` | umgesetzt |
-| Strich-Icons (27, 24 dp, nur Strich, Strichstärke 1.8, Häkchen und Kreuz auch als `_gewaehlt` mit 2.6) | `res/drawable/ic_*.xml`, in Compose mit `Icon(painterResource(...), tint = ...)` einfärben | umgesetzt |
-| Kopf (`Kopf`, `RundKnopf`) | `ui/Kopf.kt` | umgesetzt (#38) |
-| Footer-Dock, im Querformat und ab 600 dp senkrecht links | `ui/Dock.kt`: `HauptGeruest`, `Ziel` (Programme, Chat; Profil kommt mit dem Profil) | umgesetzt (#38) |
-| Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programme/ProgrammeScreens.kt`, `programme/Tage.kt` | umgesetzt (#38), ohne Kontaktperson und ohne Status je Kind in der Liste (API) |
-| Zusage (Ja/Nein-Pillen) | `programme/AnmeldungAbschnitt.kt` | umgesetzt (#38) |
-| StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Hinweis.kt`, `ui/Knoepfe.kt`, `ui/Fokus.kt` | umgesetzt (#38) |
-| Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/Zustaende.kt`: `FehlerZustand`, `LeerZustand`, `LadeSkelett` | umgesetzt (#38); «Anmelden» erst mit dem Login |
+| Strich-Icons (27, 24 dp, nur Strich, Strichstärke 1.8, Häkchen und Kreuz auch als `_selected` mit 2.6) | `res/drawable/ic_*.xml`, in Compose mit `Icon(painterResource(...), tint = ...)` einfärben | umgesetzt |
+| Kopf (`Kopf`, `RundKnopf`) | `ui/Header.kt`: `Header`, `RoundButton` | umgesetzt (#38) |
+| Footer-Dock, im Querformat und ab 600 dp senkrecht links | `ui/Dock.kt`: `MainScaffold`, `Destination` (Programme, Chat; Profil kommt mit dem Profil) | umgesetzt (#38) |
+| Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programs/ProgramsScreens.kt`, `programs/Days.kt` | umgesetzt (#38), ohne Kontaktperson und ohne Status je Kind in der Liste (API) |
+| Zusage (Ja/Nein-Pillen) | `programs/RegistrationSection.kt` (`RsvpRow`, `RsvpPill`) | umgesetzt (#38) |
+| StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Notice.kt` (`NoticeBanner`), `ui/Buttons.kt` (`PrimaryButton`, `OutlinedPillButton`, `TextActionButton`), `ui/Focus.kt` (`focusRing`) | umgesetzt (#38) |
+| Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/States.kt`: `ErrorState`, `EmptyState`, `LoadingSkeleton` | umgesetzt (#38); «Anmelden» erst mit dem Login |
 | ChatZeile, ChatBlase, ChatEingabe, MitleseHinweis, Dialog, Hinweis, Zustände | `chat/…`, `ui/…` | Issue #39 |
 | Login, Passwort, Willkommen, Profil, Datenschutz | – | mit den jeweiligen Issues (Login, Profil) |
 | Anmeldungen und Anwesenheit (Leitende) | – | Epic «Leitende», nicht begonnen |
+
+## Namen: Deutsch → Englisch
+
+Bezeichner im Code sind Englisch, Texte (`strings.xml`) und Kommentare Deutsch; Feldnamen der API bleiben über `@SerialName` erhalten.
+
+| Design-Baustein (Deutsch) | Compose-Name |
+| --- | --- |
+| Programm, Programme | `Program`, `ProgramList`, Paket `programs`, `ProgramsApi`, `ProgramsViewModel` |
+| Stufe | `AgeGroup` (`ChatAgeGroup`, `ProgramAgeGroup`, `ProfileAgeGroup`) |
+| Stufenleitung (SL) | `GroupLeader` (`groupLeaders`, `isGroupLeader`) |
+| Leitung, Leitende | `Leader` |
+| Kind, Eltern | `Child`, `Parent` |
+| Anmeldung | `Registration` (`RegistrationSection`, `ownRegistration`) |
+| Zusage, Antwort (Ja/Nein) | `Rsvp` (`RsvpRow`, `RsvpPill`, `RsvpState`); Server-Antworten heissen `Response` |
+| Pille | `Pill` (Form `Pill`, Baustein `RsvpPill`) |
+| Nachricht, Verlauf | `Message`, `Conversation` (`ChatConversationScreen`) |
+| Chatliste, Einzelchat, Gruppenchat | `ChatList`, `ChatListScreen`, `openDirectChat`, `isGroup` |
+| Hilfe, Vertrauenspersonen | `Help`, `trustedPersons` |
+| Ausblenden, Melden, Mitlesen | `hide`, `report`, `chat_read_along` (Text) |
+| Sitzung, Speicher, Herkunft | `Session`, `Storage`, `Origin` (`SessionStorage`, `SessionInterceptor`) |
+| Fehler, Laden, Leer, Zustand | `Error` (`ApiError`, `ErrorPage`, `ApiResult.Failure`), `Loading`, `Empty`, `State` |
+| Kopf, Dock | `Header`, `Dock` |
+| Knöpfe | `PrimaryButton`, `OutlinedPillButton`, `TextActionButton`, `RoundButton`, `HeaderButton` |
+| Hinweis | `Notice` (`NoticeBanner`) |
+| Fokus, Fokusring | `Focus`, `focusRing` |
+| Abstände, Grössen, Formen | `Spacing`, `Sizes`, `CeviShapes` |
+| Farben, Nacht, Tag | `CeviColors`, `CeviNight`, `CeviDay` |
+| Schrift | `CeviTypography` |
+| Zeitleiste, Kachel, Fakten | `Timeline`, `Tile`, `Facts` |
+| Aktion | `Action` (`ActionState`, `ActionMessage`) |
 
 ## Was der Entwurf zeigt, die API aber (noch) nicht liefert
 
@@ -60,4 +90,4 @@ Zwischen dem Design System (`tokens.json`, Brandbook) und den einzelnen Bildschi
 
 ## Prüfen
 
-`KontrastTest` rechnet die Textpaare der beiden Themen nach (Text 4.5:1, `outline` und `focus` 3:1). Ändert sich ein Wert, läuft der Test mit.
+`ContrastTest` rechnet die Textpaare der beiden Themen nach (Text 4.5:1, `outline` und `focus` 3:1). Ändert sich ein Wert, läuft der Test mit.

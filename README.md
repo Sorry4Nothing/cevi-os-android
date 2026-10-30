@@ -6,7 +6,17 @@ Das Backend liegt in [Sorry4Nothing/cevi-os](https://github.com/Sorry4Nothing/ce
 
 ## Stand
 
-Der Aufbau beginnt. Die bisherige Expo-App im Backend-Repo (Tag `expo-referenz`) dient nur als Referenz für Verhalten und Texte.
+Der Aufbau beginnt. Das Gerüst (Compose, Material 3, `minSdk` 26) und die CI stehen. Die frühere Expo-App im Backend-Repo (`apps/mobile`) dient nur als Referenz für Verhalten und Texte.
+
+## Bauen
+
+Android Studio oder Gradle mit JDK 17 oder neuer:
+
+```
+./gradlew assembleDebug lintDebug testDebugUnitTest
+```
+
+Die Adresse des Servers kommt nicht aus dem Repo, sondern lokal aus `~/.gradle/gradle.properties` oder per `-PceviApiBaseUrl=https://…`. Ohne Angabe gilt der Platzhalter `https://api.example.org`.
 
 ## Push
 

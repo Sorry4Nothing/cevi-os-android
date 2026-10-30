@@ -112,8 +112,8 @@ fun StatePage(
 }
 
 /**
- * Die Fehlerseite zu einem [ApiError]. Eine Aktion, die es nicht gibt, fehlt auch als Knopf: «Anmelden» erscheint erst,
- * wenn es den Login gibt, «Zu den Programmen» nur, wo `onToPrograms` gesetzt ist.
+ * Die Fehlerseite zu einem [ApiError]. Eine Aktion, die es nicht gibt, fehlt auch als Knopf: «Anmelden» erscheint nur, wo
+ * `onSignIn` gesetzt ist (nach abgelaufener Sitzung), «Zu den Programmen» nur, wo `onToPrograms` gesetzt ist.
  */
 @Composable
 fun ErrorState(
@@ -121,6 +121,7 @@ fun ErrorState(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
     onToPrograms: (() -> Unit)? = null,
+    onSignIn: (() -> Unit)? = null,
     @StringRes notFoundText: Int = R.string.state_404_text,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -140,7 +141,7 @@ fun ErrorState(
 
         ErrorPage.SESSION -> StatePage(
             R.drawable.ic_clock, stringResource(R.string.state_session_title), stringResource(R.string.state_session_text), modifier,
-        )
+        ) { onSignIn?.let { PrimaryButton(stringResource(R.string.login_submit), it) } }
 
         ErrorPage.OUTDATED -> StatePage(
             R.drawable.ic_warning, stringResource(R.string.state_error_title), stringResource(error.text), modifier,

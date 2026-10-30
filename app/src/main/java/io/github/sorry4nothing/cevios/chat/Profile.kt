@@ -10,9 +10,13 @@ data class ProfileRole(@SerialName("stufeId") val ageGroupId: String, @SerialNam
 data class ProfileAgeGroup(val id: String, val name: String, @SerialName("kuerzel") val abbreviation: String = "")
 
 @Serializable
-data class ProfileChild(val id: String, @SerialName("stufeId") val ageGroupId: String)
+data class ProfileChild(
+    val id: String,
+    @SerialName("stufeId") val ageGroupId: String,
+    @SerialName("vorname") val firstName: String = "",
+)
 
-/** Der Teil des Profils (`GET /api/v1/ich`), den der Chat braucht. Kindernamen liest die App hier nicht. */
+/** Das eigene Profil (`GET /api/v1/ich`). Die Felder der Anzeige sind für Chat und Programme egal. */
 @Serializable
 data class Profile(
     val id: String,
@@ -21,6 +25,11 @@ data class Profile(
     @SerialName("rollen") val roles: List<ProfileRole> = emptyList(),
     @SerialName("stufen") val ageGroups: List<ProfileAgeGroup> = emptyList(),
     @SerialName("kinder") val children: List<ProfileChild> = emptyList(),
+    val name: String = "",
+    @SerialName("benutzername") val username: String? = null,
+    @SerialName("mussPasswortAendern") val mustChangePassword: Boolean = false,
+    /** Wann die Person die Datenschutzerklärung zur Kenntnis genommen hat; `null`: noch nicht. */
+    @SerialName("datenschutzGelesenAm") val privacyReadAt: String? = null,
 ) {
     fun isGroupLeader(ageGroupId: String) = roles.any { it.type == "stufenleitung" && it.ageGroupId == ageGroupId }
 }

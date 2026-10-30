@@ -7,10 +7,12 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,10 +22,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.cevi
@@ -44,6 +51,11 @@ fun LabeledTextField(
     minLines: Int = 1,
     keyboardType: KeyboardType = KeyboardType.Text,
     enabled: Boolean = true,
+    masked: Boolean = false,
+    autofill: ContentType? = null,
+    imeAction: ImeAction = ImeAction.Default,
+    onImeAction: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     val interaction = remember { MutableInteractionSource() }
@@ -54,27 +66,43 @@ fun LabeledTextField(
         BasicTextField(
             value = value,
             onValueChange = { if (it.length <= maxChars) onValueChange(it) },
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
+            modifier = Modifier.fillMaxWidth().semantics {
+                contentDescription = label
+                autofill?.let { this.contentType = it }
+            },
             enabled = enabled,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
             cursorBrush = SolidColor(scheme.onSurface),
             singleLine = minLines == 1,
             minLines = minLines,
             interactionSource = interaction,
+            visualTransformation = if (masked) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(
                 capitalization = if (keyboardType == KeyboardType.Text) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
+                autoCorrectEnabled = keyboardType == KeyboardType.Text,
                 keyboardType = keyboardType,
+                imeAction = imeAction,
             ),
+            keyboardActions = KeyboardActions(onAny = { onImeAction?.invoke() }),
             decorationBox = { inner ->
-                Box(
+                // Mit Knopf am Ende (48 dp) bleibt im 52-dp-Feld nur ein schmaler Rand.
+                Row(
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = Sizes.textField)
                         .background(scheme.surface, shape)
                         .border(if (focused) 2.dp else 1.dp, if (focused) MaterialTheme.cevi.focus else scheme.outline, shape)
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    contentAlignment = Alignment.CenterStart,
-                ) { inner() }
+                        .padding(
+                            start = 16.dp,
+                            end = if (trailing == null) 16.dp else 2.dp,
+                            top = if (trailing == null) 14.dp else 2.dp,
+                            bottom = if (trailing == null) 14.dp else 2.dp,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) { inner() }
+                    trailing?.invoke()
+                }
             },
         )
         hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant) }

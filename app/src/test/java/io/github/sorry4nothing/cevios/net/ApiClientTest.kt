@@ -103,6 +103,7 @@ class ApiClientTest {
             401 to ApiFehler.NICHT_ANGEMELDET,
             403 to ApiFehler.KEINE_BERECHTIGUNG,
             404 to ApiFehler.NICHT_GEFUNDEN,
+            409 to ApiFehler.ANMELDUNG_GESCHLOSSEN,
             426 to ApiFehler.APP_VERALTET,
             429 to ApiFehler.ZU_VIELE_ANFRAGEN,
             500 to ApiFehler.UNBEKANNT,

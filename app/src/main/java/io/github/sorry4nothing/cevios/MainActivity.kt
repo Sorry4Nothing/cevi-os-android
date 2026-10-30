@@ -37,6 +37,7 @@ private fun Programme(api: ProgrammeApi) {
     val modell = viewModel { ProgrammeViewModel(api) }
     val liste by modell.liste.collectAsState()
     val detail by modell.detail.collectAsState()
+    val antwort by modell.antwort.collectAsState()
     var offen by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Auch nach Drehen oder Prozess-Ende lädt das offene Programm neu: Daten bleiben nur im Arbeitsspeicher.
@@ -48,7 +49,14 @@ private fun Programme(api: ProgrammeApi) {
             ProgrammeListeScreen(liste, onOeffnen = { offen = it }, onNochmals = modell::listeLaden)
         } else {
             BackHandler { offen = null }
-            ProgrammDetailScreen(detail, onZurueck = { offen = null }, onNochmals = { modell.detailLaden(id) })
+            ProgrammDetailScreen(
+                detail,
+                antwort,
+                onKind = { kindId, ja -> modell.kindAntworten(id, kindId, ja) },
+                onLeitung = { ja -> modell.leitungAntworten(id, ja) },
+                onZurueck = { offen = null },
+                onNochmals = { modell.detailLaden(id) },
+            )
         }
     }
 }

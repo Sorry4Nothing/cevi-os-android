@@ -13,7 +13,11 @@ val SCHWEIZ: ZoneId = ZoneId.of("Europe/Zurich")
 @Serializable
 data class ProgrammStufe(val id: String, val name: String)
 
-/** Listeneintrag und Detail der API. Zusatzfelder des Details (Kinder, Anmeldung) kommen mit der Anmeldung. */
+/** Eigenes Kind in einer Stufe des Programms. `status` ist «ja», «nein» oder `null` für noch offen. */
+@Serializable
+data class ProgrammKind(val id: String, val vorname: String, val status: String? = null)
+
+/** Listeneintrag und Detail der API. Die Felder ab `teilnahmeOffen` liefert nur das Detail. */
 @Serializable
 data class Programm(
     val id: String,
@@ -31,6 +35,11 @@ data class Programm(
     val mitnehmen: String? = null,
     val infoEltern: String? = null,
     val stufen: List<ProgrammStufe> = emptyList(),
+    /** Wahr, solange das Programm aktiv ist und nicht begonnen hat: nur dann lässt sich antworten. */
+    val teilnahmeOffen: Boolean = false,
+    val kinder: List<ProgrammKind> = emptyList(),
+    /** «ja», «nein» oder «offen»; `null`, wenn die Person keine Leitung dieses Programms ist. */
+    val eigeneAnmeldung: String? = null,
 ) {
     val abgesagt get() = status == "abgesagt"
     val pruefen get() = status == "pruefen"

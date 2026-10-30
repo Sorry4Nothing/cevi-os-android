@@ -38,6 +38,10 @@ class ApiClient(
     suspend inline fun <reified B, reified T> post(pfad: String, body: B): ApiResult<T> =
         senden(anfrage(pfad).post(jsonBody(json.encodeToString(body))).build()) { json.decodeFromString<T>(it) }
 
+    /** PUT mit JSON-Body; die Antwort hat keinen Inhalt (204). */
+    suspend inline fun <reified B> put(pfad: String, body: B): ApiResult<Unit> =
+        senden(anfrage(pfad).put(jsonBody(json.encodeToString(body))).build()) { }
+
     /** Für Antworten ohne Inhalt oder ohne Interesse am Inhalt: `decode = { }`. */
     suspend fun <T> senden(anfrage: Request, decode: (String) -> T): ApiResult<T> =
         suspendCancellableCoroutine { fortsetzung ->

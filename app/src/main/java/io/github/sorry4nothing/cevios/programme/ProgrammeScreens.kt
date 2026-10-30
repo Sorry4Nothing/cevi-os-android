@@ -96,6 +96,9 @@ private fun ProgrammZeile(programm: Programm, onOeffnen: (String) -> Unit) {
 @Composable
 fun ProgrammDetailScreen(
     zustand: ApiResult<Programm>?,
+    antwort: Antwortstand,
+    onKind: (kindId: String, ja: Boolean) -> Unit,
+    onLeitung: (ja: Boolean) -> Unit,
     onZurueck: () -> Unit,
     onNochmals: () -> Unit,
 ) {
@@ -106,13 +109,18 @@ fun ProgrammDetailScreen(
         when (zustand) {
             null -> Laden()
             is ApiResult.Fehler -> FehlerAnzeige(zustand, onNochmals)
-            is ApiResult.Ok -> ProgrammInhalt(zustand.wert)
+            is ApiResult.Ok -> ProgrammInhalt(zustand.wert, antwort, onKind, onLeitung)
         }
     }
 }
 
 @Composable
-private fun ProgrammInhalt(programm: Programm) {
+private fun ProgrammInhalt(
+    programm: Programm,
+    antwort: Antwortstand,
+    onKind: (kindId: String, ja: Boolean) -> Unit,
+    onLeitung: (ja: Boolean) -> Unit,
+) {
     // Nach dem Laden springt der Fokus auf den Titel, damit der Screenreader den Bildschirm ansagt.
     val fokus = remember { FocusRequester() }
     LaunchedEffect(programm.id) { fokus.requestFocus() }
@@ -128,6 +136,7 @@ private fun ProgrammInhalt(programm: Programm) {
         )
         StatusText(programm)
         Abschnitt(R.string.abschnitt_zeit, zeitText(programm.zeit()))
+        AnmeldungAbschnitt(programm, antwort, onKind, onLeitung)
         Abschnitt(R.string.abschnitt_treffpunkt, programm.ort)
         Abschnitt(R.string.abschnitt_schluss, schlussText(programm))
         Abschnitt(R.string.abschnitt_mitnehmen, programm.mitnehmen)

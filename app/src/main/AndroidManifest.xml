@@ -18,6 +18,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CeviOS">
+        <!-- Firebase ist eingebunden, aber still: kein Token beim Start. Der Token wird erst mit dem Push-Auftrag geholt. -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

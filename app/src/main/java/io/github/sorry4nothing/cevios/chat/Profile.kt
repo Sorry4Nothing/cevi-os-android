@@ -33,6 +33,9 @@ data class DirectChatRequest(@SerialName("stufeId") val ageGroupId: String, @Ser
 @Serializable
 data class ChatIdResponse(val id: String)
 
+/** Was man mit einer Nachricht tun kann (langes Drücken und Screenreader-Aktionen). */
+enum class MessageAction { OPEN_DIRECT_CHAT, HIDE, REPORT }
+
 /**
  * Wann die App eine Aktion anbietet. Die Nachricht trägt dafür kein Flag, deshalb gilt das Profil. Die Entscheidung
  * trifft trotzdem der Server: Eine Aktion, die er ablehnt, zeigt die App als Fehler.
@@ -50,6 +53,13 @@ object ChatRules {
     fun mayOpenDirectChat(chat: Chat?, message: ChatMessage, profile: Profile?) =
         chat != null && profile != null && chat.isGroup && !message.own &&
             profile.isGroupLeader(chat.ageGroup.id) && chat.groupLeaders.none { it.id == message.author.id }
+
+    /** Alle Aktionen, die zu einer Nachricht erlaubt sind, in der Reihenfolge des Dialogs. Leer heisst: keine Aktion. */
+    fun actions(chat: Chat?, message: ChatMessage, profile: Profile?): List<MessageAction> = buildList {
+        if (mayOpenDirectChat(chat, message, profile)) add(MessageAction.OPEN_DIRECT_CHAT)
+        if (mayHide(chat, message, profile)) add(MessageAction.HIDE)
+        if (mayReport(message)) add(MessageAction.REPORT)
+    }
 
     /**
      * Stufen, in denen ein Elternteil einen Einzelchat starten kann: eigene Kinder in der Stufe, noch kein Einzelchat

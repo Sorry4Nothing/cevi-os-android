@@ -2,22 +2,31 @@ package io.github.sorry4nothing.cevios.ui
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Pill
@@ -61,6 +70,38 @@ fun TextActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Mod
         shape = Pill,
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.cevi.accent),
         contentPadding = PaddingValues(horizontal = 12.dp),
+    ) { Text(text, style = MaterialTheme.typography.labelLarge) }
+}
+
+/** Gestrichelter Knopf für «etwas Neues anlegen», z. B. einen Einzelchat starten: ohne Fläche, 56 dp hoch. */
+@Composable
+fun DashedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null, enabled: Boolean = true) {
+    Row(
+        modifier
+            .heightIn(min = Sizes.button)
+            .focusRing(Pill)
+            .clip(Pill)
+            .dashedBorder(MaterialTheme.colorScheme.outline, Pill)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSecondaryContainer) { ButtonContent(text, icon) }
+    }
+}
+
+/** Zerstörerische Aktion im Dialog, z. B. «Ausblenden»: klein (48 dp), mit Rand, damit sie nicht nur über Farbe auffällt. */
+@Composable
+fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Button(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = Sizes.touchTarget).focusRing(Pill),
+        shape = Pill,
+        colors = ButtonDefaults.buttonColors(containerColor = scheme.errorContainer, contentColor = scheme.onErrorContainer),
+        border = BorderStroke(1.dp, scheme.onErrorContainer),
+        contentPadding = PaddingValues(horizontal = 18.dp),
     ) { Text(text, style = MaterialTheme.typography.labelLarge) }
 }
 

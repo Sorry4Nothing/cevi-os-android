@@ -1,8 +1,15 @@
 package io.github.sorry4nothing.cevios.chat
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,18 +18,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,27 +39,54 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
-import io.github.sorry4nothing.cevios.ui.ErrorDisplay
+import io.github.sorry4nothing.cevios.programs.dayAndMonth
+import io.github.sorry4nothing.cevios.ui.CeviDialog
+import io.github.sorry4nothing.cevios.ui.DangerButton
+import io.github.sorry4nothing.cevios.ui.DashedButton
+import io.github.sorry4nothing.cevios.ui.DialogText
+import io.github.sorry4nothing.cevios.ui.EmptyState
+import io.github.sorry4nothing.cevios.ui.ErrorState
+import io.github.sorry4nothing.cevios.ui.Header
+import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.Loading
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.format.FormatStyle
-import java.util.Locale
+import io.github.sorry4nothing.cevios.ui.NoticeBanner
+import io.github.sorry4nothing.cevios.ui.NoticeKind
+import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
+import io.github.sorry4nothing.cevios.ui.TextActionButton
+import io.github.sorry4nothing.cevios.ui.dashedBorder
+import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.initialFocus
+import io.github.sorry4nothing.cevios.ui.theme.Pill
+import io.github.sorry4nothing.cevios.ui.theme.Sizes
+import io.github.sorry4nothing.cevios.ui.theme.Spacing
+import io.github.sorry4nothing.cevios.ui.theme.cevi
+import java.time.LocalDate
 
 private const val MAX_CHARS = 2000
-private val DATE_TIME_FORMAT = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(Locale.forLanguageTag("de-CH"))
+private const val MAX_INPUT_LINES = 5
 
 @Composable
 fun chatTitle(chat: Chat?): String = when {
@@ -71,52 +106,121 @@ fun ChatListScreen(
     onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        Text(
-            stringResource(R.string.chat_title),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp).semantics { heading() },
-        )
-        TextButton(onClick = onHelp, Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.help_button)) }
-        ActionMessage(action)
+        Header(title = stringResource(R.string.chat_title))
+        TextActionButton(stringResource(R.string.help_button), onHelp, Modifier.padding(horizontal = Spacing.s3))
+        ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
         when (state) {
             null -> Loading()
-            is ApiResult.Failure -> ErrorDisplay(state, onRetry)
+            is ApiResult.Failure -> ErrorState(state.error, onRetry)
             is ApiResult.Ok -> {
                 val startable = ChatRules.ageGroupsForDirectChat(profile, state.value.chats)
                 if (state.value.chats.isEmpty() && startable.isEmpty()) {
-                    Text(stringResource(R.string.chat_empty), Modifier.padding(16.dp))
+                    EmptyState(
+                        R.drawable.ic_chat,
+                        stringResource(R.string.chat_empty),
+                        stringResource(R.string.chat_empty_text),
+                        onRetry,
+                    )
                 } else {
-                    LazyColumn {
-                        items(state.value.chats, key = { it.id }) { chat ->
-                            ChatRow(chat, onOpen)
-                            HorizontalDivider()
-                        }
-                        items(startable, key = { "start-" + it.id }) { ageGroup ->
-                            OutlinedButton(
-                                onClick = { onDirectChat(ageGroup.id) },
-                                enabled = !action.running,
-                                modifier = Modifier.padding(16.dp),
-                            ) { Text(stringResource(R.string.direct_chat_start, ageGroup.name)) }
-                        }
-                    }
+                    ChatSections(state.value.chats, startable, action.running, onOpen, onDirectChat)
                 }
             }
         }
     }
 }
 
+/** Gruppenchats und Einzelchats in eigenen Abschnitten; ein Abschnitt ohne Einträge fällt weg. */
 @Composable
-private fun ChatRow(chat: Chat, onOpen: (String) -> Unit) {
-    Column(
+private fun ChatSections(
+    chats: List<Chat>,
+    startable: List<ProfileAgeGroup>,
+    actionRunning: Boolean,
+    onOpen: (String) -> Unit,
+    onDirectChat: (ageGroupId: String) -> Unit,
+) {
+    val groups = chats.filter { it.isGroup }
+    val direct = chats.filterNot { it.isGroup }
+    LazyColumn(
+        contentPadding = PaddingValues(start = Spacing.s4, end = Spacing.s4, bottom = Spacing.s4),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+    ) {
+        if (groups.isNotEmpty()) {
+            item(key = "title-groups") { SectionTitle(R.string.chat_section_groups) }
+            items(groups, key = { it.id }) { ChatCard(it, onOpen) }
+        }
+        if (direct.isNotEmpty() || startable.isNotEmpty()) {
+            item(key = "title-direct") { SectionTitle(R.string.chat_section_group_leaders) }
+            items(direct, key = { it.id }) { ChatCard(it, onOpen) }
+            items(startable, key = { "start-" + it.id }) { ageGroup ->
+                DashedButton(
+                    stringResource(R.string.direct_chat_start, ageGroup.name),
+                    onClick = { onDirectChat(ageGroup.id) },
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.s2),
+                    icon = R.drawable.ic_plus,
+                    enabled = !actionRunning,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(@StringRes text: Int) {
+    Text(
+        stringResource(text),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = Spacing.s1, end = Spacing.s1, top = Spacing.s3, bottom = 2.dp).semantics { heading() },
+    )
+}
+
+/** Karte einer Chatzeile. Letzte Nachricht, Uhrzeit und Ungelesen-Zähler zeigt das Design, die API liefert sie nicht. */
+@Composable
+private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val shape = MaterialTheme.shapes.medium
+    Row(
         Modifier
             .fillMaxWidth()
+            .focusRing(shape)
+            .clip(shape)
+            .background(scheme.surfaceContainerLow)
+            .border(1.dp, scheme.outlineVariant, shape)
             .clickable(onClickLabel = stringResource(R.string.chat_open)) { onOpen(chat.id) }
-            .heightIn(min = 48.dp)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(chatTitle(chat), style = MaterialTheme.typography.titleMedium)
-        if (!chat.isGroup) Text(stringResource(R.string.chat_age_group, chat.ageGroup.name))
+        ChatAvatar(chat.isGroup)
+        Column(Modifier.weight(1f)) {
+            Text(chatTitle(chat), style = MaterialTheme.typography.titleMedium)
+            if (!chat.isGroup) {
+                Text(
+                    stringResource(R.string.chat_age_group, chat.ageGroup.name),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** Gruppe: Gruppen-Icon auf Blau. Einzelchat: «SL» (Stufenleitung) auf `secondaryContainer`. Dekorativ. */
+@Composable
+private fun ChatAvatar(group: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier.size(48.dp).background(if (group) scheme.secondary else scheme.secondaryContainer, Pill),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (group) {
+            Icon(painterResource(R.drawable.ic_group), contentDescription = null, tint = scheme.onSecondary, modifier = Modifier.size(Sizes.icon))
+        } else {
+            Text(
+                stringResource(R.string.avatar_group_leaders),
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
+                color = scheme.onSecondaryContainer,
+            )
+        }
     }
 }
 
@@ -131,7 +235,6 @@ fun ChatConversationScreen(
     action: ActionState,
     onSend: (text: String, onSent: () -> Unit) -> Unit,
     onOlder: () -> Unit,
-    onRefresh: () -> Unit,
     onHide: (messageId: String) -> Unit,
     onReport: (messageId: String) -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
@@ -140,33 +243,62 @@ fun ChatConversationScreen(
 ) {
     // Safe-Drawing-Padding enthält die Tastatur: Die Eingabe bleibt sichtbar.
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
-            TextButton(onClick = onRefresh) { Text(stringResource(R.string.refresh)) }
-        }
-        Text(
-            title,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { heading() },
+        Header(
+            title = title,
+            eyebrow = chat?.ageGroup?.name,
+            back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
+            titleStyle = MaterialTheme.typography.headlineMedium,
+            focusOnTitle = true,
         )
-        // Im Einzelchat lesen alle Stufenleitungen der Stufe mit; das steht im Kopf, nicht erst im Kleingedruckten.
+        // Im Einzelchat lesen alle Stufenleitungen der Stufe mit; das steht im Kopf und scrollt nicht weg.
         if (chat != null && !chat.isGroup && chat.groupLeaders.isNotEmpty()) {
-            Text(
-                stringResource(R.string.chat_read_along, chat.groupLeaders.joinToString(", ") { it.name }),
-                Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            ReadAlongNote(chat.groupLeaders, Modifier.padding(start = Spacing.s4, end = Spacing.s4, bottom = Spacing.s4))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
         Column(Modifier.weight(1f)) {
             when (state) {
                 null -> Loading()
-                is ApiResult.Failure -> ErrorDisplay(state, onRetry)
+                is ApiResult.Failure -> ErrorState(state.error, onRetry, notFoundText = R.string.state_chat_not_found_text)
                 is ApiResult.Ok ->
                     Messages(state.value, chat, profile, loadingOlder, onOlder, onHide, onReport, onDirectChat)
             }
         }
-        ActionMessage(action)
+        ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
         MessageInput(send, onSend)
+    }
+}
+
+/** Hinweis im Einzelchat: Die Nachricht geht an die ganze Stufenleitung. Die Avatare sind dekorativ. */
+@Composable
+private fun ReadAlongNote(leaders: List<ChatPerson>, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val names = leaders.joinToString(", ") { it.name }
+    val full = stringResource(R.string.chat_read_along, names)
+    val text = buildAnnotatedString {
+        append(full)
+        val start = full.lastIndexOf(names)
+        if (start >= 0) addStyle(SpanStyle(fontWeight = FontWeight.Bold), start, start + names.length)
+    }
+    Row(
+        modifier.fillMaxWidth().background(scheme.secondaryContainer, MaterialTheme.shapes.medium).padding(horizontal = Spacing.s3, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(Modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+            leaders.take(3).forEach { leader ->
+                Box(
+                    Modifier.size(28.dp).background(scheme.secondary, Pill).border(2.dp, scheme.secondaryContainer, Pill),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        initials(leader.name),
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.ExtraBold),
+                        color = scheme.onSecondary,
+                    )
+                }
+            }
+        }
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = scheme.onSecondaryContainer)
     }
 }
 
@@ -182,136 +314,283 @@ private fun Messages(
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
 ) {
     if (conversation.messages.isEmpty()) {
-        Text(stringResource(R.string.messages_empty), Modifier.padding(16.dp))
+        Text(stringResource(R.string.messages_empty), Modifier.padding(Spacing.s4), color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
     }
     var selected by remember { mutableStateOf<ChatMessage?>(null) }
     var question by remember { mutableStateOf<ConfirmQuestion?>(null) }
+    val items = remember(conversation.messages) { withDayDividers(conversation.messages) }
+    val today = LocalDate.now(SWISS_ZONE)
+
+    fun perform(message: ChatMessage, action: MessageAction) {
+        when (action) {
+            MessageAction.OPEN_DIRECT_CHAT -> chat?.let { onDirectChat(it.ageGroup.id, message.author.id) }
+            MessageAction.HIDE -> question = ConfirmQuestion(ConfirmKind.HIDE, message.id)
+            MessageAction.REPORT -> question = ConfirmQuestion(ConfirmKind.REPORT, message.id)
+        }
+    }
 
     // Neueste zuerst und von unten nach oben: so wächst der Verlauf wie in jedem Chat nach oben.
-    LazyColumn(reverseLayout = true, contentPadding = PaddingValues(16.dp)) {
-        items(conversation.messages, key = { it.id }) { message ->
-            MessageRow(message, onActions = { selected = message })
+    LazyColumn(
+        reverseLayout = true,
+        contentPadding = PaddingValues(Spacing.s4),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s3, Alignment.Bottom),
+    ) {
+        items(
+            items,
+            key = {
+                when (it) {
+                    is ConversationItem.Message -> it.message.id
+                    is ConversationItem.DayDivider -> "day-" + it.date
+                }
+            },
+        ) { item ->
+            when (item) {
+                is ConversationItem.Message -> MessageBubble(
+                    item.message,
+                    ChatRules.actions(chat, item.message, profile),
+                    onLongPress = { selected = item.message },
+                    onAction = { perform(item.message, it) },
+                )
+                is ConversationItem.DayDivider -> DayDividerText(dayLabel(item.date, today))
+            }
         }
         if (conversation.next != null) {
-            item {
-                OutlinedButton(onClick = onOlder, enabled = !loadingOlder, modifier = Modifier.padding(vertical = 8.dp)) {
-                    Text(stringResource(if (loadingOlder) R.string.loading else R.string.messages_older))
+            item(key = "older") {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    OutlinedPillButton(
+                        stringResource(if (loadingOlder) R.string.loading else R.string.messages_older),
+                        onClick = onOlder,
+                        enabled = !loadingOlder,
+                    )
                 }
             }
         }
     }
 
     selected?.let { message ->
-        AlertDialog(
-            onDismissRequest = { selected = null },
-            title = { Text(stringResource(R.string.actions_title, message.author.name)) },
-            text = {
-                Column {
-                    if (ChatRules.mayOpenDirectChat(chat, message, profile)) {
-                        TextButton(onClick = {
-                            selected = null
-                            chat?.let { onDirectChat(it.ageGroup.id, message.author.id) }
-                        }) { Text(stringResource(R.string.action_direct_chat, message.author.name)) }
-                    }
-                    if (ChatRules.mayHide(chat, message, profile)) {
-                        TextButton(onClick = {
-                            selected = null
-                            question = ConfirmQuestion(ConfirmKind.HIDE, message.id)
-                        }) { Text(stringResource(R.string.action_hide)) }
-                    }
-                    if (ChatRules.mayReport(message)) {
-                        TextButton(onClick = {
-                            selected = null
-                            question = ConfirmQuestion(ConfirmKind.REPORT, message.id)
-                        }) { Text(stringResource(R.string.action_report)) }
-                    }
+        CeviDialog(
+            title = stringResource(R.string.actions_title, message.author.name),
+            onDismiss = { selected = null },
+            confirmButton = { TextActionButton(stringResource(R.string.cancel), { selected = null }) },
+        ) {
+            Column {
+                ChatRules.actions(chat, message, profile).forEach { action ->
+                    TextActionButton(actionLabel(action, message), {
+                        selected = null
+                        perform(message, action)
+                    })
                 }
-            },
-            confirmButton = { TextButton(onClick = { selected = null }) { Text(stringResource(R.string.cancel)) } },
-        )
+            }
+        }
     }
 
     question?.let { f ->
-        AlertDialog(
-            onDismissRequest = { question = null },
-            title = { Text(stringResource(f.kind.title)) },
-            text = { Text(stringResource(f.kind.question)) },
+        CeviDialog(
+            title = stringResource(f.kind.title),
+            onDismiss = { question = null },
             confirmButton = {
-                Button(onClick = {
+                DangerButton(stringResource(f.kind.confirm), {
                     question = null
                     if (f.kind == ConfirmKind.HIDE) onHide(f.messageId) else onReport(f.messageId)
-                }) { Text(stringResource(f.kind.confirm)) }
+                })
             },
-            dismissButton = { TextButton(onClick = { question = null }) { Text(stringResource(R.string.cancel)) } },
-        )
+            dismissButton = { TextActionButton(stringResource(R.string.cancel), { question = null }, Modifier.initialFocus()) },
+        ) { DialogText(stringResource(f.kind.question)) }
     }
 }
 
 private enum class ConfirmKind(@StringRes val title: Int, @StringRes val question: Int, @StringRes val confirm: Int) {
-    HIDE(R.string.action_hide, R.string.hide_question, R.string.action_confirm_hide),
-    REPORT(R.string.action_report, R.string.report_question, R.string.action_confirm_report),
+    HIDE(R.string.hide_title, R.string.hide_question, R.string.action_confirm_hide),
+    REPORT(R.string.report_title, R.string.report_question, R.string.action_confirm_report),
 }
 
 private data class ConfirmQuestion(val kind: ConfirmKind, val messageId: String)
 
 @Composable
-private fun MessageRow(message: ChatMessage, onActions: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        val author = if (message.own) stringResource(R.string.message_you) else message.author.name
-        Text("$author, ${timeText(message.createdAt)}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-        // Ausgeblendet steht als Hinweis da, nie als leere Zeile.
-        Text(
-            if (message.hidden) stringResource(R.string.message_hidden) else message.text.orEmpty(),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        message.program?.let { Text(stringResource(R.string.message_program, it.title), style = MaterialTheme.typography.bodyMedium) }
-        val description = stringResource(R.string.actions_description, author)
-        TextButton(onClick = onActions, Modifier.semantics { contentDescription = description }) {
-            Text(stringResource(R.string.actions_button))
+private fun actionLabel(action: MessageAction, message: ChatMessage): String = when (action) {
+    MessageAction.OPEN_DIRECT_CHAT -> stringResource(R.string.action_direct_chat, message.author.name)
+    MessageAction.HIDE -> stringResource(R.string.action_hide)
+    MessageAction.REPORT -> stringResource(R.string.action_report)
+}
+
+@Composable
+private fun DayDividerText(label: DayLabel) {
+    Text(
+        when (label) {
+            DayLabel.Today -> stringResource(R.string.day_today)
+            DayLabel.Yesterday -> stringResource(R.string.day_yesterday)
+            is DayLabel.On -> dayAndMonth(label.date)
+        },
+        modifier = Modifier.fillMaxWidth(),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+    )
+}
+
+/**
+ * Eine Nachricht als Blase, höchstens 80 % breit. Die Aktionen (Einzelchat öffnen, ausblenden, melden) liegen auf langem
+ * Drücken und als Screenreader-Aktionen; ohne erlaubte Aktion gibt es keine.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, onLongPress: () -> Unit, onAction: (MessageAction) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val own = message.own
+    val hidden = message.hidden
+    val labels = actions.map { it to actionLabel(it, message) }
+    // Die untere Ecke zur Absenderseite ist spitz (6 dp); eine ausgeblendete eigene Nachricht sieht aus wie die der anderen.
+    val pointedOwn = own && !hidden
+    val shape = RoundedCornerShape(
+        topStart = 20.dp, topEnd = 20.dp,
+        bottomStart = if (pointedOwn) 20.dp else 6.dp,
+        bottomEnd = if (pointedOwn) 6.dp else 20.dp,
+    )
+    val ringShape = MaterialTheme.shapes.medium
+    Box(Modifier.fillMaxWidth(), contentAlignment = if (own) Alignment.CenterEnd else Alignment.CenterStart) {
+        Column(
+            Modifier
+                .fillMaxWidth(0.8f)
+                .focusRing(ringShape)
+                .semantics(mergeDescendants = true) {
+                    customActions = labels.map { (action, label) -> CustomAccessibilityAction(label) { onAction(action); true } }
+                }
+                .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = actions.isNotEmpty(),
+                    onLongClick = onLongPress,
+                    onClick = {},
+                ),
+            horizontalAlignment = if (own) Alignment.End else Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+        ) {
+            if (!own && !hidden) {
+                Text(message.author.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.cevi.accent)
+            }
+            when {
+                hidden -> Row(
+                    Modifier.dashedBorder(scheme.outline, shape).padding(horizontal = Spacing.s4, vertical = Spacing.s3),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(painterResource(R.drawable.ic_eye_off), contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    Text(
+                        stringResource(R.string.message_hidden),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
+                        color = scheme.onSurfaceVariant,
+                    )
+                }
+                else -> {
+                    val content = if (own) scheme.onSecondary else scheme.onSurface
+                    Column(
+                        Modifier
+                            .background(if (own) scheme.secondary else scheme.surfaceContainerLow, shape)
+                            .then(if (own) Modifier else Modifier.border(1.dp, scheme.outlineVariant, shape))
+                            .padding(horizontal = Spacing.s4, vertical = Spacing.s3),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(message.text.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = content)
+                        message.program?.let {
+                            Text(stringResource(R.string.message_program, it.title), style = MaterialTheme.typography.bodyMedium, color = content)
+                        }
+                    }
+                }
+            }
+            if (!hidden) {
+                val time = message.timeText()
+                Text(
+                    if (own) stringResource(R.string.message_own_time, time) else time,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
 
-/** Läuft, Fehler oder Bestätigung einer Aktion, angesagt als Live-Region. */
+/** Läuft, Fehler oder Bestätigung einer Aktion als Banner; angesagt als Live-Region. Ohne Anlass bleibt nichts stehen. */
 @Composable
-private fun ActionMessage(action: ActionState) {
-    val text = when {
-        action.running -> stringResource(R.string.action_running)
-        action.error != null -> stringResource(action.error.text)
-        action.done != null -> stringResource(action.done)
-        else -> return
+private fun ActionNotice(action: ActionState, modifier: Modifier = Modifier) {
+    val polite = modifier.semantics { liveRegion = LiveRegionMode.Polite }
+    when {
+        action.error != null -> NoticeBanner(NoticeKind.ERROR, stringResource(action.error.text), modifier)
+        action.running -> NoticeBanner(NoticeKind.INFO, stringResource(R.string.action_running), polite)
+        action.done != null -> NoticeBanner(NoticeKind.INFO, stringResource(action.done), polite)
     }
-    Text(
-        text,
-        Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics {
-            liveRegion = if (action.error != null) LiveRegionMode.Assertive else LiveRegionMode.Polite
-        },
-    )
 }
 
 @Composable
 private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) {
     var draft by rememberSaveable { mutableStateOf("") }
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    var emptyHint by remember { mutableStateOf(false) }
+    val scheme = MaterialTheme.colorScheme
+    val label = stringResource(R.string.message_input)
+    val sendLabel = stringResource(R.string.message_send)
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val fieldShape = RoundedCornerShape(26.dp)
+    Column(
+        Modifier.padding(start = Spacing.s3, end = Spacing.s3, top = 10.dp, bottom = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         if (send.running) {
-            Text(stringResource(R.string.message_sending), Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            NoticeBanner(NoticeKind.INFO, stringResource(R.string.message_sending), Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         }
-        send.error?.let {
-            Text(stringResource(it.text), Modifier.semantics { liveRegion = LiveRegionMode.Assertive })
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-            OutlinedTextField(
+        send.error?.let { NoticeBanner(NoticeKind.ERROR, stringResource(it.text)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            BasicTextField(
                 value = draft,
-                onValueChange = { if (it.length <= MAX_CHARS) draft = it },
-                label = { Text(stringResource(R.string.message_input)) },
-                maxLines = 4,
-                modifier = Modifier.weight(1f),
+                onValueChange = {
+                    if (it.length <= MAX_CHARS) draft = it
+                    emptyHint = false
+                },
+                modifier = Modifier.weight(1f).semantics { contentDescription = label },
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
+                cursorBrush = SolidColor(scheme.onSurface),
+                maxLines = MAX_INPUT_LINES,
+                interactionSource = interaction,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                decorationBox = { inner ->
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = Sizes.textField)
+                            .background(scheme.surfaceContainerLow, fieldShape)
+                            .border(if (focused) 2.dp else 1.dp, if (focused) MaterialTheme.cevi.focus else scheme.outline, fieldShape)
+                            .padding(horizontal = 20.dp, vertical = 15.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        if (draft.isEmpty()) {
+                            Text(stringResource(R.string.message_placeholder), style = MaterialTheme.typography.bodyLarge, color = scheme.onSurfaceVariant)
+                        }
+                        inner()
+                    }
+                },
             )
-            Button(
-                onClick = { onSend(draft) { draft = "" } },
-                enabled = draft.isNotBlank() && !send.running,
-            ) { Text(stringResource(R.string.message_send)) }
+            Surface(
+                onClick = {
+                    if (draft.isBlank()) emptyHint = true else onSend(draft) { draft = "" }
+                },
+                enabled = !send.running,
+                modifier = Modifier.size(52.dp).focusRing(Pill).semantics { contentDescription = sendLabel },
+                shape = Pill,
+                color = scheme.primary.copy(alpha = if (send.running) 0.5f else 1f),
+                contentColor = scheme.onPrimary,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(painterResource(R.drawable.ic_send), contentDescription = null, modifier = Modifier.size(Sizes.icon))
+                }
+            }
+        }
+        if (emptyHint) {
+            Text(
+                stringResource(R.string.message_empty_hint),
+                modifier = Modifier.padding(horizontal = 20.dp).semantics { liveRegion = LiveRegionMode.Polite },
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -319,27 +598,29 @@ private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) 
 @Composable
 fun HelpScreen(state: ApiResult<HelpResponse>?, onBack: () -> Unit, onRetry: () -> Unit) {
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        TextButton(onClick = onBack, Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.back)) }
-        Text(
-            stringResource(R.string.help_title),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { heading() },
+        Header(
+            title = stringResource(R.string.help_title),
+            back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
+            titleStyle = MaterialTheme.typography.headlineMedium,
+            focusOnTitle = true,
         )
         when (state) {
             null -> Loading()
-            is ApiResult.Failure -> ErrorDisplay(state, onRetry)
-            is ApiResult.Ok -> Text(
-                state.value.trustedPersons?.takeIf { it.isNotBlank() } ?: stringResource(R.string.help_empty),
-                Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            is ApiResult.Failure -> ErrorState(state.error, onRetry)
+            is ApiResult.Ok -> {
+                val shape = MaterialTheme.shapes.medium
+                Column(Modifier.verticalScroll(rememberScrollState()).padding(start = Spacing.s4, end = Spacing.s4, bottom = Spacing.s4)) {
+                    Text(
+                        state.value.trustedPersons?.takeIf { it.isNotBlank() } ?: stringResource(R.string.help_empty),
+                        Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow, shape)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+                            .padding(Spacing.s4),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+            }
         }
     }
 }
-
-private fun timeText(iso: String): String =
-    try {
-        DATE_TIME_FORMAT.format(Instant.parse(iso).atZone(SWISS_ZONE))
-    } catch (e: DateTimeParseException) {
-        ""
-    }

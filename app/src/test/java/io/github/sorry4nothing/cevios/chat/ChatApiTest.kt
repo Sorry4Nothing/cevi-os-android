@@ -202,4 +202,36 @@ class ChatApiTest {
         assertEquals("99+", unreadBadgeText(100))
         assertEquals("99+", unreadBadgeText(1234))
     }
+
+    @Test
+    fun ageGroupContactsAreReadFromTheAgeGroup() {
+        server.enqueue(json(200, """{"kontakte":[{"id":"l1","name":"Beispiel Leitung","telefon":null}]}"""))
+        val contacts = (runBlocking { chat.contacts("s1") } as ApiResult.Ok).value.contacts
+        assertEquals("GET /api/v1/stufen/s1/kontakte HTTP/1.1", server.takeRequest().requestLine)
+        assertNull(contacts.single().phone)
+    }
+
+    @Test
+    fun phoneIsPatchedAndRemovedWithEmptyText() {
+        server.enqueue(MockResponse.Builder().code(204).build())
+        server.enqueue(MockResponse.Builder().code(204).build())
+        assertEquals(ApiResult.Ok(Unit), runBlocking { chat.setPhone("+41 79 000 00 01") })
+        val set = server.takeRequest()
+        assertEquals("PATCH /api/v1/ich HTTP/1.1", set.requestLine)
+        assertEquals("""{"telefon":"+41 79 000 00 01"}""", set.body?.utf8())
+        assertEquals(ApiResult.Ok(Unit), runBlocking { chat.setPhone("") })
+        assertEquals("""{"telefon":""}""", server.takeRequest().body?.utf8())
+    }
+
+    @Test
+    fun parentSettingANumberIsForbidden() {
+        server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"nein"}"""))
+        assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), runBlocking { chat.setPhone("+41 79 000 00 01") })
+    }
+
+    @Test
+    fun profileCarriesTheOwnNumber() {
+        server.enqueue(json(200, """{"id":"u1","telefon":"+41 79 000 00 01","rollen":[],"stufen":[],"kinder":[]}"""))
+        assertEquals("+41 79 000 00 01", (runBlocking { chat.profile() } as ApiResult.Ok).value.phone)
+    }
 }

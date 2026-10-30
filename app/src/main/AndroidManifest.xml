@@ -4,6 +4,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Damit die App prüfen kann, ob eine Telefon-App da ist (Android 11 und neuer): Der Knopf «Anrufen» fehlt sonst. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+    </queries>
+
     <!--
         Kein Backup: Sitzung und Daten dürfen das Gerät nie verlassen. Bis Android 11 sperrt allowBackup="false"
         alles (fullBackupContent wäre überflüssig), ab Android 12 gelten die dataExtractionRules.

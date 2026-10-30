@@ -3,6 +3,7 @@ package io.github.sorry4nothing.cevios.programs
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sorry4nothing.cevios.chat.Profile
+import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.coroutines.Job
@@ -41,6 +42,9 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
 
     private val _rsvp = MutableStateFlow(RsvpState())
     val rsvp: StateFlow<RsvpState> = _rsvp.asStateFlow()
+
+    private val _contacts = MutableStateFlow<ApiResult<ContactList>?>(null)
+    val contacts: StateFlow<ApiResult<ContactList>?> = _contacts.asStateFlow()
 
     private val _edit = MutableStateFlow(EditState())
     val edit: StateFlow<EditState> = _edit.asStateFlow()
@@ -107,7 +111,13 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
         openedId = id
         _detail.value = null
         _rsvp.value = RsvpState()
+        _contacts.value = null
         detailJob = viewModelScope.launch { _detail.value = api.read(id) }
+        // Die Kontakte stören das Programm nicht: Ein Fehler dort zeigt nur keinen Abschnitt.
+        viewModelScope.launch {
+            val result = api.contacts(id)
+            if (openedId == id) _contacts.value = result
+        }
     }
 
     fun rsvpChild(programId: String, childId: String, attending: Boolean) =

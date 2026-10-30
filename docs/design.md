@@ -31,7 +31,7 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Strich-Icons (27, 24 dp, nur Strich, Strichstärke 1.8, Häkchen und Kreuz auch als `_selected` mit 2.6) | `res/drawable/ic_*.xml`, in Compose mit `Icon(painterResource(...), tint = ...)` einfärben | umgesetzt |
 | Kopf (`Kopf`, `RundKnopf`) | `ui/Header.kt`: `Header`, `RoundButton` | umgesetzt (#38) |
 | Footer-Dock, im Querformat und ab 600 dp senkrecht links | `ui/Dock.kt`: `MainScaffold`, `Destination` (Programme, Chat; Profil kommt mit dem Profil) | umgesetzt (#38) |
-| Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programs/ProgramsScreens.kt`, `programs/Days.kt` | umgesetzt (#38), ohne Kontaktperson und ohne Status je Kind in der Liste (API) |
+| Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programs/ProgramsScreens.kt`, `programs/Days.kt` | umgesetzt (#38), Kontakt mit #53 (Namen und «Anrufen» aus `/kontakte`) |
 | Zusage (Ja/Nein-Pillen) | `programs/RegistrationSection.kt` (`RsvpRow`, `RsvpPill`) | umgesetzt (#38). Der angesagte Name beginnt mit dem sichtbaren Wort («Ja, Lena», nicht «Lena, Ja»): Checkliste Barrierefreiheit 1.3 geht dem Entwurf vor |
 | StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Notice.kt` (`NoticeBanner`), `ui/Buttons.kt` (`PrimaryButton`, `OutlinedPillButton`, `TextActionButton`), `ui/Focus.kt` (`focusRing`) | umgesetzt (#38) |
 | Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/States.kt`: `ErrorState`, `EmptyState`, `LoadingSkeleton` | umgesetzt (#38); «Anmelden» erst mit dem Login |
@@ -43,6 +43,8 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Dialog (Auswahl, Bestätigung), Danger- und gestrichelter Knopf | `ui/Dialog.kt` (`CeviDialog`, `DialogText`, `initialFocus`), `ui/Buttons.kt` (`DangerButton`, `DashedButton`) | umgesetzt (#39) |
 | Hinweis (Aktionen und Senden), Zustände (Laden, Fehler, Leer) im Chat | `ui/Notice.kt`, `ui/States.kt`, `chat/ChatScreens.kt` (`ActionNotice`) | umgesetzt (#39) |
 | Zuordnung (Stufen und Sichtbarkeit), Chip «Nicht zugeordnet» | `programs/AssignmentScreen.kt`, `programs/Assignment.kt` (Regeln), `ui/Chips.kt` (`UNASSIGNED`) | umgesetzt (#15), **ohne Vorlage in den Bildschirmen**: aus Karten, Hinweis und Buttons zusammengesetzt; Knopf mit Text im Abschnitt «Für Leitende» (Stift-Icon fehlt im Design). Ergänzungen (Treffpunkt, Schluss, Mitnehmen, Info) bearbeitet die App nicht: Das geschieht zentral auf der Webseite |
+| Textfeld (Label oben, 52 dp, Radius 12) | `ui/TextField.kt`: `LabeledTextField` | umgesetzt (#53), erste Verwendung bei der Telefonnummer; ohne Passwort-Auge (kommt mit dem Login) |
+| Kontakt (Karte mit Name, Nummer und «Anrufen»), Dialog «Kontakt» im Gruppenchat, «Meine Telefonnummer» | `contacts/ContactViews.kt`, `contacts/PhoneScreen.kt`, `contacts/Contacts.kt` (Regeln) | umgesetzt (#53), **ohne Vorlage in den Bildschirmen**: aus Karten, Hinweis, Textfeld und Buttons zusammengesetzt; der Knopf zum Anrufen nutzt das Symbol `ic_phone` im Kopf des Gruppenchats; die Nummer steht in der Chatliste unter «Hilfe und Vertrauenspersonen», bis es ein Profil gibt |
 | Login, Passwort, Willkommen, Profil, Datenschutz | – | mit den jeweiligen Issues (Login, Profil) |
 | Anmeldungen und Anwesenheit (Leitende) | – | Epic «Leitende», nicht begonnen |
 
@@ -83,7 +85,6 @@ Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erf
 - **Ungelesen-Zähler am Chat-Icon im Dock:** gibt es nicht. Die API zählt je Chat (`ungelesen`), die Chatliste zeigt es; die App fragt sie nur, solange sie sichtbar ist (alle 30 Sekunden).
 - **Letzte Nachricht und Uhrzeit** in der Chatzeile: kein Feld in der Chatliste der API.
 - **Rolle des Absenders** («Sarah · SL») über der Blase: kein Feld in der Nachricht; die App zeigt nur den Namen.
-- **Kontaktperson** im Programmdetail: kein Feld in der API.
 - **Status je Kind in der Programmliste** («Noah kommt», «Zusage für Lena offen»): Die Liste liefert keine Kinder, nur das Detail. Die Karte zeigt darum nur «abgesagt» und «wird geprüft».
 - **Profilbild:** kein Feld in der API. Der Avatar zeigt bis dahin die Initiale; `Avatar` hat den Parameter `imageUrl` schon, lädt aber nichts. Das Bild kommt mit dem Feld der API.
 - **Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.

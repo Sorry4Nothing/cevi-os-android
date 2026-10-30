@@ -184,4 +184,25 @@ class ProgramsApiTest {
         server.enqueue(json(200, camp.replace("\"googleOrt\":\"Zeltplatz\"", "\"googleOrt\":\"  \"")))
         assertNull((runBlocking { programs.read("x") } as ApiResult.Ok).value.location)
     }
+
+    @Test
+    fun contactsAreReadWithAndWithoutNumber() {
+        server.enqueue(
+            json(
+                200,
+                """{"kontakte":[{"id":"l1","name":"Beispiel Leitung A","telefon":"+41 79 000 00 01"},
+                   {"id":"l2","name":"Beispiel Leitung B","telefon":null}]}""",
+            ),
+        )
+        val contacts = (runBlocking { programs.contacts("p1") } as ApiResult.Ok).value.contacts
+        assertEquals("GET /api/v1/programme/p1/kontakte HTTP/1.1", server.takeRequest().requestLine)
+        assertEquals(listOf("+41 79 000 00 01", null), contacts.map { it.phone })
+        assertEquals("Beispiel Leitung B", contacts[1].name)
+    }
+
+    @Test
+    fun noRegisteredLeaderMeansEmptyContacts() {
+        server.enqueue(json(200, """{"kontakte":[]}"""))
+        assertTrue((runBlocking { programs.contacts("p1") } as ApiResult.Ok).value.contacts.isEmpty())
+    }
 }

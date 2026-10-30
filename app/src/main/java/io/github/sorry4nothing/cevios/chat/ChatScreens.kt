@@ -71,6 +71,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.contacts.ContactCard
+import io.github.sorry4nothing.cevios.contacts.ContactList
 import kotlinx.coroutines.delay
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
@@ -119,11 +121,14 @@ fun ChatListScreen(
     onOpen: (String) -> Unit,
     onDirectChat: (ageGroupId: String) -> Unit,
     onHelp: () -> Unit,
+    phoneVisible: Boolean,
+    onPhone: () -> Unit,
     onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
         Header(title = stringResource(R.string.chat_title), focusOnTitle = true)
         TextActionButton(stringResource(R.string.help_button), onHelp, Modifier.padding(horizontal = Spacing.s3))
+        if (phoneVisible) TextActionButton(stringResource(R.string.phone_button), onPhone, Modifier.padding(horizontal = Spacing.s3))
         ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
         when (state) {
             null -> Loading()
@@ -267,6 +272,7 @@ fun ChatConversationScreen(
     chat: Chat?,
     profile: Profile?,
     state: ApiResult<Conversation>?,
+    contacts: ApiResult<ContactList>?,
     loadingOlder: Boolean,
     send: SendState,
     action: ActionState,
@@ -275,6 +281,7 @@ fun ChatConversationScreen(
     onHide: (messageId: String) -> Unit,
     onReport: (messageId: String) -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
+    onLoadContacts: (ageGroupId: String) -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -284,6 +291,20 @@ fun ChatConversationScreen(
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     val compact = keyboardOpen && windowHeight < COMPACT_HEIGHT
+    var contactOpen by remember { mutableStateOf(false) }
+    if (contactOpen) {
+        CeviDialog(
+            title = stringResource(R.string.contact_title),
+            onDismiss = { contactOpen = false },
+            confirmButton = { TextActionButton(stringResource(R.string.close), { contactOpen = false }) },
+        ) {
+            when (contacts) {
+                null -> DialogText(stringResource(R.string.loading))
+                is ApiResult.Failure -> DialogText(stringResource(contacts.error.text))
+                is ApiResult.Ok -> ContactCard(contacts.value.contacts)
+            }
+        }
+    }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         // Alles ausser Eingabe: Die Eingabe wird zuerst gemessen und behält immer ihren Platz.
         Column(Modifier.weight(1f)) {
@@ -292,6 +313,12 @@ fun ChatConversationScreen(
                     title = title,
                     eyebrow = chat?.ageGroup?.name,
                     back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
+                    action = chat?.takeIf { it.isGroup }?.let { group ->
+                        HeaderButton(R.drawable.ic_phone, stringResource(R.string.contact_button)) {
+                            contactOpen = true
+                            onLoadContacts(group.ageGroup.id)
+                        }
+                    },
                     titleStyle = MaterialTheme.typography.headlineMedium,
                     focusOnTitle = true,
                 )

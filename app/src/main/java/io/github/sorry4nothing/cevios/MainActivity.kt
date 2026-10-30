@@ -28,6 +28,8 @@ import io.github.sorry4nothing.cevios.chat.ChatConversationScreen
 import io.github.sorry4nothing.cevios.chat.ChatViewModel
 import io.github.sorry4nothing.cevios.chat.HelpScreen
 import io.github.sorry4nothing.cevios.chat.chatTitle
+import io.github.sorry4nothing.cevios.contacts.PhoneRules
+import io.github.sorry4nothing.cevios.contacts.PhoneScreen
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.AssignmentRules
@@ -68,6 +70,7 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var helpOpen by rememberSaveable { mutableStateOf(false) }
+    var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var assigning by rememberSaveable { mutableStateOf(false) }
 
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
@@ -79,8 +82,8 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
         if (id == null) chat.closeChat() else chat.openChat(id)
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(destination, openedChat, helpOpen) {
-        if (destination == Destination.CHAT && openedChat == null && !helpOpen) {
+    LaunchedEffect(destination, openedChat, helpOpen, phoneOpen) {
+        if (destination == Destination.CHAT && openedChat == null && !helpOpen && !phoneOpen) {
             chat.loadList(silent = true)
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (true) {
@@ -116,6 +119,7 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
                         detail,
                         programs.rsvp.collectAsState().value,
                         canAssign = AssignmentRules.mayAssign(programProfile),
+                        contacts = programs.contacts.collectAsState().value,
                         onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                         onLeader = { attending -> programs.rsvpLeader(programId, attending) },
                         onAssign = { assigning = true },
@@ -142,6 +146,7 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
                     chat = chatEntry,
                     profile = (profile as? ApiResult.Ok)?.value,
                     state = chat.conversation.collectAsState().value,
+                    contacts = chat.contacts.collectAsState().value,
                     loadingOlder = chat.loadingOlder.collectAsState().value,
                     send = chat.send.collectAsState().value,
                     action = chat.action.collectAsState().value,
@@ -150,8 +155,21 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
                     onHide = chat::hide,
                     onReport = chat::report,
                     onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },
+                    onLoadContacts = chat::loadContacts,
                     onBack = { openedChat = null },
                     onRetry = { chat.openChat(chatId) },
+                )
+            }
+            phoneOpen -> {
+                val leave = { phoneOpen = false; chat.resetPhone() }
+                BackHandler(onBack = leave)
+                val phoneProfile = (chat.profile.collectAsState().value as? ApiResult.Ok)?.value
+                PhoneScreen(
+                    phone = phoneProfile?.phone,
+                    canSet = PhoneRules.maySet(phoneProfile),
+                    state = chat.phone.collectAsState().value,
+                    onSave = { chat.savePhone(it, leave) },
+                    onBack = leave,
                 )
             }
             helpOpen -> {
@@ -177,6 +195,8 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
                         onOpen = { openedChat = it },
                         onDirectChat = { ageGroupId -> chat.openDirectChat(ageGroupId, null) { openedChat = it } },
                         onHelp = { helpOpen = true },
+                        phoneVisible = PhoneRules.mayEdit((chat.profile.collectAsState().value as? ApiResult.Ok)?.value),
+                        onPhone = { phoneOpen = true },
                         onRetry = { chat.loadList() },
                     )
                 }

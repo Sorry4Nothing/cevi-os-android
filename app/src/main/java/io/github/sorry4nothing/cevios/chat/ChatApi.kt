@@ -1,5 +1,7 @@
 package io.github.sorry4nothing.cevios.chat
 
+import io.github.sorry4nothing.cevios.contacts.ContactList
+import io.github.sorry4nothing.cevios.contacts.PhoneRequest
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
 
@@ -27,6 +29,12 @@ class ChatApi(private val api: ApiClient) {
     suspend fun markRead(chatId: String): ApiResult<Unit> = api.putWithoutBody("/api/v1/chats/$chatId/gelesen")
 
     suspend fun help(): ApiResult<HelpResponse> = api.get("/api/v1/hilfe")
+
+    /** Alle Stufenleitungen der Stufe (Kontaktpersonen im Gruppenchat). */
+    suspend fun contacts(ageGroupId: String): ApiResult<ContactList> = api.get("/api/v1/stufen/$ageGroupId/kontakte")
+
+    /** Setzt die eigene Telefonnummer (nur Stufenleitungen); ein leerer Text entfernt sie. */
+    suspend fun setPhone(phone: String): ApiResult<Unit> = api.patch("/api/v1/ich", PhoneRequest(phone))
 
     suspend fun profile(): ApiResult<Profile> = api.get("/api/v1/ich")
 }

@@ -2,6 +2,9 @@ package io.github.sorry4nothing.cevios.auth
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.focus.FocusRequester
@@ -67,6 +71,7 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.SlowHint
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
 import io.github.sorry4nothing.cevios.ui.theme.Eyebrow
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
@@ -77,6 +82,10 @@ import io.github.sorry4nothing.cevios.ui.theme.cevi
 private val LOGO_SIZE = 420.dp
 private val LOGO_MIN_SIZE = 200.dp
 
+/** So lange baut sich das Logo beim Start auf, und so weit gleitet es von rechts herein. */
+private const val LOGO_REVEAL_MS = 700
+private val LOGO_SLIDE = 80.dp
+
 private val CardShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
 
 /** Seite mit dem Logo hinter dem Titel oben und einem Block unten. Scrollt, wenn der Platz bei grosser Schrift nicht reicht. */
@@ -84,7 +93,12 @@ private val CardShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
 private fun LogoPage(
     top: @Composable ColumnScope.() -> Unit,
     bottom: @Composable ColumnScope.() -> Unit,
+    animateLogo: Boolean = false,
 ) {
+    // Beim Start gleitet das Logo von rechts herein und blendet auf; mit ausgeschalteten Animationen steht es gleich da.
+    val motionEnabled = rememberMotionEnabled()
+    val reveal = remember { Animatable(if (animateLogo && motionEnabled) 0f else 1f) }
+    LaunchedEffect(Unit) { if (reveal.value < 1f) reveal.animateTo(1f, tween(LOGO_REVEAL_MS, easing = FastOutSlowInEasing)) }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         val fullHeight = maxHeight
         var areaHeight by remember { mutableIntStateOf(0) }
@@ -99,7 +113,14 @@ private fun LogoPage(
                         Image(
                             painterResource(R.drawable.ic_logo),
                             contentDescription = null,
-                            modifier = Modifier.align(Alignment.TopEnd).offset(x = logoSize * (110f / 420f), y = logoSize * (8f / 420f)).size(logoSize),
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = logoSize * (110f / 420f), y = logoSize * (8f / 420f))
+                                .size(logoSize)
+                                .graphicsLayer {
+                                    alpha = reveal.value
+                                    translationX = (1f - reveal.value) * LOGO_SLIDE.toPx()
+                                },
                         )
                     }
                     Column(
@@ -143,6 +164,7 @@ fun StartScreen() {
             )
         },
         bottom = { Spacer(Modifier.height(72.dp)) },
+        animateLogo = true,
     )
 }
 

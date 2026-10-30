@@ -73,6 +73,8 @@ private const val LIST_POLL_INTERVAL_MS = 30_000L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Der Start lief mit dem Theme des Splash (Manifest); ab jetzt gilt das Theme der App.
+        setTheme(R.style.Theme_CeviOS)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // Auch auf einem englisch gestellten Gerät liest der Screenreader die App mit deutscher Aussprache vor (ab Android 13).

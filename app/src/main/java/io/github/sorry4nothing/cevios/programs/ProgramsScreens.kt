@@ -209,10 +209,12 @@ fun ProgramDetailScreen(
     state: ApiResult<Program>?,
     rsvp: RsvpState,
     canAssign: Boolean,
+    canSeeRegistrations: Boolean,
     contacts: ApiResult<ContactList>?,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
+    onRegistrations: () -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -227,7 +229,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, contacts, back, onChild, onLeader, onAssign)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, contacts, back, onChild, onLeader, onAssign, onRegistrations)
         }
     }
 }
@@ -237,11 +239,13 @@ private fun ProgramContent(
     program: Program,
     rsvp: RsvpState,
     canAssign: Boolean,
+    canSeeRegistrations: Boolean,
     contacts: ApiResult<ContactList>?,
     back: HeaderButton,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
+    onRegistrations: () -> Unit,
 ) {
     val ageGroups = program.ageGroups.joinToString(", ") { it.name }
     val date = program.startDay()?.let { "${weekdayShort(it)} ${dayAndMonth(it)}" }
@@ -259,7 +263,7 @@ private fun ProgramContent(
             Facts(program)
             RegistrationSection(program, rsvp, onChild, onLeader)
             ContactSection(program, contacts)
-            LeaderSection(program, canAssign, onAssign)
+            LeaderSection(program, canAssign, canSeeRegistrations, onAssign, onRegistrations)
             Box(Modifier.height(Spacing.s4))
         }
     }
@@ -279,18 +283,30 @@ private fun ContactSection(program: Program, contacts: ApiResult<ContactList>?) 
     }
 }
 
-/** Aktion nur für Admins und Stufenleitungen: Stufen und Sichtbarkeit setzen. */
+/**
+ * Aktionen für Leitende: die Anmeldungen ansehen (Admins sowie Leitende und SL der Stufen) und, nur für Admins und
+ * Stufenleitungen, Stufen und Sichtbarkeit setzen.
+ */
 @Composable
-private fun LeaderSection(program: Program, canAssign: Boolean, onAssign: () -> Unit) {
-    if (!canAssign) return
+private fun LeaderSection(
+    program: Program,
+    canAssign: Boolean,
+    canSeeRegistrations: Boolean,
+    onAssign: () -> Unit,
+    onRegistrations: () -> Unit,
+) {
+    if (!canAssign && !canSeeRegistrations) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
         Text(
             stringResource(R.string.section_leaders),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 6.dp).semantics { heading() },
         )
-        if (program.unassigned) NoticeBanner(NoticeKind.INFO, stringResource(R.string.unassigned_notice))
-        OutlinedPillButton(stringResource(R.string.assignment_action), onAssign, Modifier.fillMaxWidth())
+        if (canAssign && program.unassigned) NoticeBanner(NoticeKind.INFO, stringResource(R.string.unassigned_notice))
+        if (canSeeRegistrations) {
+            OutlinedPillButton(stringResource(R.string.registrations_action), onRegistrations, Modifier.fillMaxWidth(), icon = R.drawable.ic_group)
+        }
+        if (canAssign) OutlinedPillButton(stringResource(R.string.assignment_action), onAssign, Modifier.fillMaxWidth())
     }
 }
 

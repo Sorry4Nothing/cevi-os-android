@@ -34,6 +34,9 @@ class ProgramsApi(private val api: ApiClient) {
     /** Die Stufenleitungen, die sich für das Programm angemeldet haben; leer, wenn keine angemeldet ist. */
     suspend fun contacts(id: String): ApiResult<ContactList> = api.get("/api/v1/programme/$id/kontakte")
 
+    /** Zahlen und Listen der Anmeldungen (nur ansehen): Admins sowie Leitende und Stufenleitungen der Stufen des Programms. */
+    suspend fun registrations(id: String): ApiResult<Registrations> = api.get("/api/v1/programme/$id/teilnahmen")
+
     suspend fun profile(): ApiResult<Profile> = api.get("/api/v1/ich")
 
     private fun rsvpBody(attending: Boolean) = RsvpRequest(if (attending) "ja" else "nein")

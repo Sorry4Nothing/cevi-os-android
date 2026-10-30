@@ -98,7 +98,7 @@
     <string name="state_404_title">Nicht gefunden</string>
     <string name="state_404_text">Dieses Programm gibt es nicht mehr. Vielleicht wurde es verschoben oder abgesagt.</string>
     <string name="state_access_title">Kein Zugriff</string>
-    <string name="state_access_text">Diese Seite ist nur für die Stufenleitung. Wenn du denkst, das ist ein Fehler, frag deine Stufenleitung.</string>
+    <string name="state_access_text">Diese Seite ist nur für die Leitung. Wenn du denkst, das ist ein Fehler, frag deine Stufenleitung.</string>
     <string name="state_session_title">Bitte melde dich neu an</string>
     <string name="state_session_text">Du warst länger nicht aktiv. Zu deiner Sicherheit haben wir dich abgemeldet.</string>
     <string name="program_open">Programm öffnen</string>
@@ -213,4 +213,16 @@
     <string name="profile_image_remove">Profilbild entfernen</string>
     <string name="profile_image_saving">Bild wird gespeichert</string>
     <string name="error_image_unreadable">Dieses Bild lässt sich nicht lesen. Wähle ein anderes.</string>
+    <string name="registrations_title">Anmeldungen</string>
+    <string name="registrations_loading">Anmeldungen werden geladen</string>
+    <string name="registrations_action">Anmeldungen ansehen</string>
+    <string name="registrations_summary">%1$s Ja, %2$s Nein, %3$s offen von %4$s</string>
+    <string name="registrations_yes">%1$s Ja</string>
+    <string name="registrations_no">%1$s Nein</string>
+    <string name="registrations_open">%1$s offen</string>
+    <string name="registrations_tab_children">Kinder · %1$s</string>
+    <string name="registrations_tab_leaders">Leitende · %1$s</string>
+    <string name="registrations_empty_children">In den Stufen dieses Programms gibt es keine Kinder.</string>
+    <string name="registrations_empty_leaders">In den Stufen dieses Programms gibt es keine Leitenden.</string>
+    <string name="registrations_chip_open">Offen</string>
 </resources>

@@ -62,6 +62,10 @@ import io.github.sorry4nothing.cevios.programs.AssignmentScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import io.github.sorry4nothing.cevios.programs.ProgramListScreen
+import io.github.sorry4nothing.cevios.programs.RegistrationsRules
+import io.github.sorry4nothing.cevios.programs.RegistrationsScreen
+import io.github.sorry4nothing.cevios.programs.startDay
+import io.github.sorry4nothing.cevios.programs.weekdayShort
 import io.github.sorry4nothing.cevios.programs.ProgramsViewModel
 import io.github.sorry4nothing.cevios.ui.MainScaffold
 import io.github.sorry4nothing.cevios.ui.Destination
@@ -169,12 +173,17 @@ private fun MainContent(
     var helpOpen by rememberSaveable { mutableStateOf(false) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var assigning by rememberSaveable { mutableStateOf(false) }
+    var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
 
     // Ein gespeichertes Passwort schliesst den Wechsel; der Hinweis erscheint im Profil.
     LaunchedEffect(passwordSaved) { if (passwordSaved) changingPassword = false }
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
     LaunchedEffect(assigning) { if (assigning) programs.loadAgeGroups() }
+    LaunchedEffect(viewingRegistrations, openedProgram) {
+        val id = openedProgram
+        if (viewingRegistrations && id != null) programs.loadRegistrations(id)
+    }
     LaunchedEffect(helpOpen) { if (helpOpen) chat.loadHelp() }
     LaunchedEffect(openedChat) {
         val id = openedChat
@@ -211,6 +220,18 @@ private fun MainContent(
                     onRetry = programs::loadAgeGroups,
                 )
             }
+            programId != null && viewingRegistrations -> {
+                BackHandler { viewingRegistrations = false }
+                val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
+                MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingRegistrations = false }) {
+                    RegistrationsScreen(
+                        eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
+                        state = programs.registrations.collectAsState().value,
+                        onBack = { viewingRegistrations = false },
+                        onRetry = { programs.loadRegistrations(programId) },
+                    )
+                }
+            }
             programId != null -> {
                 BackHandler { openedProgram = null }
                 MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }) {
@@ -218,10 +239,12 @@ private fun MainContent(
                         detail,
                         programs.rsvp.collectAsState().value,
                         canAssign = AssignmentRules.mayAssign(programProfile),
+                        canSeeRegistrations = assignedProgram?.let { RegistrationsRules.maySee(it, programProfile) } == true,
                         contacts = programs.contacts.collectAsState().value,
                         onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                         onLeader = { attending -> programs.rsvpLeader(programId, attending) },
                         onAssign = { assigning = true },
+                        onRegistrations = { viewingRegistrations = true },
                         onBack = { openedProgram = null },
                         onRetry = { programs.loadDetail(programId) },
                     )

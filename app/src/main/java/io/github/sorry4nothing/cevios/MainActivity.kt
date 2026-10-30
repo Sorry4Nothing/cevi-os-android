@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Root(client: ApiClient) {
     val authApi = remember(client) { AuthApi(client) }
-    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client::forgetSession) }
+    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, client::forgetSession) }
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()

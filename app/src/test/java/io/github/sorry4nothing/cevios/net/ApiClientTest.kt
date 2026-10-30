@@ -195,4 +195,18 @@ class ApiClientTest {
         server.enqueue(response(409, """{"code":"PROGRAMM_GESCHLOSSEN","message":"x"}"""))
         assertEquals(ApiResult.Failure(ApiError.REGISTRATION_CLOSED, "PROGRAMM_GESCHLOSSEN"), runBlocking { client().get<Me>("/x") })
     }
+
+    @Test
+    fun forbiddenIsAnnouncedOnlyForTheApiRoutes() = runBlocking {
+        val api = client()
+        val announced = async(start = CoroutineStart.UNDISPATCHED) { api.forbidden.first() }
+        server.enqueue(response(403, """{"code":"INVALID_ORIGIN","message":"x"}"""))
+        api.post<Unit, Me>("/api/auth/sign-out", Unit)
+        server.enqueue(response(401, "{}"))
+        api.get<Me>("/api/v1/chats")
+        assertNull(withTimeoutOrNull(200) { announced.await() })
+        server.enqueue(response(403, """{"code":"KEINE_BERECHTIGUNG","message":"x"}"""))
+        api.get<Me>("/api/v1/chats")
+        assertEquals(Unit, withTimeout(5_000) { announced.await() })
+    }
 }

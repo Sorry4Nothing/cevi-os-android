@@ -2,9 +2,9 @@
     <string name="app_name">Cevi OS</string>
     <string name="error_not_signed_in">Du bist nicht angemeldet. Bitte melde dich an.</string>
     <string name="error_forbidden">Das darfst du nicht.</string>
-    <string name="error_not_found">Das gibt es nicht mehr.</string>
+    <string name="error_not_found">Das gibt es nicht mehr, oder du darfst es nicht sehen.</string>
     <string name="error_app_outdated">Diese App ist zu alt. Bitte installiere die neue Version.</string>
-    <string name="error_too_many_requests">Zu viele Versuche. Bitte warte kurz.</string>
+    <string name="error_too_many_requests">Zu viele Anfragen. Bitte warte einen Moment und versuche es dann nochmals.</string>
     <string name="error_registration_closed">Die Anmeldung ist geschlossen. Das Programm ist abgesagt oder hat schon begonnen.</string>
     <string name="error_network">Keine Verbindung. Prüfe dein Internet und versuche es nochmals.</string>
     <string name="error_unknown">Etwas ist schiefgelaufen. Bitte versuche es nochmals.</string>
@@ -197,4 +197,16 @@
     <string name="role_parent">Elternteil</string>
     <string name="working">Einen Moment …</string>
     <string name="slow_hint">Das dauert länger als sonst. Bitte noch einen Moment warten.</string>
+    <string name="error_too_many_wait">Zu viele Versuche. Bitte warte %1$s und versuche es dann nochmals.</string>
+    <string name="error_program_started">Das Programm hat schon begonnen. Die Anmeldung lässt sich nicht mehr ändern.</string>
+    <string name="error_direct_chat_unavailable">Einen Einzelchat gibt es nur zwischen der Stufenleitung und den Eltern eines Kindes dieser Stufe.</string>
+    <string name="error_message_too_fast">Du hast in kurzer Zeit viele Nachrichten gesendet. Bitte warte einen Moment.</string>
+    <plurals name="wait_seconds">
+        <item quantity="one">%d Sekunde</item>
+        <item quantity="other">%d Sekunden</item>
+    </plurals>
+    <plurals name="wait_minutes">
+        <item quantity="one">%d Minute</item>
+        <item quantity="other">%d Minuten</item>
+    </plurals>
 </resources>

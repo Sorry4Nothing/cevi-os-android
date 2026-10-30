@@ -50,3 +50,9 @@ object PasswordRules {
 @StringRes
 fun signInErrorText(failure: ApiResult.Failure): Int =
     if (failure.error == ApiError.NOT_SIGNED_IN) R.string.login_failed else failure.error.text
+
+/** Wartezeit für die Anzeige: bis 90 Sekunden in Sekunden, darüber in Minuten (aufgerundet). */
+data class WaitTime(val amount: Int, val minutes: Boolean)
+
+fun waitTime(seconds: Int): WaitTime =
+    if (seconds <= 90) WaitTime(seconds.coerceAtLeast(1), minutes = false) else WaitTime((seconds + 59) / 60, minutes = true)

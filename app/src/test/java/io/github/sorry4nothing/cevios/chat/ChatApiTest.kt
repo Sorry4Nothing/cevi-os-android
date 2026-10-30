@@ -142,7 +142,7 @@ class ChatApiTest {
     @Test
     fun tooManyMessagesGivesTooManyRequestsError() {
         server.enqueue(json(429, """{"code":"ZU_VIELE_ANFRAGEN","message":"x"}"""))
-        assertEquals(ApiResult.Failure(ApiError.TOO_MANY_REQUESTS), runBlocking { chat.send("c1", "Hallo") })
+        assertEquals(ApiResult.Failure(ApiError.MESSAGE_TOO_FAST), runBlocking { chat.send("c1", "Hallo") })
     }
 
     @Test
@@ -252,5 +252,17 @@ class ChatApiTest {
         val messages = (runBlocking { chat.messages("c1") } as ApiResult.Ok).value.messages
         assertTrue(messages[0].author.groupLeader)
         assertFalse(messages[1].author.groupLeader)
+    }
+
+    @Test
+    fun directChatNotFoundHasItsOwnText() {
+        server.enqueue(json(404, """{"code":"NICHT_GEFUNDEN","message":"x"}"""))
+        assertEquals(ApiResult.Failure(ApiError.DIRECT_CHAT_UNAVAILABLE), runBlocking { chat.directChat("s1") })
+    }
+
+    @Test
+    fun otherChatNotFoundKeepsTheGeneralText() {
+        server.enqueue(json(404, """{"code":"NICHT_GEFUNDEN","message":"x"}"""))
+        assertEquals(ApiResult.Failure(ApiError.NOT_FOUND), runBlocking { chat.messages("c1") })
     }
 }

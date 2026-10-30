@@ -97,7 +97,9 @@ class ApiClient(
     private fun <T> evaluate(response: Response, decode: (String) -> T): ApiResult<T> {
         if (!response.isSuccessful) {
             if (response.code == 401 && !response.request.url.encodedPath.startsWith(SIGN_IN_PATH)) _unauthorized.tryEmit(Unit)
-            return ApiResult.Failure(ApiError.fromStatus(response.code), if (response.code == 400) errorCode(response) else null)
+            val code = if (response.code == 400 || response.code == 409) errorCode(response) else null
+            val retryAfter = if (response.code == 429) response.header(RETRY_AFTER)?.toIntOrNull()?.coerceIn(1, MAX_RETRY_AFTER) else null
+            return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter)
         }
         return try {
             ApiResult.Ok(decode(response.body.string()))
@@ -122,6 +124,10 @@ class ApiClient(
 
     companion object {
         private const val SIGN_IN_PATH = "/api/auth/sign-in"
+
+        /** Wartezeit in Sekunden bei 429; eine Stunde ist die Obergrenze, was der Server schickt, ist nicht vertrauenswürdig. */
+        private const val RETRY_AFTER = "X-Retry-After"
+        private const val MAX_RETRY_AFTER = 3600
         private val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
 
         /** Ohne Weiterleitungen: OkHttp würde den Cookie-Header sonst auch an fremde Hosts mitschicken. */

@@ -13,4 +13,11 @@ class ApiErrorTest {
     fun unknownStatusIsUnknownError() {
         assertEquals(ApiError.UNKNOWN, ApiError.fromStatus(418))
     }
+
+    @Test
+    fun conflictCodeDecidesTheText() {
+        assertEquals(ApiError.PROGRAM_STARTED, ApiError.from(409, "PROGRAMM_BEGONNEN"))
+        assertEquals(ApiError.REGISTRATION_CLOSED, ApiError.from(409, "PROGRAMM_GESCHLOSSEN"))
+        assertEquals(ApiError.REGISTRATION_CLOSED, ApiError.from(409, null))
+    }
 }

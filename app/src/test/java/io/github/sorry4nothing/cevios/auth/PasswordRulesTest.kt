@@ -36,4 +36,14 @@ class PasswordRulesTest {
         assertEquals("Marion", firstName("  Marion  "))
         assertEquals("", firstName(""))
     }
+
+    @Test
+    fun waitTimeIsShownInSecondsThenMinutes() {
+        assertEquals(WaitTime(1, false), waitTime(0))
+        assertEquals(WaitTime(30, false), waitTime(30))
+        assertEquals(WaitTime(90, false), waitTime(90))
+        assertEquals(WaitTime(2, true), waitTime(91))
+        assertEquals(WaitTime(15, true), waitTime(900))
+        assertEquals(WaitTime(16, true), waitTime(901))
+    }
 }

@@ -13,6 +13,25 @@
     <string name="nochmals">Nochmals versuchen</string>
     <string name="zurueck">Zurück</string>
 
+    <string name="tab_programme">Programme</string>
+    <string name="tab_chat">Chat</string>
+
+    <string name="chat_titel">Chat</string>
+    <string name="chat_leer">Du bist in keinem Chat.</string>
+    <string name="chat_oeffnen">Chat öffnen</string>
+    <string name="chat_gruppe">Gruppenchat %1$s</string>
+    <string name="chat_einzel">Einzelchat %1$s</string>
+    <string name="chat_stufe">Stufe %1$s</string>
+    <string name="nachrichten_leer">Noch keine Nachrichten.</string>
+    <string name="nachricht_ausgeblendet">Diese Nachricht wurde ausgeblendet.</string>
+    <string name="nachricht_du">Du</string>
+    <string name="nachricht_programm">Programm: %1$s</string>
+    <string name="nachrichten_aeltere">Ältere Nachrichten laden</string>
+    <string name="nachricht_eingabe">Nachricht</string>
+    <string name="nachricht_senden">Senden</string>
+    <string name="nachricht_sendet">Wird gesendet …</string>
+    <string name="aktualisieren">Aktualisieren</string>
+
     <string name="programme_titel">Programme</string>
     <string name="programme_leer">In den nächsten Monaten gibt es keine Programme.</string>
     <string name="programm_oeffnen">Programm öffnen</string>

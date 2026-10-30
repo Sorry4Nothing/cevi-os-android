@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,8 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,20 +21,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.ui.FehlerAnzeige
+import io.github.sorry4nothing.cevios.ui.Laden
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -52,7 +47,7 @@ fun ProgrammeListeScreen(
     onOeffnen: (String) -> Unit,
     onNochmals: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+    Column(Modifier.fillMaxSize()) {
         Text(
             stringResource(R.string.programme_titel),
             style = MaterialTheme.typography.headlineMedium,
@@ -167,29 +162,6 @@ private fun StatusText(programm: Programm) {
         else -> return
     }
     Text(stringResource(text), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-}
-
-@Composable
-private fun Laden() {
-    val beschreibung = stringResource(R.string.laden)
-    Box(
-        Modifier.fillMaxWidth().padding(32.dp).semantics {
-            contentDescription = beschreibung
-            liveRegion = LiveRegionMode.Polite
-        },
-        contentAlignment = Alignment.Center,
-    ) { CircularProgressIndicator() }
-}
-
-@Composable
-private fun FehlerAnzeige(fehler: ApiResult.Fehler, onNochmals: () -> Unit) {
-    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(
-            stringResource(fehler.fehler.text),
-            Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-        )
-        Button(onClick = onNochmals) { Text(stringResource(R.string.nochmals)) }
-    }
 }
 
 @Composable

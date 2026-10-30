@@ -265,4 +265,11 @@ class ChatApiTest {
         server.enqueue(json(404, """{"code":"NICHT_GEFUNDEN","message":"x"}"""))
         assertEquals(ApiResult.Failure(ApiError.NOT_FOUND), runBlocking { chat.messages("c1") })
     }
+
+    @Test
+    fun authorImageUrlIsRead() {
+        server.enqueue(json(200, """{"nachrichten":[{"id":"m1","text":"Hallo","erstelltAm":"2026-05-02T12:30:00Z","autor":{"id":"u1","name":"Anna","bildUrl":"/api/v1/personen/u1/bild?v=2","stufenleitung":true},"programm":null,"eigene":false}],"naechster":null}"""))
+        val page = (runBlocking { chat.messages("c1") } as ApiResult.Ok).value
+        assertEquals("/api/v1/personen/u1/bild?v=2", page.messages.single().author.imageUrl)
+    }
 }

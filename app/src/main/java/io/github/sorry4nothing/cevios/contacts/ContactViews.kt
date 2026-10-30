@@ -22,8 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
@@ -71,6 +73,7 @@ private fun ContactRow(contact: Contact) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Avatar(contact.name, size = 40.dp, imageUrl = contact.imageUrl, initialSize = 16.sp)
         Column(Modifier.weight(1f)) {
             Text(contact.name, style = MaterialTheme.typography.titleMedium)
             contact.phone?.takeIf { it.isNotBlank() }?.let {

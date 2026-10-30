@@ -49,6 +49,10 @@ import io.github.sorry4nothing.cevios.chat.HelpScreen
 import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.chat.chatTitle
 import io.github.sorry4nothing.cevios.contacts.PhoneRules
+import io.github.sorry4nothing.cevios.images.LocalProfileImages
+import io.github.sorry4nothing.cevios.images.ProfileImageApi
+import io.github.sorry4nothing.cevios.images.ProfileImageEncoder
+import io.github.sorry4nothing.cevios.images.ProfileImages
 import io.github.sorry4nothing.cevios.contacts.PhoneScreen
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiError
@@ -63,7 +67,9 @@ import io.github.sorry4nothing.cevios.ui.MainScaffold
 import io.github.sorry4nothing.cevios.ui.Destination
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.theme.CeviTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist (Takt laut API). */
 private const val CHAT_POLL_INTERVAL_MS = 5_000L
@@ -94,6 +100,7 @@ private fun Root(client: ApiClient) {
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()
+    val imageForm by auth.imageForm.collectAsState()
     val context = LocalContext.current
     val openPrivacy = { openInBrowser(context, authApi.privacyUrl()) }
     Surface(Modifier.fillMaxSize()) {
@@ -119,11 +126,15 @@ private fun Root(client: ApiClient) {
                 onAccept = auth::acceptPrivacy,
             )
             is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
-                MainContent(
-                    ProgramsApi(client), ChatApi(client), current.profile,
-                    passwordSaved, form, auth,
-                    onOpenPrivacy = openPrivacy,
-                )
+                // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
+                val images = viewModel { ProfileImages(ProfileImageApi(client)) }
+                CompositionLocalProvider(LocalProfileImages provides images) {
+                    MainContent(
+                        ProgramsApi(client), ChatApi(client), current.profile,
+                        passwordSaved, form, imageForm, auth,
+                        onOpenPrivacy = openPrivacy,
+                    )
+                }
             }
         }
     }
@@ -144,9 +155,11 @@ private fun MainContent(
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
+    imageForm: FormState,
     auth: AuthViewModel,
     onOpenPrivacy: () -> Unit,
 ) {
+    val resolver = LocalContext.current.contentResolver
     val programs = viewModel { ProgramsViewModel(programsApi) }
     val chat = viewModel { ChatViewModel(chatApi) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
@@ -278,11 +291,13 @@ private fun MainContent(
                     )
                 } else if (destination == Destination.PROFILE) {
                     ProfileScreen(
-                        account, passwordSaved, form,
+                        account, passwordSaved, form, imageForm,
+                        onPickImage = { uri -> auth.uploadImage { withContext(Dispatchers.Default) { ProfileImageEncoder.encode(resolver, uri) } } },
+                        onRemoveImage = auth::removeImage,
                         onChangePassword = { changingPassword = true },
                         onOpenPrivacy = onOpenPrivacy,
                         onSignOut = auth::signOut,
-                        onLeave = auth::clearPasswordSaved,
+                        onLeave = { auth.clearPasswordSaved(); auth.clearImageError() },
                     )
                 } else {
                     ChatListScreen(

@@ -81,8 +81,28 @@ class ApiClient(
     suspend fun postWithoutBody(path: String): ApiResult<Unit> =
         send(request(path).post(ByteArray(0).toRequestBody()).build()) { }
 
+    /** PUT mit den Bytes eines Bildes (der Typ ergibt sich beim Server aus den ersten Bytes); die Antwort hat keinen Inhalt (204). */
+    suspend fun putBytes(path: String, bytes: ByteArray, type: String): ApiResult<Unit> =
+        send(request(path).put(bytes.toRequestBody(type.toMediaType())).build()) { }
+
+    /** DELETE ohne Body; die Antwort hat keinen Inhalt (204). */
+    suspend fun delete(path: String): ApiResult<Unit> =
+        send(request(path).delete().build()) { }
+
+    /** GET einer Datei (Bild) als Bytes; mehr als `maxBytes` gilt als Fehler. */
+    suspend fun getBytes(path: String, maxBytes: Int): ApiResult<ByteArray> =
+        sendRaw(request(path).get().build()) { response ->
+            val source = response.body.source()
+            source.request(maxBytes + 1L)
+            if (source.buffer.size > maxBytes) throw IllegalArgumentException("Antwort zu gross")
+            source.readByteArray()
+        }
+
     /** Für Antworten ohne Inhalt oder ohne Interesse am Inhalt: `decode = { }`. */
     suspend fun <T> send(request: Request, decode: (String) -> T): ApiResult<T> =
+        sendRaw(request) { decode(it.body.string()) }
+
+    private suspend fun <T> sendRaw(request: Request, decode: (Response) -> T): ApiResult<T> =
         suspendCancellableCoroutine { continuation ->
             val httpCall = http.newCall(request)
             continuation.invokeOnCancellation { httpCall.cancel() }
@@ -99,7 +119,7 @@ class ApiClient(
             })
         }
 
-    private fun <T> evaluate(response: Response, decode: (String) -> T): ApiResult<T> {
+    private fun <T> evaluate(response: Response, decode: (Response) -> T): ApiResult<T> {
         if (!response.isSuccessful) {
             if (response.code == 401 && !response.request.url.encodedPath.startsWith(SIGN_IN_PATH)) _unauthorized.tryEmit(Unit)
             if (response.code == 403 && response.request.url.encodedPath.startsWith(API_PATH)) _forbidden.tryEmit(Unit)
@@ -108,7 +128,7 @@ class ApiClient(
             return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter)
         }
         return try {
-            ApiResult.Ok(decode(response.body.string()))
+            ApiResult.Ok(decode(response))
         } catch (e: IOException) {
             ApiResult.Failure(ApiError.NETWORK)
         } catch (e: IllegalArgumentException) { // auch SerializationException

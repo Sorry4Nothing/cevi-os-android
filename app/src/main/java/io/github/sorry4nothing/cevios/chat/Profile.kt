@@ -30,6 +30,7 @@ data class Profile(
     @SerialName("mussPasswortAendern") val mustChangePassword: Boolean = false,
     /** Wann die Person die Datenschutzerklärung zur Kenntnis genommen hat; `null`: noch nicht. */
     @SerialName("datenschutzGelesenAm") val privacyReadAt: String? = null,
+    @SerialName("bildUrl") val imageUrl: String? = null,
 ) {
     fun isGroupLeader(ageGroupId: String) = roles.any { it.type == "stufenleitung" && it.ageGroupId == ageGroupId }
 }

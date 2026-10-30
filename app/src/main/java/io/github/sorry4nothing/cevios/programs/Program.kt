@@ -36,7 +36,6 @@ data class Program(
     @SerialName("schlussOrt") val closingLocation: String? = null,
     @SerialName("schlussZeit") val closingTime: String? = null,
     @SerialName("mitnehmen") val bringAlong: String? = null,
-    @SerialName("infoEltern") val parentInfo: String? = null,
     @SerialName("stufen") val ageGroups: List<ProgramAgeGroup> = emptyList(),
     /** Wahr, solange das Programm aktiv ist und nicht begonnen hat: nur dann lässt sich antworten. */
     @SerialName("teilnahmeOffen") val attendanceOpen: Boolean = false,
@@ -49,7 +48,20 @@ data class Program(
     val unassigned get() = ageGroups.isEmpty()
 
     /** Der Treffpunkt der Leitung, sonst der Ort aus dem Google-Kalender. */
-    val location get() = meetingPoint?.takeIf { it.isNotBlank() } ?: googleLocation?.takeIf { it.isNotBlank() }
+    val location get() = parseMeetingPoint(meetingPoint).place ?: googleLocation?.takeIf { it.isNotBlank() }
+}
+
+/** Zeit und Ort des Treffpunkts, wie der Server sie in einem Text liefert. */
+data class MeetingPoint(val time: String?, val place: String?)
+
+private val MEETING_TIME = Regex("""^(\d{2}:\d{2}) Uhr$""")
+
+/** Der Server schreibt «14:00 Uhr» in die erste Zeile, wenn die Webseite eine Zeit nennt; der Rest ist der Ort. */
+fun parseMeetingPoint(text: String?): MeetingPoint {
+    val lines = text.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
+    val time = lines.firstOrNull()?.let { MEETING_TIME.matchEntire(it)?.groupValues?.get(1) }
+    val place = (if (time != null) lines.drop(1) else lines).joinToString("\n").ifEmpty { null }
+    return MeetingPoint(time, place)
 }
 
 @Serializable

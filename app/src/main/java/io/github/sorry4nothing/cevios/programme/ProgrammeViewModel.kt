@@ -10,9 +10,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
-/** Zustand beim Speichern einer Antwort («ja» oder «nein»). */
-data class Antwortstand(val laeuft: Boolean = false, val fehler: ApiFehler? = null)
+/**
+ * Zustand beim Speichern einer Antwort («ja» oder «nein»). `gesendet` merkt sich pro Kind (ID) oder für die eigene
+ * Anmeldung ([SCHLUESSEL_LEITUNG]) die Uhrzeit des letzten Sendens: «Gesendet 12:10».
+ */
+data class Antwortstand(
+    val laeuft: Boolean = false,
+    val fehler: ApiFehler? = null,
+    val gesendet: Map<String, String> = emptyMap(),
+)
+
+const val SCHLUESSEL_LEITUNG = "leitung"
+
+private val UHRZEIT = DateTimeFormatter.ofPattern("HH:mm")
 
 /** `null` heisst: wird geladen. Die Daten bleiben nur im Arbeitsspeicher. */
 class ProgrammeViewModel(private val api: ProgrammeApi) : ViewModel() {
@@ -49,20 +62,24 @@ class ProgrammeViewModel(private val api: ProgrammeApi) : ViewModel() {
     }
 
     fun kindAntworten(programmId: String, kindId: String, ja: Boolean) =
-        speichern(programmId) { api.teilnahmeSetzen(programmId, kindId, ja) }
+        speichern(programmId, kindId) { api.teilnahmeSetzen(programmId, kindId, ja) }
 
     fun leitungAntworten(programmId: String, ja: Boolean) =
-        speichern(programmId) { api.leitungSetzen(programmId, ja) }
+        speichern(programmId, SCHLUESSEL_LEITUNG) { api.leitungSetzen(programmId, ja) }
 
-    /** Speichert und liest das Programm danach neu: Der Server ist die einzige Wahrheit über den Stand. */
-    private fun speichern(programmId: String, aufruf: suspend () -> ApiResult<Unit>) {
+    /**
+     * Speichert und liest das Programm danach neu: Der Server ist die einzige Wahrheit über den Stand. Bei einem Fehler
+     * bleibt der alte Stand sichtbar, die Pillen springen also zurück.
+     */
+    private fun speichern(programmId: String, schluessel: String, aufruf: suspend () -> ApiResult<Unit>) {
         if (_antwort.value.laeuft) return
-        _antwort.value = Antwortstand(laeuft = true)
+        val bisher = _antwort.value.gesendet
+        _antwort.value = Antwortstand(laeuft = true, gesendet = bisher)
         viewModelScope.launch {
             when (val ergebnis = aufruf()) {
-                is ApiResult.Fehler -> _antwort.value = Antwortstand(fehler = ergebnis.fehler)
+                is ApiResult.Fehler -> _antwort.value = Antwortstand(fehler = ergebnis.fehler, gesendet = bisher)
                 is ApiResult.Ok -> {
-                    _antwort.value = Antwortstand()
+                    _antwort.value = Antwortstand(gesendet = bisher + (schluessel to UHRZEIT.format(LocalTime.now(SCHWEIZ))))
                     val neu = api.lesen(programmId)
                     if (offeneId == programmId) _detail.value = neu
                 }

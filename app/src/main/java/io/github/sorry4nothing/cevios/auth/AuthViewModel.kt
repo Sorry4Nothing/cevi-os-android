@@ -45,6 +45,14 @@ sealed interface AuthState {
 /** Zustand eines Formulars (Anmelden, Passwort, Datenschutz): läuft gerade etwas, und was ging schief. */
 data class FormState(val running: Boolean = false, @StringRes val error: Int? = null, val waitSeconds: Int? = null)
 
+/** Der Fehler einer Anfrage als Zustand eines Formulars; bei «zu viele Anfragen» mit der Wartezeit des Servers. */
+internal fun failureForm(failure: ApiResult.Failure, @StringRes text: Int) =
+    if (failure.error == ApiError.TOO_MANY_REQUESTS && failure.retryAfterSeconds != null) {
+        FormState(error = R.string.error_too_many_wait, waitSeconds = failure.retryAfterSeconds)
+    } else {
+        FormState(error = text)
+    }
+
 /**
  * Wer ist angemeldet, und was muss die Person noch tun. Passwörter liegen nie hier: Die Eingabe bleibt im Bildschirm und
  * geht direkt an den Server.
@@ -211,13 +219,6 @@ class AuthViewModel(
     }
 
     /** Bei 429 mit Wartezeit sagt der Text, wie lange; sonst der Text des Aufrufs. */
-    private fun failureForm(failure: ApiResult.Failure, @StringRes text: Int) =
-        if (failure.error == ApiError.TOO_MANY_REQUESTS && failure.retryAfterSeconds != null) {
-            FormState(error = R.string.error_too_many_wait, waitSeconds = failure.retryAfterSeconds)
-        } else {
-            FormState(error = text)
-        }
-
     private fun fail(error: ApiError) {
         if (error == ApiError.NOT_SIGNED_IN) leave(expired = true) else _state.value = AuthState.Failed(error)
     }

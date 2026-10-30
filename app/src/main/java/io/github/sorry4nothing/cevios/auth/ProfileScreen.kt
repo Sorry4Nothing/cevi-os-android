@@ -74,6 +74,7 @@ fun ProfileScreen(
     onPickImage: (Uri) -> Unit,
     onRemoveImage: () -> Unit,
     onChangePassword: () -> Unit,
+    onOpenNotifications: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenDeleteAccount: () -> Unit,
@@ -99,7 +100,7 @@ fun ProfileScreen(
             formErrorText(imageForm)?.let { NoticeBanner(NoticeKind.ERROR, it) }
             SectionTitle(R.string.profile_section_app)
             SettingsCard {
-                SettingsRow(R.drawable.ic_bell, stringResource(R.string.profile_notifications), value = stringResource(R.string.profile_soon))
+                SettingsRow(R.drawable.ic_bell, stringResource(R.string.profile_notifications), onClick = onOpenNotifications, chevron = true)
                 SettingsDivider()
                 SettingsRow(
                     R.drawable.ic_shield, stringResource(R.string.profile_privacy),
@@ -184,7 +185,7 @@ private fun PersonRow(profile: Profile, uploading: Boolean, onChangeImage: () ->
     }
 }
 
-/** «Stufenleitung · Elternteil · Lena, Noah»: Rollen und, bei Eltern, die Vornamen der Kinder. */
+/** Rollen und, bei Eltern, die Vornamen der Kinder, getrennt mit « · ». */
 @Composable
 private fun roleLine(profile: Profile): String {
     val parts = buildList {
@@ -209,7 +210,7 @@ private fun SectionTitle(@StringRes text: Int) {
 }
 
 @Composable
-private fun SettingsCard(content: @Composable () -> Unit) {
+internal fun SettingsCard(content: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -220,7 +221,7 @@ private fun SettingsCard(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SettingsDivider() = HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+internal fun SettingsDivider() = HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
 /** Eine Zeile mit Icon, Text und rechts ein Wert oder ein Pfeil. Ohne `onClick` ist sie nur Anzeige. */
 @Composable

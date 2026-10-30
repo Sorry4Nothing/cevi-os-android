@@ -1,5 +1,6 @@
 package io.github.sorry4nothing.cevios
 
+import android.Manifest
 import android.app.LocaleManager
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -9,7 +10,9 @@ import android.os.Bundle
 import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,6 +60,12 @@ import io.github.sorry4nothing.cevios.contacts.PhoneScreen
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.push.Notifications
+import io.github.sorry4nothing.cevios.push.NotificationsScreen
+import io.github.sorry4nothing.cevios.push.PushApi
+import io.github.sorry4nothing.cevios.push.PushTarget
+import io.github.sorry4nothing.cevios.push.PushToken
+import io.github.sorry4nothing.cevios.push.PushViewModel
 import io.github.sorry4nothing.cevios.programs.AssignmentRules
 import io.github.sorry4nothing.cevios.programs.AssignmentScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
@@ -82,6 +91,16 @@ private const val CHAT_POLL_INTERVAL_MS = 5_000L
 private const val LIST_POLL_INTERVAL_MS = 30_000L
 
 class MainActivity : ComponentActivity() {
+    /** Wohin das Tippen auf einen Push führt; bleibt stehen, bis die Person angemeldet ist und der Bildschirm es aufgreift. */
+    private var pushTarget by mutableStateOf<PushTarget?>(null)
+
+    private fun targetOf(intent: Intent?) = PushTarget.from(intent?.getStringExtra("typ"), intent?.getStringExtra("id"))
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        targetOf(intent)?.let { pushTarget = it }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Der Start lief mit dem Theme des Splash (Manifest); ab jetzt gilt das Theme der App.
         setTheme(R.style.Theme_CeviOS)
@@ -91,14 +110,17 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getSystemService(LocaleManager::class.java).applicationLocales = LocaleList.forLanguageTags("de")
         }
+        Notifications.createChannels(applicationContext)
+        // Nach Drehen oder Prozess-Ende gilt der Push nicht noch einmal: Das Intent ist dann dasselbe wie beim ersten Start.
+        if (savedInstanceState == null) pushTarget = targetOf(intent)
         val client = ApiClient.create(applicationContext)
-        setContent { CeviTheme { Root(client) } }
+        setContent { CeviTheme { Root(client, pushTarget) { pushTarget = null } } }
     }
 }
 
 /** Je nach Anmeldestand: Start, Fehler, Anmelden, Passwort wählen, Willkommen oder die App selbst. */
 @Composable
-private fun Root(client: ApiClient) {
+private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
     val authApi = remember(client) { AuthApi(client) }
     val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, client::forgetSession) }
     val state by auth.state.collectAsState()
@@ -134,8 +156,9 @@ private fun Root(client: ApiClient) {
                 val images = viewModel { ProfileImages(ProfileImageApi(client)) }
                 CompositionLocalProvider(LocalProfileImages provides images) {
                     MainContent(
-                        ProgramsApi(client), ChatApi(client), current.profile,
+                        ProgramsApi(client), ChatApi(client), PushApi(client), current.profile,
                         passwordSaved, form, imageForm, auth,
+                        pushTarget, onPushTargetHandled,
                         onOpenPrivacy = openPrivacy,
                         onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
                         onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
@@ -158,18 +181,24 @@ private fun openInBrowser(context: Context, url: String) {
 private fun MainContent(
     programsApi: ProgramsApi,
     chatApi: ChatApi,
+    pushApi: PushApi,
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
     imageForm: FormState,
     auth: AuthViewModel,
+    pushTarget: PushTarget?,
+    onPushTargetHandled: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenDeleteAccount: () -> Unit,
 ) {
-    val resolver = LocalContext.current.contentResolver
+    val context = LocalContext.current
+    val resolver = context.contentResolver
     val programs = viewModel { ProgramsViewModel(programsApi) }
     val chat = viewModel { ChatViewModel(chatApi) }
+    val push = viewModel { PushViewModel(pushApi, account) }
+    var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
@@ -181,6 +210,24 @@ private fun MainContent(
 
     // Ein gespeichertes Passwort schliesst den Wechsel; der Hinweis erscheint im Profil.
     LaunchedEffect(passwordSaved) { if (passwordSaved) changingPassword = false }
+    // Pushes brauchen das Token dieses Geräts beim Server und, ab Android 13, die Erlaubnis (einmal fragen, danach im Profil).
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(account.id) {
+        push.registerDevice { PushToken.fetch(context) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Notifications.shouldAskOnce(context)) {
+            askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+    // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
+    LaunchedEffect(pushTarget) {
+        val target = pushTarget ?: return@LaunchedEffect
+        notificationsOpen = false; helpOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false
+        when (target) {
+            is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
+            is PushTarget.Program -> { destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
+        }
+        onPushTargetHandled()
+    }
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
     LaunchedEffect(assigning) { if (assigning) programs.loadAgeGroups() }
@@ -304,6 +351,17 @@ private fun MainContent(
                     onRetry = chat::loadHelp,
                 )
             }
+            notificationsOpen -> {
+                val leave = { notificationsOpen = false; push.clearError() }
+                BackHandler(onBack = leave)
+                NotificationsScreen(
+                    switches = push.switches.collectAsState().value,
+                    form = push.form.collectAsState().value,
+                    onChat = push::setChat,
+                    onPrograms = push::setPrograms,
+                    onBack = leave,
+                )
+            }
             changingPassword -> {
                 val leave = { changingPassword = false; auth.clearError() }
                 BackHandler(onBack = leave)
@@ -322,6 +380,7 @@ private fun MainContent(
                         onPickImage = { uri -> auth.uploadImage { withContext(Dispatchers.Default) { ProfileImageEncoder.encode(resolver, uri) } } },
                         onRemoveImage = auth::removeImage,
                         onChangePassword = { changingPassword = true },
+                        onOpenNotifications = { notificationsOpen = true },
                         onOpenPrivacy = onOpenPrivacy,
                         onOpenSupport = onOpenSupport,
                         onOpenDeleteAccount = onOpenDeleteAccount,

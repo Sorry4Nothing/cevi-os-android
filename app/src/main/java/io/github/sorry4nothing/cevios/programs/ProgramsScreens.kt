@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +45,9 @@ import io.github.sorry4nothing.cevios.ui.Header
 import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.LoadingSkeleton
 import io.github.sorry4nothing.cevios.ui.EmptyState
+import io.github.sorry4nothing.cevios.ui.NoticeBanner
+import io.github.sorry4nothing.cevios.ui.NoticeKind
+import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
@@ -145,12 +152,18 @@ private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
     }
 }
 
-/** Abgesagt oder «wird noch geprüft»: als Etikett mit Icon und Wort. Ein aktives Programm braucht keins. */
+/**
+ * Abgesagt, «wird noch geprüft» oder «nicht zugeordnet» (nur Leitungen sehen solche Programme): als Etikett mit Icon und
+ * Wort. Ein aktives, zugeordnetes Programm braucht keins.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProgramStatus(program: Program, modifier: Modifier = Modifier) {
-    when {
-        program.cancelled -> StatusChip(ChipKind.NO, stringResource(R.string.status_cancelled), modifier)
-        program.inReview -> StatusChip(ChipKind.REVIEW, stringResource(R.string.status_review), modifier)
+    if (!program.cancelled && !program.inReview && !program.unassigned) return
+    FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+        if (program.cancelled) StatusChip(ChipKind.NO, stringResource(R.string.status_cancelled))
+        if (program.inReview) StatusChip(ChipKind.REVIEW, stringResource(R.string.status_review))
+        if (program.unassigned) StatusChip(ChipKind.UNASSIGNED, stringResource(R.string.status_unassigned))
     }
 }
 
@@ -176,8 +189,11 @@ private fun listTime(program: Program): String = when (val time = program.time()
 fun ProgramDetailScreen(
     state: ApiResult<Program>?,
     rsvp: RsvpState,
+    canAssign: Boolean,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onAssign: () -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -192,7 +208,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, back, onChild, onLeader)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, back, onChild, onLeader, onEdit, onAssign)
         }
     }
 }
@@ -201,9 +217,12 @@ fun ProgramDetailScreen(
 private fun ProgramContent(
     program: Program,
     rsvp: RsvpState,
+    canAssign: Boolean,
     back: HeaderButton,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onAssign: () -> Unit,
 ) {
     val ageGroups = program.ageGroups.joinToString(", ") { it.name }
     val date = program.startDay()?.let { "${weekdayShort(it)} ${dayAndMonth(it)}" }
@@ -220,8 +239,25 @@ private fun ProgramContent(
             Tiles(program)
             Facts(program)
             RegistrationSection(program, rsvp, onChild, onLeader)
+            LeaderSection(program, canAssign, onEdit, onAssign)
             Box(Modifier.height(Spacing.s4))
         }
+    }
+}
+
+/** Aktionen nur für Leitende: Ergänzungen bearbeiten, wer `mayEdit` hat; zuordnen, wer Admin oder Stufenleitung ist. */
+@Composable
+private fun LeaderSection(program: Program, canAssign: Boolean, onEdit: () -> Unit, onAssign: () -> Unit) {
+    if (!program.mayEdit && !canAssign) return
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+        Text(
+            stringResource(R.string.section_leaders),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 6.dp).semantics { heading() },
+        )
+        if (program.unassigned) NoticeBanner(NoticeKind.INFO, stringResource(R.string.unassigned_notice))
+        if (program.mayEdit) OutlinedPillButton(stringResource(R.string.extras_action), onEdit, Modifier.fillMaxWidth())
+        if (canAssign) OutlinedPillButton(stringResource(R.string.assignment_action), onAssign, Modifier.fillMaxWidth())
     }
 }
 

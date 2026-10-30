@@ -34,9 +34,10 @@ import io.github.sorry4nothing.cevios.ui.theme.cevi
 
 /** Die eine Hauptaktion pro Screen, in Cevi-Rot: 56 dp hoch, pillenförmig. */
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null) {
+fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null, enabled: Boolean = true) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.heightIn(min = Sizes.button).focusRing(Pill),
         shape = Pill,
         colors = ButtonDefaults.buttonColors(

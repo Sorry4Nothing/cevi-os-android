@@ -2,6 +2,7 @@ package io.github.sorry4nothing.cevios.programs
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.coroutines.Job
@@ -25,6 +26,9 @@ data class RsvpState(
 
 const val LEADER_KEY = "leitung"
 
+/** Zustand beim Speichern von Ergänzungen oder Zuordnung durch Leitende. */
+data class EditState(val running: Boolean = false, val error: ApiError? = null)
+
 private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
 
 /** `null` heisst: wird geladen. Die Daten bleiben nur im Arbeitsspeicher. */
@@ -38,18 +42,66 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
     private val _rsvp = MutableStateFlow(RsvpState())
     val rsvp: StateFlow<RsvpState> = _rsvp.asStateFlow()
 
+    private val _edit = MutableStateFlow(EditState())
+    val edit: StateFlow<EditState> = _edit.asStateFlow()
+
+    /** Für die Rechte bei der Zuordnung (Admin, Stufenleitung); `null`, solange es lädt. */
+    private val _profile = MutableStateFlow<ApiResult<Profile>?>(null)
+    val profile: StateFlow<ApiResult<Profile>?> = _profile.asStateFlow()
+
+    private val _ageGroups = MutableStateFlow<ApiResult<AgeGroupList>?>(null)
+    val ageGroups: StateFlow<ApiResult<AgeGroupList>?> = _ageGroups.asStateFlow()
+
     private var detailJob: Job? = null
     private var openedId: String? = null
 
     init {
         loadList()
+        viewModelScope.launch { _profile.value = api.profile() }
     }
 
     fun loadList() {
         _list.value = null
+        fetchList()
+    }
+
+    private fun fetchList() {
         viewModelScope.launch {
             val today = LocalDate.now(SWISS_ZONE)
             _list.value = api.list(today, today.plusMonths(WINDOW_MONTHS))
+        }
+    }
+
+    fun loadAgeGroups() {
+        _ageGroups.value = null
+        viewModelScope.launch { _ageGroups.value = api.ageGroups() }
+    }
+
+    fun resetEdit() {
+        _edit.value = EditState()
+    }
+
+    fun saveExtras(programId: String, changes: Map<String, String>, onSaved: () -> Unit) =
+        saveEdit(programId, onSaved) { api.updateExtras(programId, changes) }
+
+    fun saveAssignment(programId: String, request: AssignmentRequest, onSaved: () -> Unit) =
+        saveEdit(programId, onSaved) { api.assign(programId, request) }
+
+    /** Speichert, liest Detail und Liste danach neu und meldet den Erfolg. Bei einem Fehler bleibt der Bildschirm offen. */
+    private fun saveEdit(programId: String, onSaved: () -> Unit, block: suspend () -> ApiResult<Unit>) {
+        if (_edit.value.running) return
+        _edit.value = EditState(running = true)
+        viewModelScope.launch {
+            when (val result = block()) {
+                is ApiResult.Failure -> _edit.value = EditState(error = result.error)
+                is ApiResult.Ok -> {
+                    _edit.value = EditState()
+                    val fresh = api.read(programId)
+                    if (openedId == programId) _detail.value = fresh
+                    fetchList()
+                    onSaved()
+                }
+            }
         }
     }
 

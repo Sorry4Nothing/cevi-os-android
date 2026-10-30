@@ -24,6 +24,8 @@ data class Program(
     val id: String,
     @SerialName("titel") val title: String,
     val status: String,
+    /** «intern», «leitende» oder «eltern»: wer das Programm ausser Admins und Stufenleitungen sieht. */
+    @SerialName("sichtbarkeit") val visibility: String = "intern",
     @SerialName("ganztaegig") val allDay: Boolean,
     @SerialName("beginn") val start: String? = null,
     @SerialName("ende") val end: String? = null,
@@ -41,9 +43,12 @@ data class Program(
     @SerialName("kinder") val children: List<ProgramChild> = emptyList(),
     /** «ja», «nein» oder «offen»; `null`, wenn die Person keine Leitung dieses Programms ist. */
     @SerialName("eigeneAnmeldung") val ownRegistration: String? = null,
+    /** Admin oder Leitung und Stufenleitung einer zugeordneten Stufe: darf Treffpunkt, Schluss, Mitnehmen und Info ändern. */
+    @SerialName("darfErgaenzen") val mayEdit: Boolean = false,
 ) {
     val cancelled get() = status == "abgesagt"
     val inReview get() = status == "pruefen"
+    val unassigned get() = ageGroups.isEmpty()
 
     /** Der Treffpunkt der Leitung, sonst der Ort aus dem Google-Kalender. */
     val location get() = meetingPoint?.takeIf { it.isNotBlank() } ?: googleLocation?.takeIf { it.isNotBlank() }

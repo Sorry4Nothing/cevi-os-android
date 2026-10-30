@@ -1,5 +1,6 @@
 package io.github.sorry4nothing.cevios.programs
 
+import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.serialization.Serializable
@@ -22,6 +23,17 @@ class ProgramsApi(private val api: ApiClient) {
     /** Dasselbe für die eigene Anmeldung als Leitung. */
     suspend fun setLeaderRsvp(id: String, attending: Boolean): ApiResult<Unit> =
         api.put("/api/v1/programme/$id/leitung", rsvpBody(attending))
+
+    /** Ändert nur die genannten Ergänzungen (`treffpunkt`, `schlussOrt`, `schlussZeit`, `mitnehmen`, `infoEltern`). */
+    suspend fun updateExtras(id: String, changes: Map<String, String>): ApiResult<Unit> =
+        api.patch("/api/v1/programme/$id", changes)
+
+    suspend fun assign(id: String, request: AssignmentRequest): ApiResult<Unit> =
+        api.put("/api/v1/programme/$id/zuordnung", request)
+
+    suspend fun ageGroups(): ApiResult<AgeGroupList> = api.get("/api/v1/stufen")
+
+    suspend fun profile(): ApiResult<Profile> = api.get("/api/v1/ich")
 
     private fun rsvpBody(attending: Boolean) = RsvpRequest(if (attending) "ja" else "nein")
 }

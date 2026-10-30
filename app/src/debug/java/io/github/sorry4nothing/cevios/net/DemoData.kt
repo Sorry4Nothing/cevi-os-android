@@ -19,12 +19,16 @@ internal class DemoProgram(
     val dayFrom: LocalDate? = null,
     val dayTo: LocalDate? = null,
     val googleLocation: String? = null,
-    val meetingPoint: String? = null,
-    val closingLocation: String? = null,
-    val closingTime: String? = null,
-    val bringAlong: String? = null,
-    val parentInfo: String? = null,
+    var meetingPoint: String? = null,
+    var closingLocation: String? = null,
+    var closingTime: String? = null,
+    var bringAlong: String? = null,
+    var parentInfo: String? = null,
 ) {
+    /** Zugeordnete Stufen und Sichtbarkeit; die Leitung ändert sie über `PUT .../zuordnung`. */
+    var ageGroupIds: Set<String> = setOf(DemoData.AGE_GROUP_ID)
+    var visibility = "eltern"
+
     val allDay get() = dayFrom != null
 
     /** Beginn als Zeitpunkt; bei ganztägigen Programmen der Beginn des ersten Tages. */
@@ -47,6 +51,12 @@ internal object DemoData {
     const val AGE_GROUP_ID = "00000000-0000-4000-8000-000000000001"
     const val AGE_GROUP_NAME = "Jungschar (Demo)"
     const val AGE_GROUP_ABBREVIATION = "JS"
+
+    /** Eine zweite Stufe, in der die Demo-Leitung nichts ändern darf. */
+    const val OTHER_AGE_GROUP_ID = "00000000-0000-4000-8000-000000000002"
+    const val OTHER_AGE_GROUP_NAME = "Wölfe (Demo)"
+    const val OTHER_AGE_GROUP_ABBREVIATION = "WO"
+    val ageGroupNames = mapOf(AGE_GROUP_ID to AGE_GROUP_NAME, OTHER_AGE_GROUP_ID to OTHER_AGE_GROUP_NAME)
     const val GROUP_CHAT_ID = "00000000-0000-4000-8000-0000000000c1"
     const val DIRECT_CHAT_ID = "00000000-0000-4000-8000-0000000000c2"
 

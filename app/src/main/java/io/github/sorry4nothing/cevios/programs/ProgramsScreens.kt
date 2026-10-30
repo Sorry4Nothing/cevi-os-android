@@ -210,11 +210,13 @@ fun ProgramDetailScreen(
     rsvp: RsvpState,
     canAssign: Boolean,
     canSeeRegistrations: Boolean,
+    canRecordAttendance: Boolean,
     contacts: ApiResult<ContactList>?,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
     onRegistrations: () -> Unit,
+    onAttendance: () -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -229,7 +231,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, contacts, back, onChild, onLeader, onAssign, onRegistrations)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, canRecordAttendance, contacts, back, onChild, onLeader, onAssign, onRegistrations, onAttendance)
         }
     }
 }
@@ -240,12 +242,14 @@ private fun ProgramContent(
     rsvp: RsvpState,
     canAssign: Boolean,
     canSeeRegistrations: Boolean,
+    canRecordAttendance: Boolean,
     contacts: ApiResult<ContactList>?,
     back: HeaderButton,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
     onRegistrations: () -> Unit,
+    onAttendance: () -> Unit,
 ) {
     val ageGroups = program.ageGroups.joinToString(", ") { it.name }
     val date = program.startDay()?.let { "${weekdayShort(it)} ${dayAndMonth(it)}" }
@@ -263,7 +267,7 @@ private fun ProgramContent(
             Facts(program)
             RegistrationSection(program, rsvp, onChild, onLeader)
             ContactSection(program, contacts)
-            LeaderSection(program, canAssign, canSeeRegistrations, onAssign, onRegistrations)
+            LeaderSection(program, canAssign, canSeeRegistrations, canRecordAttendance, onAssign, onRegistrations, onAttendance)
             Box(Modifier.height(Spacing.s4))
         }
     }
@@ -292,10 +296,12 @@ private fun LeaderSection(
     program: Program,
     canAssign: Boolean,
     canSeeRegistrations: Boolean,
+    canRecordAttendance: Boolean,
     onAssign: () -> Unit,
     onRegistrations: () -> Unit,
+    onAttendance: () -> Unit,
 ) {
-    if (!canAssign && !canSeeRegistrations) return
+    if (!canAssign && !canSeeRegistrations && !canRecordAttendance) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
         Text(
             stringResource(R.string.section_leaders),
@@ -305,6 +311,9 @@ private fun LeaderSection(
         if (canAssign && program.unassigned) NoticeBanner(NoticeKind.INFO, stringResource(R.string.unassigned_notice))
         if (canSeeRegistrations) {
             OutlinedPillButton(stringResource(R.string.registrations_action), onRegistrations, Modifier.fillMaxWidth(), icon = R.drawable.ic_group)
+        }
+        if (canRecordAttendance) {
+            OutlinedPillButton(stringResource(R.string.attendance_action), onAttendance, Modifier.fillMaxWidth(), icon = R.drawable.ic_check)
         }
         if (canAssign) OutlinedPillButton(stringResource(R.string.assignment_action), onAssign, Modifier.fillMaxWidth())
     }

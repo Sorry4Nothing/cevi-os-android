@@ -50,7 +50,7 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Profil | `auth/ProfileScreen.kt` | umgesetzt (#68): Name, Rolle, Kinder, Benutzername, Passwort ändern, Datenschutz (öffnet `/datenschutz` im Browser, kein eigener Text in der App), Abmelden. Kein «Konto löschen»; Profilbild mit Kamera-Knopf am Bild (Auswahl über die Systemauswahl, die App dreht, schneidet die Mitte quadratisch zu, verkleinert und sendet als JPEG ohne Metadaten) und «Profilbild entfernen» (#80), kein biometrisches Login; «Benachrichtigungen» zeigt «Kommt bald». «Meine Telefonnummer» steht weiter in der Chatliste |
 | Datenschutz (eigener Bildschirm im Entwurf) | – | nicht umgesetzt: Die Erklärung steht auf dem Backend und öffnet im Browser |
 | Anmeldungen (SL): Balken mit Ja/Nein/offen, Reiter Kinder und Leitende, Liste mit Stand | `programs/Registrations.kt` (Modelle, `RegistrationsRules`), `programs/RegistrationsScreen.kt`; Einstieg im Abschnitt «Für Leitende» des Programms | umgesetzt (#82), nur zum Ansehen: Leitende ändern keine Antworten (Entscheid des Auftraggebers). Der Entwurf zeigt Chips «Ja», «Nein», «Offen»; die Zahlen darüber sagen dasselbe Wort. Die Dock-Beschriftung schrumpft bei grösster Schrift (`autoSize`), weil drei Reiter die Breite teilen |
-| Anwesenheit (Leitende, `B8`) | – | nicht begonnen: nicht Teil der API |
+| Anwesenheit erfassen (Leitende; Entwurf `B8`/`L8`) | `attendance/Attendance.kt` (Modelle, `AttendanceRules`), `attendance/AttendanceScreen.kt`, `attendance/AttendanceApi.kt`, `attendance/AttendanceViewModel.kt`; Einstieg im Abschnitt «Für Leitende» des Programms | umgesetzt (#90), **nicht nach dem Entwurf**: `B8`/`L8` zeigen die Tabelle über mehrere Anlässe mit Quoten, das ist die Auswertung und gehört ins Web-Admin (Entscheid des Auftraggebers, Backend #195). Die App erfasst nur, pro Programm: Reiter Kinder und Leitende, je Person «Da» oder «Nicht da» in der Zeile (ein zweiter Tipp nimmt zurück), Aufbau wie die Anmeldungen (`B6`), **ohne Vorlage in den Bildschirmen**. Erfassen geht ab Beginn bis 14 Tage danach, sonst nur Lesen mit Hinweis. Die Zusage ändert der Bildschirm nie. Bei Programmen mit mehreren Stufen gilt die erste Stufe, die die Person führt (Admins: die erste des Programms) |
 
 ## Namen: Deutsch → Englisch
 
@@ -88,7 +88,7 @@ Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erf
 
 - **Ungelesen-Zähler am Chat-Icon im Dock:** gibt es nicht. Die API zählt je Chat (`ungelesen`), die Chatliste zeigt es; die App fragt sie nur, solange sie sichtbar ist (alle 30 Sekunden).
 - **Profilbild (#80):** Bilder erscheinen im Chat bei Autoren, bei Kontakten und im Profil. In der Chatliste bleiben die Initialen: Der Vertrag liefert dort kein `bildUrl`. Die App baut keine Adressen selbst (`personen/{id}/bild`), sie nimmt nur die `bildUrl` der API und nur, wenn sie ein Profilbild nennt.
-- **Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.
+- **Biometrisches Login:** nicht Teil der API-Beschreibung.
 
 ## Grössen und Werte: das Design System gilt, nicht die Mockups
 

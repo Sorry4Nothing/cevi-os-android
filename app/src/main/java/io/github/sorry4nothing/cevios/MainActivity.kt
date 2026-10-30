@@ -108,7 +108,6 @@ private fun MainContent(programsApi: ProgramsApi, chatApi: ChatApi) {
                     action = chat.action.collectAsState().value,
                     onSend = chat::send,
                     onOlder = chat::loadOlder,
-                    onRefresh = chat::refresh,
                     onHide = chat::hide,
                     onReport = chat::report,
                     onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },

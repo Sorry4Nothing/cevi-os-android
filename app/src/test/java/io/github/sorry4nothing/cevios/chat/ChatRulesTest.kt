@@ -50,6 +50,17 @@ class ChatRulesTest {
     }
 
     @Test
+    fun actionsListOnlyWhatIsAllowed() {
+        assertEquals(
+            listOf(MessageAction.OPEN_DIRECT_CHAT, MessageAction.HIDE, MessageAction.REPORT),
+            ChatRules.actions(group, message(), groupLeader),
+        )
+        assertEquals(listOf(MessageAction.REPORT), ChatRules.actions(group, message(), parent))
+        assertEquals("eigene sichtbare Nachricht: keine Aktion", emptyList<MessageAction>(), ChatRules.actions(group, message(own = true), parent))
+        assertEquals(emptyList<MessageAction>(), ChatRules.actions(null, message(own = true), null))
+    }
+
+    @Test
     fun parentStartsDirectChatOnlyInAgeGroupsWithOwnChildAndNoExistingChat() {
         assertEquals(listOf("s1"), ChatRules.ageGroupsForDirectChat(parent, listOf(group)).map { it.id })
         assertEquals("schon ein Einzelchat", emptyList<String>(), ChatRules.ageGroupsForDirectChat(parent, listOf(group, direct)).map { it.id })

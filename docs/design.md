@@ -35,7 +35,12 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Zusage (Ja/Nein-Pillen) | `programs/RegistrationSection.kt` (`RsvpRow`, `RsvpPill`) | umgesetzt (#38) |
 | StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Notice.kt` (`NoticeBanner`), `ui/Buttons.kt` (`PrimaryButton`, `OutlinedPillButton`, `TextActionButton`), `ui/Focus.kt` (`focusRing`) | umgesetzt (#38) |
 | Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/States.kt`: `ErrorState`, `EmptyState`, `LoadingSkeleton` | umgesetzt (#38); «Anmelden» erst mit dem Login |
-| ChatZeile, ChatBlase, ChatEingabe, MitleseHinweis, Dialog, Hinweis, Zustände | `chat/…`, `ui/…` | Issue #39 |
+| ChatZeile (Karten, Abschnitte «Gruppen» und «Mit der Stufenleitung») | `chat/ChatScreens.kt`: `ChatListScreen`, `ChatCard`, `ChatAvatar` | umgesetzt (#39), ohne letzte Nachricht, Uhrzeit und Ungelesen-Zähler (API) |
+| ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), ohne Rolle des Absenders und Avatar |
+| ChatEingabe | `chat/ChatScreens.kt`: `MessageInput` | umgesetzt (#39) |
+| MitleseHinweis | `chat/ChatScreens.kt`: `ReadAlongNote` | umgesetzt (#39), Avatare einfarbig `secondary` (Farben ohne Token nicht übernommen) |
+| Dialog (Auswahl, Bestätigung), Danger- und gestrichelter Knopf | `ui/Dialog.kt` (`CeviDialog`, `DialogText`, `initialFocus`), `ui/Buttons.kt` (`DangerButton`, `DashedButton`) | umgesetzt (#39) |
+| Hinweis (Aktionen und Senden), Zustände (Laden, Fehler, Leer) im Chat | `ui/Notice.kt`, `ui/States.kt`, `chat/ChatScreens.kt` (`ActionNotice`) | umgesetzt (#39) |
 | Login, Passwort, Willkommen, Profil, Datenschutz | – | mit den jeweiligen Issues (Login, Profil) |
 | Anmeldungen und Anwesenheit (Leitende) | – | Epic «Leitende», nicht begonnen |
 
@@ -60,7 +65,7 @@ Bezeichner im Code sind Englisch, Texte (`strings.xml`) und Kommentare Deutsch; 
 | Sitzung, Speicher, Herkunft | `Session`, `Storage`, `Origin` (`SessionStorage`, `SessionInterceptor`) |
 | Fehler, Laden, Leer, Zustand | `Error` (`ApiError`, `ErrorPage`, `ApiResult.Failure`), `Loading`, `Empty`, `State` |
 | Kopf, Dock | `Header`, `Dock` |
-| Knöpfe | `PrimaryButton`, `OutlinedPillButton`, `TextActionButton`, `RoundButton`, `HeaderButton` |
+| Knöpfe | `PrimaryButton`, `OutlinedPillButton`, `TextActionButton`, `DashedButton`, `DangerButton`, `RoundButton`, `HeaderButton` |
 | Hinweis | `Notice` (`NoticeBanner`) |
 | Fokus, Fokusring | `Focus`, `focusRing` |
 | Abstände, Grössen, Formen | `Spacing`, `Sizes`, `CeviShapes` |
@@ -74,6 +79,8 @@ Bezeichner im Code sind Englisch, Texte (`strings.xml`) und Kommentare Deutsch; 
 Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erfinden: Der Baustein bleibt weg, die Stelle ist mit dem Backend-Issue verknüpft.
 
 - **Ungelesen-Zähler** am Chat-Icon und in der Chatliste: kein Feld in der API.
+- **Letzte Nachricht und Uhrzeit** in der Chatzeile: kein Feld in der Chatliste der API.
+- **Rolle des Absenders** («Sarah · SL») über der Blase: kein Feld in der Nachricht; die App zeigt nur den Namen.
 - **Kontaktperson** im Programmdetail: kein Feld in der API.
 - **Status je Kind in der Programmliste** («Noah kommt», «Zusage für Lena offen»): Die Liste liefert keine Kinder, nur das Detail. Die Karte zeigt darum nur «abgesagt» und «wird geprüft».
 - **Profilbild, Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.

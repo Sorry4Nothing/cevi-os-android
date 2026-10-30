@@ -2,4 +2,11 @@
     <string name="app_name">Cevi OS</string>
     <string name="start_titel">Willkommen bei Cevi OS</string>
     <string name="start_hinweis">Die App ist im Aufbau.</string>
+    <string name="fehler_nicht_angemeldet">Du bist nicht angemeldet. Bitte melde dich an.</string>
+    <string name="fehler_keine_berechtigung">Das darfst du nicht.</string>
+    <string name="fehler_nicht_gefunden">Das gibt es nicht mehr.</string>
+    <string name="fehler_app_veraltet">Diese App ist zu alt. Bitte installiere die neue Version.</string>
+    <string name="fehler_zu_viele_anfragen">Zu viele Versuche. Bitte warte kurz.</string>
+    <string name="fehler_netzwerk">Keine Verbindung. Prüfe dein Internet und versuche es nochmals.</string>
+    <string name="fehler_unbekannt">Etwas ist schiefgelaufen. Bitte versuche es nochmals.</string>
 </resources>

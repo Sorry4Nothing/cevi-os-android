@@ -190,6 +190,8 @@
     <string name="profile_soon">Kommt bald</string>
     <string name="profile_privacy">Datenschutz</string>
     <string name="profile_privacy_open">Im Browser öffnen</string>
+    <string name="profile_support">Support</string>
+    <string name="profile_delete_account">Konto löschen lassen</string>
     <string name="profile_change_password">Passwort ändern</string>
     <string name="profile_sign_out">Abmelden</string>
     <string name="role_group_leader">Stufenleitung</string>

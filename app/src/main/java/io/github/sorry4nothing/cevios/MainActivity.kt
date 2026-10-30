@@ -137,6 +137,8 @@ private fun Root(client: ApiClient) {
                         ProgramsApi(client), ChatApi(client), current.profile,
                         passwordSaved, form, imageForm, auth,
                         onOpenPrivacy = openPrivacy,
+                        onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
+                        onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
                     )
                 }
             }
@@ -162,6 +164,8 @@ private fun MainContent(
     imageForm: FormState,
     auth: AuthViewModel,
     onOpenPrivacy: () -> Unit,
+    onOpenSupport: () -> Unit,
+    onOpenDeleteAccount: () -> Unit,
 ) {
     val resolver = LocalContext.current.contentResolver
     val programs = viewModel { ProgramsViewModel(programsApi) }
@@ -319,6 +323,8 @@ private fun MainContent(
                         onRemoveImage = auth::removeImage,
                         onChangePassword = { changingPassword = true },
                         onOpenPrivacy = onOpenPrivacy,
+                        onOpenSupport = onOpenSupport,
+                        onOpenDeleteAccount = onOpenDeleteAccount,
                         onSignOut = auth::signOut,
                         onLeave = { auth.clearPasswordSaved(); auth.clearImageError() },
                     )

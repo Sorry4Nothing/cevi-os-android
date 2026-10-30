@@ -9,6 +9,7 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -228,5 +229,43 @@ class ChatApiTest {
     fun profileCarriesTheOwnNumber() {
         server.enqueue(json(200, """{"id":"u1","telefon":"+41 79 000 00 01","rollen":[],"stufen":[],"kinder":[]}"""))
         assertEquals("+41 79 000 00 01", (runBlocking { chat.profile() } as ApiResult.Ok).value.phone)
+    }
+
+    @Test
+    fun chatListReadsLastMessageAndAllowsNone() {
+        server.enqueue(
+            json(
+                200,
+                """{"chats":[
+                {"id":"c1","typ":"stufe","stufe":{"id":"s1","name":"Pfadi","kuerzel":"PF"},"eltern":null,"stufenleitung":[],"ungelesen":0,
+                 "letzteNachricht":{"text":"Treffpunkt ist um 14 Uhr.","erstelltAm":"2027-01-01T12:30:00Z","eigene":false,
+                                    "autor":{"id":"l1","name":"Beispiel Leitung"}}},
+                {"id":"c2","typ":"stufe","stufe":{"id":"s2","name":"Wölfe","kuerzel":"WO"},"eltern":null,"stufenleitung":[],"ungelesen":0,
+                 "letzteNachricht":null}]}""",
+            ),
+        )
+        val chats = (runBlocking { chat.chats() } as ApiResult.Ok).value.chats
+        val last = chats[0].lastMessage!!
+        assertEquals("Treffpunkt ist um 14 Uhr.", last.text)
+        assertEquals("Beispiel Leitung", last.author.name)
+        assertFalse(last.own)
+        assertNull(chats[1].lastMessage)
+    }
+
+    @Test
+    fun messagesReadHideFlagAndLeaderRoleOfTheAuthor() {
+        server.enqueue(
+            json(
+                200,
+                """{"nachrichten":[
+                {"id":"m2","text":"Hallo","erstelltAm":"2027-01-01T10:00:00Z","autor":{"id":"l1","name":"Beispiel Leitung","stufenleitung":true},
+                 "programm":null,"ausgeblendet":false,"darfAusblenden":true,"eigene":false},
+                {"id":"m1","text":"Hi","erstelltAm":"2027-01-01T09:00:00Z","autor":{"id":"e1","name":"Beispiel Eltern","stufenleitung":false},
+                 "programm":null,"ausgeblendet":false,"darfAusblenden":false,"eigene":false}],"naechster":null}""",
+            ),
+        )
+        val messages = (runBlocking { chat.messages("c1") } as ApiResult.Ok).value.messages
+        assertTrue(messages[0].mayHide && messages[0].author.groupLeader)
+        assertFalse(messages[1].mayHide || messages[1].author.groupLeader)
     }
 }

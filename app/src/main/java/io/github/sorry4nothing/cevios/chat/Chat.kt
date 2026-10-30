@@ -4,7 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ChatPerson(val id: String, val name: String)
+data class ChatPerson(
+    val id: String,
+    val name: String,
+    /** Nur bei Nachrichten gefüllt (`autor.stufenleitung`): Die Person ist Stufenleitung der Stufe des Chats. */
+    @SerialName("stufenleitung") val groupLeader: Boolean = false,
+)
 
 @Serializable
 data class ChatAgeGroup(val id: String, val name: String, @SerialName("kuerzel") val abbreviation: String)
@@ -19,12 +24,23 @@ data class Chat(
     @SerialName("stufenleitung") val groupLeaders: List<ChatPerson> = emptyList(),
     /** Nachrichten anderer, die die Person noch nicht gesehen hat (zählt der Server nach dem Gelesen-Stand). */
     @SerialName("ungelesen") val unread: Int = 0,
+    /** Neueste für die Person sichtbare Nachricht, vom Server auf 120 Zeichen gekürzt; `null`, solange es keine gibt. */
+    @SerialName("letzteNachricht") val lastMessage: LastMessage? = null,
 ) {
     val isGroup get() = type == "stufe"
 }
 
 @Serializable
 data class ChatList(val chats: List<Chat>)
+
+/** Vorschau der letzten Nachricht in der Chatliste. `own` heisst: Die angemeldete Person hat sie geschrieben. */
+@Serializable
+data class LastMessage(
+    val text: String,
+    @SerialName("erstelltAm") val createdAt: String,
+    @SerialName("eigene") val own: Boolean,
+    @SerialName("autor") val author: ChatPerson,
+)
 
 @Serializable
 data class ProgramRef(val id: String, @SerialName("titel") val title: String)
@@ -38,6 +54,8 @@ data class ChatMessage(
     @SerialName("autor") val author: ChatPerson,
     @SerialName("programm") val program: ProgramRef? = null,
     @SerialName("ausgeblendet") val hidden: Boolean = false,
+    /** Der Server sagt, ob die Person diese Nachricht ausblenden darf (Stufenleitung im Gruppenchat der eigenen Stufe). */
+    @SerialName("darfAusblenden") val mayHide: Boolean = false,
     @SerialName("eigene") val own: Boolean = false,
 )
 

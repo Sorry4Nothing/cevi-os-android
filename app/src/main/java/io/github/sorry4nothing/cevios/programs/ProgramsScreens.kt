@@ -151,7 +151,23 @@ private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
         )
         Text(program.title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 24.sp))
         program.location?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        // Je eigenes Kind der Stand («Noah kommt»); bei einem abgesagten Programm steht schon «Abgesagt» da.
+        if (!program.cancelled) program.children.forEach { ChildStatus(it) }
         ProgramStatus(program, Modifier.padding(top = 6.dp))
+    }
+}
+
+/** Der Stand eines eigenen Kindes auf der Karte: Symbol und Wort, nie nur Farbe. */
+@Composable
+private fun ChildStatus(child: ProgramChild) {
+    val (icon, text) = when (child.status) {
+        "ja" -> R.drawable.ic_check to stringResource(R.string.child_status_yes, child.firstName)
+        "nein" -> R.drawable.ic_cross to stringResource(R.string.child_status_no, child.firstName)
+        else -> R.drawable.ic_question to stringResource(R.string.child_status_open, child.firstName)
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1), verticalAlignment = Alignment.CenterVertically) {
+        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -205,4 +205,16 @@ class ProgramsApiTest {
         server.enqueue(json(200, """{"kontakte":[]}"""))
         assertTrue((runBlocking { programs.contacts("p1") } as ApiResult.Ok).value.contacts.isEmpty())
     }
+
+    @Test
+    fun listEntryCarriesTheStatusOfOwnChildren() {
+        server.enqueue(
+            json(
+                200,
+                """{"programme":[${camp.replace("\"googleBeschreibung\":null", "\"googleBeschreibung\":null,\"kinder\":[{\"id\":\"k1\",\"vorname\":\"Noah\",\"status\":\"ja\"},{\"id\":\"k2\",\"vorname\":\"Lena\",\"status\":null}]")}]}""",
+            ),
+        )
+        val p = (runBlocking { programs.list(LocalDate.of(2027, 7, 1), LocalDate.of(2027, 7, 31)) } as ApiResult.Ok).value.programs.single()
+        assertEquals(listOf("Noah" to "ja", "Lena" to null), p.children.map { it.firstName to it.status })
+    }
 }

@@ -31,12 +31,12 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Strich-Icons (27, 24 dp, nur Strich, Strichstärke 1.8, Häkchen und Kreuz auch als `_selected` mit 2.6) | `res/drawable/ic_*.xml`, in Compose mit `Icon(painterResource(...), tint = ...)` einfärben | umgesetzt |
 | Kopf (`Kopf`, `RundKnopf`) | `ui/Header.kt`: `Header`, `RoundButton` | umgesetzt (#38) |
 | Footer-Dock, im Querformat und ab 600 dp senkrecht links | `ui/Dock.kt`: `MainScaffold`, `Destination` (Programme, Chat; Profil kommt mit dem Profil) | umgesetzt (#38) |
-| Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programs/ProgramsScreens.kt`, `programs/Days.kt` | umgesetzt (#38), Kontakt mit #53 (Namen und «Anrufen» aus `/kontakte`) |
+| Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programs/ProgramsScreens.kt`, `programs/Days.kt` | umgesetzt (#38), Kontakt mit #53 (Namen und «Anrufen» aus `/kontakte`), Stand je Kind auf der Karte (#62) |
 | Zusage (Ja/Nein-Pillen) | `programs/RegistrationSection.kt` (`RsvpRow`, `RsvpPill`) | umgesetzt (#38). Der angesagte Name beginnt mit dem sichtbaren Wort («Ja, Lena», nicht «Lena, Ja»): Checkliste Barrierefreiheit 1.3 geht dem Entwurf vor |
 | StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Notice.kt` (`NoticeBanner`), `ui/Buttons.kt` (`PrimaryButton`, `OutlinedPillButton`, `TextActionButton`), `ui/Focus.kt` (`focusRing`) | umgesetzt (#38) |
 | Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/States.kt`: `ErrorState`, `EmptyState`, `LoadingSkeleton` | umgesetzt (#38); «Anmelden» erst mit dem Login |
-| ChatZeile (Karten, Abschnitte «Gruppen» und «Mit der Stufenleitung») | `chat/ChatScreens.kt`: `ChatListScreen`, `ChatCard`, `ChatAvatar` | umgesetzt (#39), Zähler «ungelesen» mit #52; ohne letzte Nachricht und Uhrzeit (API) |
-| ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), ohne Rolle des Absenders |
+| ChatZeile (Karten, Abschnitte «Gruppen» und «Mit der Stufenleitung») | `chat/ChatScreens.kt`: `ChatListScreen`, `ChatCard`, `ChatAvatar` | umgesetzt (#39), Zähler «ungelesen» (#52), Vorschau der letzten Nachricht mit Zeit (#62) |
+| ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), Rolle «· SL» am Namen und «Ausblenden» nach `darfAusblenden` (#62) |
 | Avatar (32 dp bei fremden Blasen, Initiale auf `secondary`) | `ui/Avatar.kt`: `Avatar` | umgesetzt (#49), zeigt die Initiale; für ein Profilbild vorbereitet (`imageUrl`). Der Kreis wächst mit der Schrift (`scaledWithFont`), die Schrift hat kein Limit (Checkliste 5.3) |
 | ChatEingabe | `chat/ChatScreens.kt`: `MessageInput` | umgesetzt (#39) |
 | MitleseHinweis | `chat/ChatScreens.kt`: `ReadAlongNote` | umgesetzt (#39), Avatare einfarbig `secondary` (Farben ohne Token nicht übernommen) |
@@ -83,12 +83,8 @@ Bezeichner im Code sind Englisch, Texte (`strings.xml`) und Kommentare Deutsch; 
 Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erfinden: Der Baustein bleibt weg, die Stelle ist mit dem Backend-Issue verknüpft.
 
 - **Ungelesen-Zähler am Chat-Icon im Dock:** gibt es nicht. Die API zählt je Chat (`ungelesen`), die Chatliste zeigt es; die App fragt sie nur, solange sie sichtbar ist (alle 30 Sekunden).
-- **Letzte Nachricht und Uhrzeit** in der Chatzeile: kein Feld in der Chatliste der API.
-- **Rolle des Absenders** («Sarah · SL») über der Blase: kein Feld in der Nachricht; die App zeigt nur den Namen.
-- **Status je Kind in der Programmliste** («Noah kommt», «Zusage für Lena offen»): Die Liste liefert keine Kinder, nur das Detail. Die Karte zeigt darum nur «abgesagt» und «wird geprüft».
 - **Profilbild:** kein Feld in der API. Der Avatar zeigt bis dahin die Initiale; `Avatar` hat den Parameter `imageUrl` schon, lädt aber nichts. Das Bild kommt mit dem Feld der API.
 - **Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.
-- Ebenfalls gewünscht: ein Flag je Nachricht, ob man sie ausblenden darf (heute leitet die App das aus dem Profil ab).
 
 ## Grössen und Werte: das Design System gilt, nicht die Mockups
 

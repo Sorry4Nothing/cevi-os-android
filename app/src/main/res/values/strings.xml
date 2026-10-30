@@ -33,6 +33,12 @@
     <string name="messages_empty">Noch keine Nachrichten.</string>
     <string name="message_hidden">Nachricht ausgeblendet</string>
     <string name="message_you">Du</string>
+    <string name="message_author_leader">%1$s · SL</string>
+    <string name="chat_preview_own">Du: %1$s</string>
+    <string name="chat_preview_other">%1$s: %2$s</string>
+    <string name="child_status_yes">%1$s kommt</string>
+    <string name="child_status_no">%1$s kommt nicht</string>
+    <string name="child_status_open">Zusage für %1$s offen</string>
     <string name="message_program">Programm: %1$s</string>
     <string name="messages_older">Ältere Nachrichten laden</string>
     <string name="message_input">Nachricht</string>

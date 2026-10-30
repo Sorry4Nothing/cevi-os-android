@@ -40,6 +40,10 @@
     <string name="message_empty_hint">Schreib zuerst eine Nachricht</string>
     <string name="message_send">Senden</string>
     <string name="message_sending">Wird gesendet …</string>
+    <plurals name="new_messages">
+        <item quantity="one">Eine neue Nachricht</item>
+        <item quantity="other">%d neue Nachrichten</item>
+    </plurals>
     <string name="refresh">Aktualisieren</string>
     <string name="cancel">Abbrechen</string>
     <string name="chat_read_along">Deine Nachricht geht an die ganze Stufenleitung: %1$s</string>
@@ -113,7 +117,7 @@
     <string name="assignment_loading">Stufen werden geladen</string>
     <string name="assignment_age_groups">Stufen</string>
     <string name="assignment_no_choices">Du bist in keiner Stufe Stufenleitung. Darum kannst du keine Stufe zuordnen.</string>
-    <string name="assignment_fixed">Diese Stufen kannst du nicht ändern: %1$s. Sie bleiben zugeordnet, und die Sichtbarkeit bleibt, wie sie ist.</string>
+    <string name="assignment_fixed">Diese Stufen kannst du nicht ändern: %1$s. Sie und die Sichtbarkeit bleiben, wie sie sind.</string>
     <string name="assignment_visibility">Wer sieht das Programm?</string>
     <string name="visibility_intern">Intern</string>
     <string name="visibility_intern_text">Nur Stufenleitungen und Admins</string>

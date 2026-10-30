@@ -25,6 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -117,12 +118,15 @@ private fun RsvpRow(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(name, style = MaterialTheme.typography.titleMedium)
-            Text(
-                statusText,
-                style = MaterialTheme.typography.bodySmall,
-                color = statusColor,
-                modifier = Modifier.semantics { if (sentAt != null) liveRegion = LiveRegionMode.Polite },
-            )
+            // Ist die Anmeldung geschlossen, sagt schon das Etikett rechts denselben Stand: nicht doppelt zeigen.
+            if (isOpen) {
+                Text(
+                    statusText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = statusColor,
+                    modifier = Modifier.semantics { if (sentAt != null) liveRegion = LiveRegionMode.Polite },
+                )
+            }
         }
         if (isOpen) {
             Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
@@ -166,7 +170,7 @@ private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, nam
             .border(borderSpec.first, borderSpec.second, Pill)
             .selectable(selected = selected, enabled = active, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 18.dp)
-            .semantics { contentDescription = "$name, $word" },
+            .clearAndSetSemantics { contentDescription = "$word, $name" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))

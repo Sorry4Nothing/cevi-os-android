@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
@@ -33,16 +31,17 @@ fun avatarInitial(name: String): String = initials(name).take(1)
 fun Avatar(name: String, modifier: Modifier = Modifier, size: Dp = 32.dp, imageUrl: String? = null) {
     val scheme = MaterialTheme.colorScheme
     Box(
-        modifier.size(size).background(scheme.secondary, Pill).clearAndSetSemantics {},
+        modifier.size(scaledWithFont(size)).background(scheme.secondary, Pill).clearAndSetSemantics {},
         contentAlignment = Alignment.Center,
     ) { InitialText(avatarInitial(name), 12.sp, scheme.onSecondary) }
 }
 
-/** Initiale im Kreis: wächst mit der Schrift nur bis 130 %, sonst passt sie nicht mehr hinein (der Name steht daneben). */
+/** Grösse eines Kreises mit Initiale: wächst mit der Schrift, damit die Initiale bei grösster Schrift hineinpasst. */
+@Composable
+fun scaledWithFont(size: Dp): Dp = size * LocalDensity.current.fontScale.coerceAtLeast(1f)
+
+/** Initiale im Kreis. Der Kreis wächst mit der Schrift (siehe [scaledWithFont]), die Schrift selbst hat kein Limit. */
 @Composable
 internal fun InitialText(text: String, fontSize: TextUnit, color: Color) {
-    val density = LocalDensity.current
-    CompositionLocalProvider(LocalDensity provides Density(density.density, minOf(density.fontScale, 1.3f))) {
-        Text(text, style = MaterialTheme.typography.labelMedium.copy(fontSize = fontSize, fontWeight = FontWeight.ExtraBold), color = color)
-    }
+    Text(text, style = MaterialTheme.typography.labelMedium.copy(fontSize = fontSize, fontWeight = FontWeight.ExtraBold), color = color)
 }

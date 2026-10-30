@@ -32,12 +32,12 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Kopf (`Kopf`, `RundKnopf`) | `ui/Header.kt`: `Header`, `RoundButton` | umgesetzt (#38) |
 | Footer-Dock, im Querformat und ab 600 dp senkrecht links | `ui/Dock.kt`: `MainScaffold`, `Destination` (Programme, Chat; Profil kommt mit dem Profil) | umgesetzt (#38) |
 | Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programs/ProgramsScreens.kt`, `programs/Days.kt` | umgesetzt (#38), ohne Kontaktperson und ohne Status je Kind in der Liste (API) |
-| Zusage (Ja/Nein-Pillen) | `programs/RegistrationSection.kt` (`RsvpRow`, `RsvpPill`) | umgesetzt (#38) |
+| Zusage (Ja/Nein-Pillen) | `programs/RegistrationSection.kt` (`RsvpRow`, `RsvpPill`) | umgesetzt (#38). Der angesagte Name beginnt mit dem sichtbaren Wort («Ja, Lena», nicht «Lena, Ja»): Checkliste Barrierefreiheit 1.3 geht dem Entwurf vor |
 | StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Notice.kt` (`NoticeBanner`), `ui/Buttons.kt` (`PrimaryButton`, `OutlinedPillButton`, `TextActionButton`), `ui/Focus.kt` (`focusRing`) | umgesetzt (#38) |
 | Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/States.kt`: `ErrorState`, `EmptyState`, `LoadingSkeleton` | umgesetzt (#38); «Anmelden» erst mit dem Login |
 | ChatZeile (Karten, Abschnitte «Gruppen» und «Mit der Stufenleitung») | `chat/ChatScreens.kt`: `ChatListScreen`, `ChatCard`, `ChatAvatar` | umgesetzt (#39), ohne letzte Nachricht, Uhrzeit und Ungelesen-Zähler (API) |
 | ChatBlase (eigene, andere, ausgeblendete, Tagestrenner), Aktionen per langem Drücken und `customActions` | `chat/ChatScreens.kt`: `MessageBubble`, `DayDividerText`; `chat/ConversationItems.kt` (`withDayDividers`, `dayLabel`); `ui/DashedBorder.kt` (`dashedBorder`) | umgesetzt (#39), ohne Rolle des Absenders |
-| Avatar (32 dp bei fremden Blasen, Initiale auf `secondary`) | `ui/Avatar.kt`: `Avatar` | umgesetzt (#49), zeigt die Initiale; für ein Profilbild vorbereitet (`imageUrl`) |
+| Avatar (32 dp bei fremden Blasen, Initiale auf `secondary`) | `ui/Avatar.kt`: `Avatar` | umgesetzt (#49), zeigt die Initiale; für ein Profilbild vorbereitet (`imageUrl`). Der Kreis wächst mit der Schrift (`scaledWithFont`), die Schrift hat kein Limit (Checkliste 5.3) |
 | ChatEingabe | `chat/ChatScreens.kt`: `MessageInput` | umgesetzt (#39) |
 | MitleseHinweis | `chat/ChatScreens.kt`: `ReadAlongNote` | umgesetzt (#39), Avatare einfarbig `secondary` (Farben ohne Token nicht übernommen) |
 | Dialog (Auswahl, Bestätigung), Danger- und gestrichelter Knopf | `ui/Dialog.kt` (`CeviDialog`, `DialogText`, `initialFocus`), `ui/Buttons.kt` (`DangerButton`, `DashedButton`) | umgesetzt (#39) |
@@ -97,6 +97,10 @@ Zwischen dem Design System (`tokens.json`, Brandbook) und den einzelnen Bildschi
 - `outline`: Token `#8A8A90` (Nacht) gilt, nicht `#74746F`.
 - Farben ohne Token (`#C2C3EC`, `#B4B6F5`, `#2C7C91`): nicht übernommen, es gelten die Tokens `accent`, `secondary-container` usw.
 - MitleseHinweis im Tag-Theme: Token `secondary-container` `#ECECF8` gilt, nicht `#DFDFF3`.
+
+## Ausrichtung
+
+Die App läuft nur im Hochformat (`screenOrientation="portrait"`, Entscheid 2026-10-30). Das weicht von der Checkliste Barrierefreiheit 5.8 ab (Querformat bedienbar). Auf grossen Bildschirmen (ab 600 dp, Tablet, Faltgerät) ignoriert Android die Sperre, dort gelten das Dock links und die Tastaturregel im Chat. Wer das Telefon nur quer halten kann (zum Beispiel an einer Halterung), kann die App nicht bedienen: Das ist als offener Punkt im PR von #17 genannt.
 
 ## Prüfen
 

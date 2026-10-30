@@ -22,9 +22,6 @@ class ChatApi(private val api: ApiClient) {
     suspend fun hide(messageId: String): ApiResult<Unit> =
         api.postWithoutBody("/api/v1/nachrichten/$messageId/ausblenden")
 
-    suspend fun report(messageId: String): ApiResult<Unit> =
-        api.postWithoutBody("/api/v1/nachrichten/$messageId/melden")
-
     /** Setzt den Gelesen-Stand auf die Serverzeit; danach zählt `ungelesen` nur noch spätere Nachrichten. */
     suspend fun markRead(chatId: String): ApiResult<Unit> = api.putWithoutBody("/api/v1/chats/$chatId/gelesen")
 

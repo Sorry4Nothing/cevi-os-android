@@ -65,7 +65,7 @@ Bezeichner im Code sind Englisch, Texte (`strings.xml`) und Kommentare Deutsch; 
 | Nachricht, Verlauf | `Message`, `Conversation` (`ChatConversationScreen`) |
 | Chatliste, Einzelchat, Gruppenchat | `ChatList`, `ChatListScreen`, `openDirectChat`, `isGroup` |
 | Hilfe, Vertrauenspersonen | `Help`, `trustedPersons` |
-| Ausblenden, Melden, Mitlesen | `hide`, `report`, `chat_read_along` (Text) |
+| Ausblenden, Mitlesen | `hide`, `chat_read_along` (Text) |
 | Sitzung, Speicher, Herkunft | `Session`, `Storage`, `Origin` (`SessionStorage`, `SessionInterceptor`) |
 | Fehler, Laden, Leer, Zustand | `Error` (`ApiError`, `ErrorPage`, `ApiResult.Failure`), `Loading`, `Empty`, `State` |
 | Kopf, Dock | `Header`, `Dock` |

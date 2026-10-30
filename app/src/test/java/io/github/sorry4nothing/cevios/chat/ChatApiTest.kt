@@ -111,17 +111,12 @@ class ChatApiTest {
     }
 
     @Test
-    fun hideAndReportPostWithoutBody() {
+    fun hidePostsWithoutBody() {
         server.enqueue(MockResponse.Builder().code(204).build())
-        server.enqueue(MockResponse.Builder().code(204).build())
-        runBlocking {
-            assertEquals(ApiResult.Ok(Unit), chat.hide("m1"))
-            assertEquals(ApiResult.Ok(Unit), chat.report("m1"))
-        }
+        assertEquals(ApiResult.Ok(Unit), runBlocking { chat.hide("m1") })
         val hide = server.takeRequest()
         assertEquals("POST /api/v1/nachrichten/m1/ausblenden HTTP/1.1", hide.requestLine)
         assertEquals(0, hide.body?.size ?: 0)
-        assertEquals("POST /api/v1/nachrichten/m1/melden HTTP/1.1", server.takeRequest().requestLine)
     }
 
     @Test

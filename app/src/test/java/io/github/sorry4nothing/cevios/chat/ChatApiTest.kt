@@ -67,20 +67,20 @@ class ChatApiTest {
     }
 
     @Test
-    fun hiddenMessageHasNoText() {
+    fun messageWithoutTextIsTolerated() {
         server.enqueue(
             json(
                 200,
                 """{"nachrichten":[
                 {"id":"m2","text":null,"erstelltAm":"2027-01-01T10:00:00.000Z","autor":{"id":"a","name":"Ich"},
-                 "programm":null,"ausgeblendet":true,"eigene":true},
+                 "programm":null,"eigene":true},
                 {"id":"m1","text":"Hallo","erstelltAm":"2027-01-01T09:00:00.000Z","autor":{"id":"b","name":"Du"},
-                 "programm":{"id":"p1","titel":"Lager"},"ausgeblendet":false,"eigene":false}],"naechster":"m1"}""",
+                 "programm":{"id":"p1","titel":"Lager"},"eigene":false}],"naechster":"m1"}""",
             ),
         )
         val page = (runBlocking { chat.messages("c1") } as ApiResult.Ok).value
         assertNull(page.messages[0].text)
-        assertTrue(page.messages[0].hidden && page.messages[0].own)
+        assertTrue(page.messages[0].own)
         assertEquals("Lager", page.messages[1].program?.title)
         assertEquals("m1", page.next)
     }
@@ -244,9 +244,9 @@ class ChatApiTest {
                 200,
                 """{"nachrichten":[
                 {"id":"m2","text":"Hallo","erstelltAm":"2027-01-01T10:00:00Z","autor":{"id":"l1","name":"Beispiel Leitung","stufenleitung":true},
-                 "programm":null,"ausgeblendet":false,"eigene":false},
+                 "programm":null,"eigene":false},
                 {"id":"m1","text":"Hi","erstelltAm":"2027-01-01T09:00:00Z","autor":{"id":"e1","name":"Beispiel Eltern","stufenleitung":false},
-                 "programm":null,"ausgeblendet":false,"eigene":false}],"naechster":null}""",
+                 "programm":null,"eigene":false}],"naechster":null}""",
             ),
         )
         val messages = (runBlocking { chat.messages("c1") } as ApiResult.Ok).value.messages

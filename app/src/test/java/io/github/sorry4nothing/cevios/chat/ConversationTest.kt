@@ -42,7 +42,7 @@ class ConversationTest {
     }
 
     @Test
-    fun hiddenMessageDisappearsFromNewRange() {
+    fun messageMissingFromTheNewPageDisappears() {
         val existing = Conversation(listOf("0005", "0004", "0003").map(::n), next = null)
         val v = existing.withNewestPage(page("0005", "0003"))
         assertEquals(listOf("0005", "0003"), ids(v))
@@ -63,10 +63,9 @@ class ConversationTest {
     }
 
     @Test
-    fun onlyVisibleMessagesOfOthersNewerThanKnownAreAnnounced() {
+    fun onlyMessagesOfOthersNewerThanKnownAreAnnounced() {
         val own = n("0006").copy(own = true)
-        val hidden = n("0005").copy(hidden = true, text = null)
-        val conversation = Conversation(listOf(own, hidden, n("0004"), n("0003"), n("0002")))
+        val conversation = Conversation(listOf(own, n("0004"), n("0003"), n("0002")))
         assertEquals(2, conversation.newFromOthers("0002"))
         assertEquals(0, conversation.newFromOthers("0004"))
         assertEquals("beim ersten Laden gibt es nichts anzusagen", 0, conversation.newFromOthers(null))

@@ -64,7 +64,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -94,7 +93,6 @@ import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.TextActionButton
-import io.github.sorry4nothing.cevios.ui.dashedBorder
 import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
@@ -554,10 +552,9 @@ private fun DayDividerText(label: DayLabel) {
 private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, onLongPress: () -> Unit, onAction: (MessageAction) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val own = message.own
-    val hidden = message.hidden
     val labels = actions.map { it to actionLabel(it, message) }
-    // Die untere Ecke zur Absenderseite ist spitz (6 dp); eine ausgeblendete eigene Nachricht sieht aus wie die der anderen.
-    val pointedOwn = own && !hidden
+    // Die untere Ecke zur Absenderseite ist spitz (6 dp).
+    val pointedOwn = own
     val shape = RoundedCornerShape(
         topStart = 20.dp, topEnd = 20.dp,
         bottomStart = if (pointedOwn) 20.dp else 6.dp,
@@ -583,7 +580,7 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
             horizontalAlignment = if (own) Alignment.End else Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(Spacing.s1),
         ) {
-            if (!own && !hidden) {
+            if (!own) {
                 val authorLine = if (message.author.groupLeader) {
                     stringResource(R.string.message_author_leader, message.author.name)
                 } else {
@@ -591,46 +588,28 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
                 }
                 Text(authorLine, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.cevi.accent)
             }
-            when {
-                hidden -> Row(
-                    Modifier.dashedBorder(scheme.outline, shape).padding(horizontal = Spacing.s4, vertical = Spacing.s3),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(painterResource(R.drawable.ic_eye_off), contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                    Text(
-                        stringResource(R.string.message_hidden),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
-                        color = scheme.onSurfaceVariant,
-                    )
-                }
-                else -> {
-                    val content = if (own) scheme.onSecondary else scheme.onSurface
-                    Column(
-                        Modifier
-                            .background(if (own) scheme.secondary else scheme.surfaceContainerLow, shape)
-                            .then(if (own) Modifier else Modifier.border(1.dp, scheme.outlineVariant, shape))
-                            .padding(horizontal = Spacing.s4, vertical = Spacing.s3),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        Text(message.text.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = content)
-                        message.program?.let {
-                            Text(stringResource(R.string.message_program, it.title), style = MaterialTheme.typography.bodyMedium, color = content)
-                        }
-                    }
+            val content = if (own) scheme.onSecondary else scheme.onSurface
+            Column(
+                Modifier
+                    .background(if (own) scheme.secondary else scheme.surfaceContainerLow, shape)
+                    .then(if (own) Modifier else Modifier.border(1.dp, scheme.outlineVariant, shape))
+                    .padding(horizontal = Spacing.s4, vertical = Spacing.s3),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(message.text.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = content)
+                message.program?.let {
+                    Text(stringResource(R.string.message_program, it.title), style = MaterialTheme.typography.bodyMedium, color = content)
                 }
             }
-            if (!hidden) {
-                val time = message.timeText()
-                Text(
-                    if (own) stringResource(R.string.message_own_time, time) else time,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant,
-                )
-            }
+            val time = message.timeText()
+            Text(
+                if (own) stringResource(R.string.message_own_time, time) else time,
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant,
+            )
         }
     }
-    if (own || hidden) {
+    if (own) {
         Box(Modifier.fillMaxWidth(), contentAlignment = if (own) Alignment.CenterEnd else Alignment.CenterStart) { column() }
     } else {
         // Avatar unten bündig mit der Blase: Er rückt um die Zeile der Zeit nach oben.

@@ -52,6 +52,7 @@ data class FormState(val running: Boolean = false, @StringRes val error: Int? = 
 class AuthViewModel(
     private val api: AuthApi,
     unauthorized: Flow<Unit>,
+    forbidden: Flow<Unit>,
     private val forgetSession: () -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(AuthState.Loading)
@@ -71,6 +72,7 @@ class AuthViewModel(
         viewModelScope.launch {
             unauthorized.collect { if (_state.value !is AuthState.SignedOut) leave(expired = true) }
         }
+        viewModelScope.launch { forbidden.collect { recheckAfterForbidden() } }
     }
 
     fun start() {
@@ -177,8 +179,32 @@ class AuthViewModel(
     }
 
     private fun enter(profile: Profile) {
+        scope?.viewModelStore?.clear()
         val fresh = SessionScope().also { scope = it }
         _state.value = AuthState.SignedIn(profile, fresh)
+    }
+
+    private var rechecking = false
+
+    /**
+     * Ein 403 unter `/api/v1` heisst auch «Passwortwechsel offen». Das Profil (`GET /ich`) bleibt dann erreichbar und sagt es:
+     * Dann geht es zur Passwortseite, sonst bleibt es bei der Meldung der Stelle. Mehrere 403 gleichzeitig prüfen einmal.
+     */
+    private fun recheckAfterForbidden() {
+        if (rechecking || _state.value !is AuthState.SignedIn) return
+        rechecking = true
+        viewModelScope.launch {
+            try {
+                val profile = (api.profile() as? ApiResult.Ok)?.value
+                if (profile != null && profile.mustChangePassword) {
+                    scope?.viewModelStore?.clear()
+                    scope = null
+                    _state.value = AuthState.MustChangePassword
+                }
+            } finally {
+                rechecking = false
+            }
+        }
     }
 
     /** Verlässt die Sitzung: Cookie, Daten im Arbeitsspeicher und Formular sind weg. */

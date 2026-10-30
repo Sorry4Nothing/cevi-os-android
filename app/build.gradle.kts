@@ -32,15 +32,7 @@ android {
     }
 
     buildTypes {
-        debug {
-            // Demodaten nur im Debug-Build und nur, solange keine echte Adresse gesetzt ist.
-            val demo = !providers.gradleProperty("ceviApiBaseUrl").isPresent
-            buildConfigField("boolean", "DEMO_DATA", "$demo")
-            // Die Demo-Person ist Stufenleitung (-PdemoLeader), damit sich die Bildschirme für Leitende ansehen lassen.
-            buildConfigField("boolean", "DEMO_LEADER", "${providers.gradleProperty("demoLeader").isPresent}")
-        }
         release {
-            buildConfigField("boolean", "DEMO_DATA", "false")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")

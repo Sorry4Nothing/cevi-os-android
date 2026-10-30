@@ -30,19 +30,23 @@ fun dayLabel(day: LocalDate, today: LocalDate): DayLabel = when (day) {
     else -> DayLabel.On(day)
 }
 
-/** Der Tag der Nachricht in Schweizer Zeit; `null`, wenn die Zeit des Servers kein Datum ist. */
-fun ChatMessage.day(): LocalDate? = try {
+/** Der Tag einer Zeit des Servers in Schweizer Zeit; `null`, wenn sie kein Datum ist. */
+fun dayOf(createdAt: String): LocalDate? = try {
     Instant.parse(createdAt).atZone(SWISS_ZONE).toLocalDate()
 } catch (e: DateTimeParseException) {
     null
 }
 
 /** «14:20» in Schweizer Zeit; leer, wenn die Zeit des Servers kein Datum ist. */
-fun ChatMessage.timeText(): String = try {
+fun timeOf(createdAt: String): String = try {
     TIME_FORMAT.format(Instant.parse(createdAt).atZone(SWISS_ZONE))
 } catch (e: DateTimeParseException) {
     ""
 }
+
+fun ChatMessage.day(): LocalDate? = dayOf(createdAt)
+
+fun ChatMessage.timeText(): String = timeOf(createdAt)
 
 /**
  * Fügt Tagestrenner ein. `messages` und Ergebnis sind neueste zuerst, wie der Verlauf (von unten nach oben gezeichnet):

@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
@@ -102,6 +103,7 @@ import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 private const val MAX_CHARS = 2000
 private const val MAX_INPUT_LINES = 5
@@ -194,7 +196,7 @@ private fun SectionTitle(@StringRes text: Int) {
     )
 }
 
-/** Karte einer Chatzeile mit Zähler «ungelesen». Letzte Nachricht und Uhrzeit zeigt das Design, die API liefert sie nicht. */
+/** Karte einer Chatzeile: Titel, Vorschau der letzten Nachricht, Zeit und Zähler «ungelesen». */
 @Composable
 private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
@@ -224,10 +226,47 @@ private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
                     color = scheme.onSurfaceVariant,
                 )
             }
+            chat.lastMessage?.let { last ->
+                val preview = if (last.own) {
+                    stringResource(R.string.chat_preview_own, last.text)
+                } else {
+                    stringResource(R.string.chat_preview_other, last.author.name, last.text)
+                }
+                Text(
+                    preview,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurfaceVariant,
+                    maxLines = PREVIEW_LINES,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        unreadBadgeText(chat.unread)?.let { UnreadBadge(it) }
+        val badge = unreadBadgeText(chat.unread)
+        val time = chat.lastMessage?.let { previewTimeText(it.createdAt) }.orEmpty()
+        if (badge != null || time.isNotEmpty()) {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
+                if (time.isNotEmpty()) {
+                    Text(time, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
+                }
+                badge?.let { UnreadBadge(it) }
+            }
+        }
     }
 }
+
+/** Uhrzeit, wenn die Nachricht von heute ist, sonst «Gestern» oder das Datum (Schweizer Zeit). */
+@Composable
+private fun previewTimeText(createdAt: String): String {
+    val day = dayOf(createdAt) ?: return ""
+    return when (val label = dayLabel(day, LocalDate.now(SWISS_ZONE))) {
+        DayLabel.Today -> timeOf(createdAt)
+        DayLabel.Yesterday -> stringResource(R.string.day_yesterday)
+        is DayLabel.On -> PREVIEW_DATE.format(label.date)
+    }
+}
+
+private const val PREVIEW_LINES = 2
+private val PREVIEW_DATE = DateTimeFormatter.ofPattern("d.M.")
 
 /** Zahl in einer roten Pille (nie nur Farbe). Wächst mit der Schrift. Für den Screenreader steht die Zahl am Zustand der Zeile. */
 @Composable
@@ -566,7 +605,12 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
             verticalArrangement = Arrangement.spacedBy(Spacing.s1),
         ) {
             if (!own && !hidden) {
-                Text(message.author.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.cevi.accent)
+                val authorLine = if (message.author.groupLeader) {
+                    stringResource(R.string.message_author_leader, message.author.name)
+                } else {
+                    message.author.name
+                }
+                Text(authorLine, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.cevi.accent)
             }
             when {
                 hidden -> Row(

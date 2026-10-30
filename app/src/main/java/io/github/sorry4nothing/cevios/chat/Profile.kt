@@ -39,25 +39,20 @@ data class ChatIdResponse(val id: String)
 enum class MessageAction { OPEN_DIRECT_CHAT, HIDE }
 
 /**
- * Wann die App eine Aktion anbietet. Die Nachricht trägt dafür kein Flag, deshalb gilt das Profil. Die Entscheidung
- * trifft trotzdem der Server: Eine Aktion, die er ablehnt, zeigt die App als Fehler.
+ * Wann die App eine Aktion anbietet. «Ausblenden» sagt der Server je Nachricht (`darfAusblenden`); «Einzelchat öffnen»
+ * leitet die App aus dem Profil ab. Die Entscheidung trifft trotzdem der Server: Eine Aktion, die er ablehnt, zeigt die App
+ * als Fehler.
  */
 object ChatRules {
-    /** Stufenleitungen blenden im Gruppenchat der eigenen Stufe aus, nie im Einzelchat. */
-    fun mayHide(chat: Chat?, message: ChatMessage, profile: Profile?) =
-        chat != null && profile != null && chat.isGroup && !message.hidden &&
-            profile.isGroupLeader(chat.ageGroup.id)
-
-
     /** Eine Stufenleitung öffnet den Einzelchat mit einem Elternteil über dessen Nachricht im Gruppenchat. */
     fun mayOpenDirectChat(chat: Chat?, message: ChatMessage, profile: Profile?) =
         chat != null && profile != null && chat.isGroup && !message.own &&
-            profile.isGroupLeader(chat.ageGroup.id) && chat.groupLeaders.none { it.id == message.author.id }
+            profile.isGroupLeader(chat.ageGroup.id) && !message.author.groupLeader
 
     /** Alle Aktionen, die zu einer Nachricht erlaubt sind, in der Reihenfolge des Dialogs. Leer heisst: keine Aktion. */
     fun actions(chat: Chat?, message: ChatMessage, profile: Profile?): List<MessageAction> = buildList {
         if (mayOpenDirectChat(chat, message, profile)) add(MessageAction.OPEN_DIRECT_CHAT)
-        if (mayHide(chat, message, profile)) add(MessageAction.HIDE)
+        if (message.mayHide) add(MessageAction.HIDE)
     }
 
     /**

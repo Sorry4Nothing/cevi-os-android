@@ -17,6 +17,7 @@ data class ProfileChild(val id: String, @SerialName("stufeId") val ageGroupId: S
 data class Profile(
     val id: String,
     val admin: Boolean = false,
+    @SerialName("telefon") val phone: String? = null,
     @SerialName("rollen") val roles: List<ProfileRole> = emptyList(),
     @SerialName("stufen") val ageGroups: List<ProfileAgeGroup> = emptyList(),
     @SerialName("kinder") val children: List<ProfileChild> = emptyList(),

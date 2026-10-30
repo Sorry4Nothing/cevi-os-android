@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.coroutines.Job
@@ -14,6 +15,9 @@ import kotlinx.coroutines.launch
 
 /** Zustand beim Senden einer Nachricht. */
 data class SendState(val running: Boolean = false, val error: ApiError? = null)
+
+/** Zustand beim Speichern der eigenen Telefonnummer. */
+data class PhoneState(val running: Boolean = false, val error: ApiError? = null)
 
 /** Zustand von Ausblenden, Melden und Einzelchat-Öffnen. `done` ist der Text der Bestätigung. */
 data class ActionState(val running: Boolean = false, val error: ApiError? = null, @StringRes val done: Int? = null)
@@ -41,6 +45,12 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     private val _help = MutableStateFlow<ApiResult<HelpResponse>?>(null)
     val help: StateFlow<ApiResult<HelpResponse>?> = _help.asStateFlow()
 
+    private val _contacts = MutableStateFlow<ApiResult<ContactList>?>(null)
+    val contacts: StateFlow<ApiResult<ContactList>?> = _contacts.asStateFlow()
+
+    private val _phone = MutableStateFlow(PhoneState())
+    val phone: StateFlow<PhoneState> = _phone.asStateFlow()
+
     private var openedId: String? = null
     private var conversationJob: Job? = null
 
@@ -52,6 +62,32 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     /** Das Profil entscheidet, welche Aktionen die App anbietet (Stufenleitung, Kinder). */
     fun loadProfile() {
         viewModelScope.launch { _profile.value = api.profile() }
+    }
+
+    /** Die Stufenleitungen der Stufe für den Dialog «Kontakt» im Gruppenchat. */
+    fun loadContacts(ageGroupId: String) {
+        _contacts.value = null
+        viewModelScope.launch { _contacts.value = api.contacts(ageGroupId) }
+    }
+
+    fun resetPhone() {
+        _phone.value = PhoneState()
+    }
+
+    /** Speichert die eigene Nummer (leer entfernt sie), liest danach das Profil neu und meldet den Erfolg. */
+    fun savePhone(phone: String, onSaved: () -> Unit) {
+        if (_phone.value.running) return
+        _phone.value = PhoneState(running = true)
+        viewModelScope.launch {
+            when (val result = api.setPhone(phone.trim())) {
+                is ApiResult.Failure -> _phone.value = PhoneState(error = result.error)
+                is ApiResult.Ok -> {
+                    _phone.value = PhoneState()
+                    _profile.value = api.profile()
+                    onSaved()
+                }
+            }
+        }
     }
 
     fun loadHelp() {

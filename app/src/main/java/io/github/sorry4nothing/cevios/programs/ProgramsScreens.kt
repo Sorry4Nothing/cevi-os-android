@@ -38,6 +38,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.contacts.ContactCard
+import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.ui.ChipKind
 import io.github.sorry4nothing.cevios.ui.ErrorState
@@ -191,6 +193,7 @@ fun ProgramDetailScreen(
     state: ApiResult<Program>?,
     rsvp: RsvpState,
     canAssign: Boolean,
+    contacts: ApiResult<ContactList>?,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
@@ -208,7 +211,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, back, onChild, onLeader, onAssign)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, contacts, back, onChild, onLeader, onAssign)
         }
     }
 }
@@ -218,6 +221,7 @@ private fun ProgramContent(
     program: Program,
     rsvp: RsvpState,
     canAssign: Boolean,
+    contacts: ApiResult<ContactList>?,
     back: HeaderButton,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
@@ -238,9 +242,24 @@ private fun ProgramContent(
             Tiles(program)
             Facts(program)
             RegistrationSection(program, rsvp, onChild, onLeader)
+            ContactSection(program, contacts)
             LeaderSection(program, canAssign, onAssign)
             Box(Modifier.height(Spacing.s4))
         }
+    }
+}
+
+/** «Kontakt» mit den Stufenleitungen, die sich angemeldet haben. Ein Fehler beim Laden zeigt keinen Abschnitt. */
+@Composable
+private fun ContactSection(program: Program, contacts: ApiResult<ContactList>?) {
+    if (program.unassigned || contacts !is ApiResult.Ok) return
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+        Text(
+            stringResource(R.string.contact_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 6.dp).semantics { heading() },
+        )
+        ContactCard(contacts.value.contacts)
     }
 }
 

@@ -1,6 +1,7 @@
 package io.github.sorry4nothing.cevios.programs
 
 import io.github.sorry4nothing.cevios.chat.Profile
+import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.serialization.Serializable
@@ -29,6 +30,9 @@ class ProgramsApi(private val api: ApiClient) {
         api.put("/api/v1/programme/$id/zuordnung", request)
 
     suspend fun ageGroups(): ApiResult<AgeGroupList> = api.get("/api/v1/stufen")
+
+    /** Die Stufenleitungen, die sich für das Programm angemeldet haben; leer, wenn keine angemeldet ist. */
+    suspend fun contacts(id: String): ApiResult<ContactList> = api.get("/api/v1/programme/$id/kontakte")
 
     suspend fun profile(): ApiResult<Profile> = api.get("/api/v1/ich")
 

@@ -29,7 +29,12 @@ Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. 
 | Abstände, Grössen, Ecken | `ui/theme/Masse.kt` (`Abstand`, `Groesse`, `CeviFormen`, `Voll`) | umgesetzt |
 | Theme | `ui/theme/Theme.kt`: `CeviTheme` | umgesetzt |
 | Strich-Icons (27, 24 dp, nur Strich, Strichstärke 1.8, Häkchen und Kreuz auch als `_gewaehlt` mit 2.6) | `res/drawable/ic_*.xml`, in Compose mit `Icon(painterResource(...), tint = ...)` einfärben | umgesetzt |
-| Kopf, Footer-Dock, Termin-Liste, Detail, Zusage, StatusChip, Zustand | `programme/…`, `ui/…` | Issue #38 |
+| Kopf (`Kopf`, `RundKnopf`) | `ui/Kopf.kt` | umgesetzt (#38) |
+| Footer-Dock, im Querformat und ab 600 dp senkrecht links | `ui/Dock.kt`: `HauptGeruest`, `Ziel` (Programme, Chat; Profil kommt mit dem Profil) | umgesetzt (#38) |
+| Termin-Liste (Datumsspalte, Karte), TerminDetail (Kacheln, Fakten) | `programme/ProgrammeScreens.kt`, `programme/Tage.kt` | umgesetzt (#38), ohne Kontaktperson und ohne Status je Kind in der Liste (API) |
+| Zusage (Ja/Nein-Pillen) | `programme/AnmeldungAbschnitt.kt` | umgesetzt (#38) |
+| StatusChip, Hinweis (Banner), Buttons, Fokusring | `ui/Chips.kt`, `ui/Hinweis.kt`, `ui/Knoepfe.kt`, `ui/Fokus.kt` | umgesetzt (#38) |
+| Zustand-Screens (Laden-Skelett, Leer, Offline, Fehler, 404, Kein Zugriff, Sitzung) | `ui/Zustaende.kt`: `FehlerZustand`, `LeerZustand`, `LadeSkelett` | umgesetzt (#38); «Anmelden» erst mit dem Login |
 | ChatZeile, ChatBlase, ChatEingabe, MitleseHinweis, Dialog, Hinweis, Zustände | `chat/…`, `ui/…` | Issue #39 |
 | Login, Passwort, Willkommen, Profil, Datenschutz | – | mit den jeweiligen Issues (Login, Profil) |
 | Anmeldungen und Anwesenheit (Leitende) | – | Epic «Leitende», nicht begonnen |
@@ -40,6 +45,7 @@ Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erf
 
 - **Ungelesen-Zähler** am Chat-Icon und in der Chatliste: kein Feld in der API.
 - **Kontaktperson** im Programmdetail: kein Feld in der API.
+- **Status je Kind in der Programmliste** («Noah kommt», «Zusage für Lena offen»): Die Liste liefert keine Kinder, nur das Detail. Die Karte zeigt darum nur «abgesagt» und «wird geprüft».
 - **Profilbild, Biometrisches Login, Anwesenheit:** nicht Teil der API-Beschreibung.
 - Ebenfalls gewünscht: ein Flag je Nachricht, ob man sie ausblenden darf (heute leitet die App das aus dem Profil ab).
 

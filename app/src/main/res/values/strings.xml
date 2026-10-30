@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">Cevi OS</string>
-    <string name="start_titel">Willkommen bei Cevi OS</string>
-    <string name="start_hinweis">Die App ist im Aufbau.</string>
     <string name="fehler_nicht_angemeldet">Du bist nicht angemeldet. Bitte melde dich an.</string>
     <string name="fehler_keine_berechtigung">Das darfst du nicht.</string>
     <string name="fehler_nicht_gefunden">Das gibt es nicht mehr.</string>
@@ -9,4 +7,26 @@
     <string name="fehler_zu_viele_anfragen">Zu viele Versuche. Bitte warte kurz.</string>
     <string name="fehler_netzwerk">Keine Verbindung. Prüfe dein Internet und versuche es nochmals.</string>
     <string name="fehler_unbekannt">Etwas ist schiefgelaufen. Bitte versuche es nochmals.</string>
+
+    <string name="laden">Wird geladen …</string>
+    <string name="nochmals">Nochmals versuchen</string>
+    <string name="zurueck">Zurück</string>
+
+    <string name="programme_titel">Programme</string>
+    <string name="programme_leer">In den nächsten Monaten gibt es keine Programme.</string>
+    <string name="programm_oeffnen">Programm öffnen</string>
+    <string name="status_abgesagt">Abgesagt</string>
+    <string name="status_pruefen">Wird noch geprüft</string>
+    <string name="zeit_offen">Zeit noch offen</string>
+    <string name="zeit_ganztaegig_ein_tag">%1$s (ganztägig)</string>
+    <string name="zeit_ganztaegig_mehrere_tage">%1$s bis %2$s (ganztägig)</string>
+    <string name="zeit_gleicher_tag">%1$s, %2$s bis %3$s Uhr</string>
+    <string name="zeit_mehrere_tage">%1$s, %2$s Uhr bis %3$s, %4$s Uhr</string>
+    <string name="uhrzeit">%s Uhr</string>
+    <string name="abschnitt_zeit">Wann</string>
+    <string name="abschnitt_treffpunkt">Treffpunkt</string>
+    <string name="abschnitt_schluss">Schluss</string>
+    <string name="abschnitt_mitnehmen">Mitnehmen</string>
+    <string name="abschnitt_info">Info für Eltern</string>
+    <string name="abschnitt_stufen">Stufen</string>
 </resources>

@@ -31,6 +31,25 @@
     <string name="nachricht_senden">Senden</string>
     <string name="nachricht_sendet">Wird gesendet …</string>
     <string name="aktualisieren">Aktualisieren</string>
+    <string name="abbrechen">Abbrechen</string>
+    <string name="chat_mitlesen">Mitlesende Stufenleitung: %1$s</string>
+    <string name="einzelchat_starten">Einzelchat mit der Stufenleitung %1$s starten</string>
+    <string name="aktionen_knopf">Aktionen</string>
+    <string name="aktionen_beschreibung">Aktionen zur Nachricht von %1$s</string>
+    <string name="aktionen_titel">Nachricht von %1$s</string>
+    <string name="aktion_einzelchat">Einzelchat mit %1$s öffnen</string>
+    <string name="aktion_ausblenden">Nachricht ausblenden</string>
+    <string name="aktion_melden">Nachricht melden</string>
+    <string name="ausblenden_frage">Soll die Nachricht für alle ausgeblendet werden? Wer sie geschrieben hat, sieht dann nur noch einen Hinweis.</string>
+    <string name="melden_frage">Soll die Nachricht den Admins gemeldet werden? Sie sehen dann den Text der Nachricht.</string>
+    <string name="aktion_bestaetigen_ausblenden">Ausblenden</string>
+    <string name="aktion_bestaetigen_melden">Melden</string>
+    <string name="aktion_laeuft">Wird ausgeführt …</string>
+    <string name="aktion_ausgeblendet">Die Nachricht wurde ausgeblendet.</string>
+    <string name="aktion_gemeldet">Die Nachricht wurde den Admins gemeldet.</string>
+    <string name="hilfe_knopf">Hilfe und Vertrauenspersonen</string>
+    <string name="hilfe_titel">Hilfe</string>
+    <string name="hilfe_leer">Die Abteilung hat noch keine Vertrauenspersonen eingetragen.</string>
 
     <string name="programme_titel">Programme</string>
     <string name="programme_leer">In den nächsten Monaten gibt es keine Programme.</string>

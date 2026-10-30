@@ -30,6 +30,7 @@ import io.github.sorry4nothing.cevios.chat.ChatApi
 import io.github.sorry4nothing.cevios.chat.ChatListeScreen
 import io.github.sorry4nothing.cevios.chat.ChatVerlaufScreen
 import io.github.sorry4nothing.cevios.chat.ChatViewModel
+import io.github.sorry4nothing.cevios.chat.HilfeScreen
 import io.github.sorry4nothing.cevios.chat.chatTitel
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
@@ -62,9 +63,11 @@ private fun Haupt(programmeApi: ProgrammeApi, chatApi: ChatApi) {
     var tab by rememberSaveable { mutableIntStateOf(TAB_PROGRAMME) }
     var offenesProgramm by rememberSaveable { mutableStateOf<String?>(null) }
     var offenerChat by rememberSaveable { mutableStateOf<String?>(null) }
+    var hilfeOffen by rememberSaveable { mutableStateOf(false) }
 
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(offenesProgramm) { offenesProgramm?.let(programme::detailLaden) }
+    LaunchedEffect(hilfeOffen) { if (hilfeOffen) chat.hilfeLaden() }
     LaunchedEffect(offenerChat) {
         val id = offenerChat
         if (id == null) chat.chatSchliessen() else chat.chatOeffnen(id)
@@ -98,17 +101,32 @@ private fun Haupt(programmeApi: ProgrammeApi, chatApi: ChatApi) {
                     }
                 }
                 val liste by chat.liste.collectAsState()
+                val profil by chat.profil.collectAsState()
                 val chatEintrag = (liste as? ApiResult.Ok)?.wert?.chats?.firstOrNull { it.id == chatId }
                 ChatVerlaufScreen(
                     titel = chatTitel(chatEintrag),
+                    chat = chatEintrag,
+                    profil = (profil as? ApiResult.Ok)?.wert,
                     zustand = chat.verlauf.collectAsState().value,
                     aeltereLaedt = chat.aeltereLaedt.collectAsState().value,
                     senden = chat.senden.collectAsState().value,
+                    aktion = chat.aktion.collectAsState().value,
                     onSenden = chat::senden,
                     onAeltere = chat::aeltereLaden,
                     onAktualisieren = chat::aktualisieren,
+                    onAusblenden = chat::ausblenden,
+                    onMelden = chat::melden,
+                    onEinzelchat = { stufeId, elternId -> chat.einzelchatOeffnen(stufeId, elternId) { offenerChat = it } },
                     onZurueck = { offenerChat = null },
                     onNochmals = { chat.chatOeffnen(chatId) },
+                )
+            }
+            hilfeOffen -> {
+                BackHandler { hilfeOffen = false }
+                HilfeScreen(
+                    chat.hilfe.collectAsState().value,
+                    onZurueck = { hilfeOffen = false },
+                    onNochmals = chat::hilfeLaden,
                 )
             }
             else -> Column(Modifier.fillMaxSize().safeDrawingPadding()) {
@@ -133,7 +151,11 @@ private fun Haupt(programmeApi: ProgrammeApi, chatApi: ChatApi) {
                 } else {
                     ChatListeScreen(
                         chat.liste.collectAsState().value,
+                        (chat.profil.collectAsState().value as? ApiResult.Ok)?.wert,
+                        chat.aktion.collectAsState().value,
                         onOeffnen = { offenerChat = it },
+                        onEinzelchat = { stufeId -> chat.einzelchatOeffnen(stufeId, null) { offenerChat = it } },
+                        onHilfe = { hilfeOffen = true },
                         onNochmals = { chat.listeLaden() },
                     )
                 }

@@ -151,7 +151,7 @@ private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
         )
         Text(program.title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 24.sp))
         program.location?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        // Je eigenes Kind der Stand («Noah kommt»); bei einem abgesagten Programm steht schon «Abgesagt» da.
+        // Je eigenes Kind der Stand (Vorname und «kommt», «kommt nicht» oder «noch offen»); bei einem abgesagten Programm steht schon «Abgesagt» da.
         if (!program.cancelled) program.children.forEach { ChildStatus(it) }
         ProgramStatus(program, Modifier.padding(top = 6.dp))
     }

@@ -145,7 +145,7 @@ private fun RsvpRow(
 
 /**
  * Eine Pille: offen mit Rand, gewählt Ja grün mit dickem Häkchen, Nein rot mit Kreuz, beide mit 2-dp-Rand.
- * Der Zustand steht in Form, Icon und Wort, nicht nur in der Farbe. TalkBack: «Lena, Ja, nicht ausgewählt».
+ * Der Zustand steht in Form, Icon und Wort, nicht nur in der Farbe. TalkBack: «Vorname, Ja, nicht ausgewählt».
  */
 @Composable
 private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, loading: Boolean, name: String, onClick: () -> Unit) {

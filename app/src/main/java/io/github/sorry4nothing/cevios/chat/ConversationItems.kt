@@ -61,7 +61,7 @@ fun withDayDividers(messages: List<ChatMessage>): List<ConversationItem> = build
     }
 }
 
-/** «SL» für «Sarah Läuchli»: Anfangsbuchstaben des ersten und des letzten Wortes. */
+/** Anfangsbuchstaben des ersten und des letzten Wortes des Namens, etwa «VN» für «Vorname Nachname». */
 fun initials(name: String): String {
     val words = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
     return when (words.size) {

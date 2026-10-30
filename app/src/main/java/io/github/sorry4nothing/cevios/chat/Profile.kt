@@ -31,6 +31,9 @@ data class Profile(
     /** Wann die Person die Datenschutzerklärung zur Kenntnis genommen hat; `null`: noch nicht. */
     @SerialName("datenschutzGelesenAm") val privacyReadAt: String? = null,
     @SerialName("bildUrl") val imageUrl: String? = null,
+    /** Die Push-Schalter beim Server: Sie sind standardmässig an. */
+    @SerialName("pushChat") val pushChat: Boolean = true,
+    @SerialName("pushProgramme") val pushPrograms: Boolean = true,
 ) {
     fun isGroupLeader(ageGroupId: String) = roles.any { it.type == "stufenleitung" && it.ageGroupId == ageGroupId }
 }

@@ -8,6 +8,7 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -79,16 +80,26 @@ class ApiClient(
         private val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
 
         /** Ohne Weiterleitungen: OkHttp würde den Cookie-Header sonst auch an fremde Hosts mitschicken. */
-        fun httpClient(storage: SessionStorage, appVersion: String): OkHttpClient =
+        fun httpClient(
+            storage: SessionStorage,
+            appVersion: String,
+            extraInterceptors: List<Interceptor> = emptyList(),
+        ): OkHttpClient =
             OkHttpClient.Builder()
                 .followRedirects(false)
                 .followSslRedirects(false)
+                // Vor dem SessionInterceptor: Ein DemoServer antwortet selbst und ruft die Kette nie weiter auf.
+                .apply { extraInterceptors.forEach { addInterceptor(it) } }
                 .addInterceptor(SessionInterceptor(storage, appVersion))
                 .build()
 
         fun create(context: Context): ApiClient = ApiClient(
             BuildConfig.API_BASE_URL,
-            httpClient(KeystoreSessionStorage(context), BuildConfig.VERSION_NAME),
+            httpClient(
+                KeystoreSessionStorage(context),
+                BuildConfig.VERSION_NAME,
+                if (BuildConfig.DEMO_DATA) demoInterceptors() else emptyList(),
+            ),
         )
     }
 }

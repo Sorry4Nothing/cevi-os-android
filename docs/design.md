@@ -98,3 +98,5 @@ Zwischen dem Design System (`tokens.json`, Brandbook) und den einzelnen Bildschi
 ## Prüfen
 
 `ContrastTest` rechnet die Textpaare der beiden Themen nach (Text 4.5:1, `outline` und `focus` 3:1). Ändert sich ein Wert, läuft der Test mit.
+
+Ohne `ceviApiBaseUrl` zeigt der Debug-Build die Bildschirme mit erfundenen Demodaten (siehe README, «Demodaten»), damit sich alle Zustände ohne Server ansehen lassen.

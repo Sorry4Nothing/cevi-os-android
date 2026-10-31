@@ -34,6 +34,9 @@ object PasswordRules {
 
     fun valid(current: String, new: String) = longEnough(new) && different(current, new)
 
+    /** `current` ist `null`, wenn die App das Startpasswort vom Login kennt: Dann prüft der Server, ob es sich unterscheidet. */
+    fun canSave(current: String?, new: String) = if (current == null) longEnough(new) else valid(current, new)
+
     /** Text zu einem Fehlschlag von `change-password`. Der Server-Text ist englisch und wird nie angezeigt. */
     @StringRes
     fun errorText(failure: ApiResult.Failure): Int = when (failure.code) {

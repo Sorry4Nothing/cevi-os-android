@@ -74,9 +74,6 @@
     <string name="actions_title">Nachricht von %1$s</string>
     <string name="action_direct_chat">Einzelchat mit %1$s öffnen</string>
     <string name="action_running">Wird ausgeführt …</string>
-    <string name="help_button">Hilfe und Vertrauenspersonen</string>
-    <string name="help_title">Hilfe</string>
-    <string name="help_empty">Die Abteilung hat noch keine Vertrauenspersonen eingetragen.</string>
 
     <string name="programs_title">Programme</string>
     <string name="programs_loading">Programme werden geladen</string>

@@ -41,9 +41,6 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     private val _profile = MutableStateFlow<ApiResult<Profile>?>(null)
     val profile: StateFlow<ApiResult<Profile>?> = _profile.asStateFlow()
 
-    private val _help = MutableStateFlow<ApiResult<HelpResponse>?>(null)
-    val help: StateFlow<ApiResult<HelpResponse>?> = _help.asStateFlow()
-
     private val _contacts = MutableStateFlow<ApiResult<ContactList>?>(null)
     val contacts: StateFlow<ApiResult<ContactList>?> = _contacts.asStateFlow()
 
@@ -87,11 +84,6 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
                 }
             }
         }
-    }
-
-    fun loadHelp() {
-        _help.value = null
-        viewModelScope.launch { _help.value = api.help() }
     }
 
     /** Mit `silent` bleibt die alte Liste sichtbar, bis die neue da ist. */

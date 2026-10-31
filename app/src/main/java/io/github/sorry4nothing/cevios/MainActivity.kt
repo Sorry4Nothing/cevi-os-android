@@ -150,7 +150,9 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
                     LoginScreen(form, onSignIn = auth::signIn)
                 }
             }
-            AuthState.MustChangePassword -> PasswordScreen(first = true, form, onSave = auth::changePassword)
+            AuthState.MustChangePassword -> PasswordScreen(
+                first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
+            )
             is AuthState.Welcome -> WelcomeScreen(
                 name = current.profile.name,
                 passwordSaved = passwordSaved,

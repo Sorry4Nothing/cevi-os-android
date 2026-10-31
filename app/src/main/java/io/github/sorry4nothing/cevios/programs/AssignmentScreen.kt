@@ -190,7 +190,7 @@ private fun ChoiceRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         control()
-        stageId?.let { StageLogo(it, size = 32.dp) }
+        stageId?.let { StageLogo(it, size = 40.dp) }
         Column(Modifier.weight(1f)) {
             Text(
                 title,

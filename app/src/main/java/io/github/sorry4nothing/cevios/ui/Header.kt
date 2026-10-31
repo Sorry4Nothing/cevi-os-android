@@ -70,7 +70,7 @@ fun Header(
             Column(Modifier.padding(horizontal = Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
                 if (eyebrow != null || eyebrowStages.isNotEmpty()) {
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1), verticalAlignment = Alignment.CenterVertically) {
-                        eyebrowStages.forEach { StageLogo(it, size = 20.dp) }
+                        eyebrowStages.forEach { StageLogo(it, size = 24.dp) }
                         eyebrow?.let { Text(it.uppercase(), style = Eyebrow, color = MaterialTheme.cevi.accent) }
                     }
                 }

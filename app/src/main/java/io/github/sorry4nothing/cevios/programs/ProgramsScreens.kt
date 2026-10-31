@@ -146,7 +146,7 @@ private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-            program.ageGroups.forEach { StageLogo(it.id, size = 24.dp) }
+            program.ageGroups.forEach { StageLogo(it.id, size = 28.dp) }
             Text(
                 headerLine,
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),

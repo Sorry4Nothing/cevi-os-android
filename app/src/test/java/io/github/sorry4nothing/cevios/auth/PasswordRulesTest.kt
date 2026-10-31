@@ -24,6 +24,14 @@ class PasswordRulesTest {
     }
 
     @Test
+    fun knownStartPasswordNeedsOnlyALongNewPassword() {
+        assertTrue(PasswordRules.canSave(null, "ein langes neues Passwort"))
+        assertFalse(PasswordRules.canSave(null, "zu kurz"))
+        assertFalse(PasswordRules.canSave("ein langes Passwort", "ein langes Passwort"))
+        assertTrue(PasswordRules.canSave("Startpasswort", "ein langes neues Passwort"))
+    }
+
+    @Test
     fun validNeedsBothRules() {
         assertTrue(PasswordRules.valid("Startpasswort", "ein langes neues Passwort"))
         assertFalse(PasswordRules.valid("Startpasswort", "zu kurz"))

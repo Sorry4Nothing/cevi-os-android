@@ -77,6 +77,19 @@ class AuthViewModel(
     private val _imageForm = MutableStateFlow(FormState())
     val imageForm: StateFlow<FormState> = _imageForm.asStateFlow()
 
+    /**
+     * Das Passwort des Logins, nur im Arbeitsspeicher und nur, bis der Pflichtwechsel durch ist: Der Server verlangt zum Ändern
+     * das bisherige Passwort, und die Person hat es gerade getippt. Nie in `rememberSaveable`, Logs oder auf dem Gerät.
+     */
+    private var startPassword: String? = null
+    private val _startPasswordKnown = MutableStateFlow(false)
+    val startPasswordKnown: StateFlow<Boolean> = _startPasswordKnown.asStateFlow()
+
+    private fun rememberStartPassword(value: String?) {
+        startPassword = value
+        _startPasswordKnown.value = value != null
+    }
+
     private var scope: SessionScope? = null
 
     init {
@@ -103,20 +116,30 @@ class AuthViewModel(
                     forgetSession()
                     _form.value = FormState(error = R.string.login_admin_only)
                 } else {
+                    rememberStartPassword(password)
                     resolve()
+                    // Wer nicht zum Pflichtwechsel kommt, braucht es nicht.
+                    if (_state.value !is AuthState.MustChangePassword) rememberStartPassword(null)
                     _form.value = FormState()
                 }
             }
         }
     }
 
-    fun changePassword(current: String, new: String) {
+    /** `current` ist `null`, wenn die App das Startpasswort schon vom Login kennt. */
+    fun changePassword(current: String?, new: String) {
         if (_form.value.running) return
+        val bisher = current ?: startPassword ?: return
         _form.value = FormState(running = true)
         viewModelScope.launch {
-            when (val result = api.changePassword(current, new)) {
-                is ApiResult.Failure -> if (result.error != ApiError.NOT_SIGNED_IN) _form.value = failureForm(result, PasswordRules.errorText(result))
+            when (val result = api.changePassword(bisher, new)) {
+                is ApiResult.Failure -> if (result.error != ApiError.NOT_SIGNED_IN) {
+                    // Stimmt es nicht, fragt der Bildschirm danach, statt dasselbe noch einmal zu senden.
+                    if (result.code == "INVALID_PASSWORD") rememberStartPassword(null)
+                    _form.value = failureForm(result, PasswordRules.errorText(result))
+                }
                 is ApiResult.Ok -> {
+                    rememberStartPassword(null)
                     _passwordSaved.value = true
                     resolve()
                     _form.value = FormState()
@@ -254,6 +277,7 @@ class AuthViewModel(
 
     /** Verlässt die Sitzung: Cookie, Daten im Arbeitsspeicher und Formular sind weg. */
     private fun leave(expired: Boolean) {
+        rememberStartPassword(null)
         forgetSession()
         scope?.viewModelStore?.clear()
         scope = null

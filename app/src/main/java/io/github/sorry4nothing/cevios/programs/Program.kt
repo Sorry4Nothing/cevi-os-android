@@ -12,7 +12,12 @@ import java.time.format.DateTimeParseException
 val SWISS_ZONE: ZoneId = ZoneId.of("Europe/Zurich")
 
 @Serializable
-data class ProgramAgeGroup(val id: String, val name: String)
+data class ProgramAgeGroup(
+    val id: String,
+    val name: String,
+    /** Pfad zum Stufenlogo; nur in `GET /api/v1/stufen` gefüllt, `null` ohne eigenes Logo. */
+    @SerialName("logoUrl") val logoUrl: String? = null,
+)
 
 /** Eigenes Kind in einer Stufe des Programms. `status` ist «ja», «nein» oder `null` für noch offen. */
 @Serializable

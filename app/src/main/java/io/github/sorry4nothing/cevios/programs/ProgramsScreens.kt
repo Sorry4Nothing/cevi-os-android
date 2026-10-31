@@ -52,6 +52,7 @@ import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.StageLogo
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 import java.time.LocalTime
@@ -144,11 +145,14 @@ private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
             .padding(horizontal = Spacing.s4, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        Text(
-            headerLine,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
-            color = MaterialTheme.cevi.accent,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
+            program.ageGroups.forEach { StageLogo(it.id, size = 24.dp) }
+            Text(
+                headerLine,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
+                color = MaterialTheme.cevi.accent,
+            )
+        }
         Text(program.title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 24.sp))
         program.location?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         // Je eigenes Kind der Stand (Vorname und «kommt», «kommt nicht» oder «noch offen»); bei einem abgesagten Programm steht schon «Abgesagt» da.
@@ -257,6 +261,7 @@ private fun ProgramContent(
         Header(
             title = program.title,
             eyebrow = listOfNotNull(ageGroups.ifBlank { null }, date).joinToString(" · "),
+            eyebrowStages = program.ageGroups.map { it.id },
             back = back,
             titleStyle = MaterialTheme.typography.headlineMedium,
             focusOnTitle = true,

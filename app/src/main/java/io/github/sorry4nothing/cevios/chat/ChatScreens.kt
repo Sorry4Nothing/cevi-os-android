@@ -94,6 +94,7 @@ import io.github.sorry4nothing.cevios.ui.Spinner
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Pill
+import io.github.sorry4nothing.cevios.ui.StageLogo
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
@@ -212,7 +213,7 @@ private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ChatAvatar(chat.isGroup)
+        if (chat.isGroup) StageLogo(chat.ageGroup.id, size = 48.dp) else ChatAvatar()
         Column(Modifier.weight(1f)) {
             Text(chatTitle(chat), style = MaterialTheme.typography.titleMedium)
             if (!chat.isGroup) {
@@ -281,23 +282,16 @@ private fun UnreadBadge(text: String) {
     }
 }
 
-/** Gruppe: Gruppen-Icon auf Blau. Einzelchat: «SL» (Stufenleitung) auf `secondaryContainer`. Dekorativ. */
+/** Einzelchat: «SL» (Stufenleitung) auf `secondaryContainer`. Dekorativ. Der Gruppenchat zeigt das Stufenlogo ([StageLogo]). */
 @Composable
-private fun ChatAvatar(group: Boolean) {
+private fun ChatAvatar() {
     val scheme = MaterialTheme.colorScheme
-    Box(
-        Modifier.size(48.dp).background(if (group) scheme.secondary else scheme.secondaryContainer, Pill),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (group) {
-            Icon(painterResource(R.drawable.ic_group), contentDescription = null, tint = scheme.onSecondary, modifier = Modifier.size(Sizes.icon))
-        } else {
-            Text(
-                stringResource(R.string.avatar_group_leaders),
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
-                color = scheme.onSecondaryContainer,
-            )
-        }
+    Box(Modifier.size(48.dp).background(scheme.secondaryContainer, Pill), contentAlignment = Alignment.Center) {
+        Text(
+            stringResource(R.string.avatar_group_leaders),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
+            color = scheme.onSecondaryContainer,
+        )
     }
 }
 
@@ -345,6 +339,7 @@ fun ChatConversationScreen(
                 Header(
                     title = title,
                     eyebrow = chat?.ageGroup?.name,
+                    eyebrowStages = listOfNotNull(chat?.ageGroup?.id),
                     back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
                     action = chat?.takeIf { it.isGroup }?.let { group ->
                         HeaderButton(R.drawable.ic_phone, stringResource(R.string.contact_button)) {

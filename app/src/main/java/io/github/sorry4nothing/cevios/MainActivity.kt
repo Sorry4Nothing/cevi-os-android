@@ -55,6 +55,8 @@ import io.github.sorry4nothing.cevios.images.LocalProfileImages
 import io.github.sorry4nothing.cevios.images.ProfileImageApi
 import io.github.sorry4nothing.cevios.images.ProfileImageEncoder
 import io.github.sorry4nothing.cevios.images.ProfileImages
+import io.github.sorry4nothing.cevios.images.LocalStageLogos
+import io.github.sorry4nothing.cevios.images.StageLogos
 import io.github.sorry4nothing.cevios.contacts.PhoneScreen
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiError
@@ -157,7 +159,8 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
             is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
                 // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
                 val images = viewModel { ProfileImages(ProfileImageApi(client)) }
-                CompositionLocalProvider(LocalProfileImages provides images) {
+                val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
+                CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
                     MainContent(
                         ProgramsApi(client), ChatApi(client), PushApi(client), AttendanceApi(client), current.profile,
                         passwordSaved, form, imageForm, auth,

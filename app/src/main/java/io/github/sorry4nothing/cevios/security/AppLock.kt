@@ -18,6 +18,12 @@ interface LockState {
     fun disable()
 }
 
+/** So lange darf die App im Hintergrund sein, bevor sie sich wieder sperrt (kurze Wechsel wie Bildauswahl oder Berechtigungen nicht). */
+const val RELOCK_AFTER_MS = 30_000L
+
+/** Ob die App nach `awayMs` Millisekunden im Hintergrund wieder gesperrt sein soll; `awayMs` ist `null`, wenn sie nicht im Hintergrund war. */
+fun shouldRelock(awayMs: Long?): Boolean = awayMs != null && awayMs >= RELOCK_AFTER_MS
+
 /**
  * Entsperren der App mit Fingerabdruck oder Gesicht. Die Sitzung bleibt, wie sie ist (verschlüsselt im Keystore); die App
  * zeigt nach dem Start aber nichts und fragt den Server nichts, bis die Person sich ausgewiesen hat.

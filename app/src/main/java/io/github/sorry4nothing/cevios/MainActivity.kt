@@ -8,6 +8,10 @@ import io.github.sorry4nothing.cevios.security.LockOutcome
 import io.github.sorry4nothing.cevios.security.BiometricPrompter
 import io.github.sorry4nothing.cevios.security.AppLock
 import io.github.sorry4nothing.cevios.auth.LockedScreen
+import io.github.sorry4nothing.cevios.security.shouldRelock
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.compose.runtime.mutableLongStateOf
+import android.os.SystemClock
 import androidx.compose.runtime.SideEffect
 import android.view.WindowManager
 import android.app.Activity
@@ -150,6 +154,12 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
     val pending by client.pending.collectAsState()
     val context = LocalContext.current
     val lockEnabled by auth.lockEnabled.collectAsState()
+    var stoppedAt by remember { mutableLongStateOf(0L) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stoppedAt = SystemClock.elapsedRealtime() }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        if (shouldRelock(if (stoppedAt == 0L) null else SystemClock.elapsedRealtime() - stoppedAt)) auth.relock()
+        stoppedAt = 0L
+    }
     val lockAvailable = remember { lock.isAvailable() }
     val onLockChange: (Boolean) -> Unit = { on ->
         if (on) {

@@ -122,6 +122,21 @@ class AuthViewModel(
         viewModelScope.launch { resolve() }
     }
 
+    /**
+     * Die App war eine Weile im Hintergrund: Mit eingeschaltetem Entsperren zeigt sie wieder den Sperrbildschirm. Die Daten der
+     * Sitzung verlassen den Arbeitsspeicher, die Sitzung selbst bleibt; nach dem Ausweis lädt die App neu.
+     */
+    fun relock() {
+        if (!lock.enabled || _state.value !is AuthState.SignedIn) return
+        unlocked = false
+        scope?.viewModelStore?.clear()
+        scope = null
+        _imageForm.value = FormState()
+        _form.value = FormState()
+        _passwordSaved.value = false
+        _state.value = AuthState.Locked
+    }
+
     /** Die Person hat sich ausgewiesen: Jetzt fragt die App den Server. */
     fun unlock() {
         unlocked = true

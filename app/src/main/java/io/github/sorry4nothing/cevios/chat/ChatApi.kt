@@ -28,8 +28,6 @@ class ChatApi(private val api: ApiClient) {
     /** Setzt den Gelesen-Stand auf die Serverzeit; danach zählt `ungelesen` nur noch spätere Nachrichten. */
     suspend fun markRead(chatId: String): ApiResult<Unit> = api.putWithoutBody("/api/v1/chats/$chatId/gelesen")
 
-    suspend fun help(): ApiResult<HelpResponse> = api.get("/api/v1/hilfe")
-
     /** Alle Stufenleitungen der Stufe (Kontaktpersonen im Gruppenchat). */
     suspend fun contacts(ageGroupId: String): ApiResult<ContactList> = api.get("/api/v1/stufen/$ageGroupId/kontakte")
 

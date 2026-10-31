@@ -26,11 +26,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -119,14 +117,12 @@ fun ChatListScreen(
     action: ActionState,
     onOpen: (String) -> Unit,
     onDirectChat: (ageGroupId: String) -> Unit,
-    onHelp: () -> Unit,
     phoneVisible: Boolean,
     onPhone: () -> Unit,
     onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
         Header(title = stringResource(R.string.chat_title), focusOnTitle = true)
-        TextActionButton(stringResource(R.string.help_button), onHelp, Modifier.padding(horizontal = Spacing.s3))
         if (phoneVisible) TextActionButton(stringResource(R.string.phone_button), onPhone, Modifier.padding(horizontal = Spacing.s3))
         ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
         when (state) {
@@ -711,36 +707,6 @@ private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) 
                 style = MaterialTheme.typography.bodyMedium,
                 color = scheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-@Composable
-fun HelpScreen(state: ApiResult<HelpResponse>?, onBack: () -> Unit, onRetry: () -> Unit) {
-    Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        Header(
-            title = stringResource(R.string.help_title),
-            back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
-            titleStyle = MaterialTheme.typography.headlineMedium,
-            focusOnTitle = true,
-        )
-        when (state) {
-            null -> Loading()
-            is ApiResult.Failure -> ErrorState(state.error, onRetry)
-            is ApiResult.Ok -> {
-                val shape = MaterialTheme.shapes.medium
-                Column(Modifier.verticalScroll(rememberScrollState()).padding(start = Spacing.s4, end = Spacing.s4, bottom = Spacing.s4)) {
-                    Text(
-                        state.value.trustedPersons?.takeIf { it.isNotBlank() } ?: stringResource(R.string.help_empty),
-                        Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow, shape)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-                            .padding(Spacing.s4),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                }
-            }
         }
     }
 }

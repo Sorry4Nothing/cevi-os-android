@@ -112,17 +112,6 @@ class ChatApiTest {
     }
 
     @Test
-    fun helpReadsTextOrNone() {
-        server.enqueue(json(200, """{"vertrauenspersonen":"Vertrauensperson: Beispiel, erreichbar am Abend."}"""))
-        server.enqueue(json(200, """{"vertrauenspersonen":null}"""))
-        runBlocking {
-            assertEquals("Vertrauensperson: Beispiel, erreichbar am Abend.", (chat.help() as ApiResult.Ok).value.trustedPersons)
-            assertNull((chat.help() as ApiResult.Ok).value.trustedPersons)
-        }
-        assertEquals("GET /api/v1/hilfe HTTP/1.1", server.takeRequest().requestLine)
-    }
-
-    @Test
     fun profileReadsRolesAgeGroupsAndChildren() {
         server.enqueue(
             json(

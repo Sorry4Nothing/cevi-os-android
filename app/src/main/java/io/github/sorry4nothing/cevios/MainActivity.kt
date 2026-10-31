@@ -48,7 +48,6 @@ import io.github.sorry4nothing.cevios.chat.ChatApi
 import io.github.sorry4nothing.cevios.chat.ChatListScreen
 import io.github.sorry4nothing.cevios.chat.ChatConversationScreen
 import io.github.sorry4nothing.cevios.chat.ChatViewModel
-import io.github.sorry4nothing.cevios.chat.HelpScreen
 import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.chat.chatTitle
 import io.github.sorry4nothing.cevios.contacts.PhoneRules
@@ -209,7 +208,6 @@ private fun MainContent(
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
-    var helpOpen by rememberSaveable { mutableStateOf(false) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var assigning by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
@@ -228,7 +226,7 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; helpOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false
+        notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false
         viewingAttendance = false
         when (target) {
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
@@ -243,14 +241,13 @@ private fun MainContent(
         val id = openedProgram
         if (viewingRegistrations && id != null) programs.loadRegistrations(id)
     }
-    LaunchedEffect(helpOpen) { if (helpOpen) chat.loadHelp() }
     LaunchedEffect(openedChat) {
         val id = openedChat
         if (id == null) chat.closeChat() else chat.openChat(id)
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(destination, openedChat, helpOpen, phoneOpen) {
-        if (destination == Destination.CHAT && openedChat == null && !helpOpen && !phoneOpen) {
+    LaunchedEffect(destination, openedChat, phoneOpen) {
+        if (destination == Destination.CHAT && openedChat == null && !phoneOpen) {
             chat.loadList(silent = true)
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (true) {
@@ -372,14 +369,6 @@ private fun MainContent(
                     onBack = leave,
                 )
             }
-            helpOpen -> {
-                BackHandler { helpOpen = false }
-                HelpScreen(
-                    chat.help.collectAsState().value,
-                    onBack = { helpOpen = false },
-                    onRetry = chat::loadHelp,
-                )
-            }
             notificationsOpen -> {
                 val leave = { notificationsOpen = false; push.clearError() }
                 BackHandler(onBack = leave)
@@ -423,7 +412,6 @@ private fun MainContent(
                         chat.action.collectAsState().value,
                         onOpen = { openedChat = it },
                         onDirectChat = { ageGroupId -> chat.openDirectChat(ageGroupId, null) { openedChat = it } },
-                        onHelp = { helpOpen = true },
                         phoneVisible = PhoneRules.mayEdit((chat.profile.collectAsState().value as? ApiResult.Ok)?.value),
                         onPhone = { phoneOpen = true },
                         onRetry = { chat.loadList() },

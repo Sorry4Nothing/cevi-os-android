@@ -38,9 +38,6 @@ data class Profile(
     fun isGroupLeader(ageGroupId: String) = roles.any { it.type == "stufenleitung" && it.ageGroupId == ageGroupId }
 }
 
-@Serializable
-data class HelpResponse(@SerialName("vertrauenspersonen") val trustedPersons: String? = null)
-
 /** `parentUserId` nur für Stufenleitungen; ein Elternteil lässt es weg (und es bleibt dann im JSON weg). */
 @Serializable
 data class DirectChatRequest(@SerialName("stufeId") val ageGroupId: String, @SerialName("elternUserId") val parentUserId: String? = null)

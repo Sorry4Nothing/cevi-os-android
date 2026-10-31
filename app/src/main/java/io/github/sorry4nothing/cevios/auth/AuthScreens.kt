@@ -278,12 +278,22 @@ private fun ShowPasswordSwitch(visible: Boolean, onChange: (Boolean) -> Unit) {
  * (Checkliste 9.7).
  */
 @Composable
-fun PasswordScreen(first: Boolean, form: FormState, onSave: (String, String) -> Unit, onBack: (() -> Unit)? = null) {
+fun PasswordScreen(
+    first: Boolean,
+    form: FormState,
+    onSave: (String?, String) -> Unit,
+    onBack: (() -> Unit)? = null,
+    /** Die App kennt das Startpasswort vom Login: Dann entfällt das Feld dafür. */
+    startPasswordKnown: Boolean = false,
+) {
     var current by remember { mutableStateOf("") }
     var new by remember { mutableStateOf("") }
-    var visible by remember { mutableStateOf(false) }
-    val ready = PasswordRules.valid(current, new)
-    val save = { if (ready && !form.running) onSave(current, new) }
+    var currentVisible by remember { mutableStateOf(false) }
+    var newVisible by remember { mutableStateOf(false) }
+    val askCurrent = !(first && startPasswordKnown)
+    val bisher = if (askCurrent) current else null
+    val ready = PasswordRules.canSave(bisher, new)
+    val save = { if (ready && !form.running) onSave(bisher, new) }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Header(
@@ -301,32 +311,35 @@ fun PasswordScreen(first: Boolean, form: FormState, onSave: (String, String) -> 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                LabeledTextField(
-                    label = stringResource(if (first) R.string.password_current_first else R.string.password_current),
-                    value = current,
-                    onValueChange = { current = it },
-                    maxChars = PasswordRules.MAX_LENGTH,
-                    keyboardType = KeyboardType.Password,
-                    masked = !visible,
-                    autofill = ContentType.Password,
-                    imeAction = ImeAction.Next,
-                    enabled = !form.running,
-                )
+                if (askCurrent) {
+                    LabeledTextField(
+                        label = stringResource(if (first) R.string.password_current_first else R.string.password_current),
+                        value = current,
+                        onValueChange = { current = it },
+                        maxChars = PasswordRules.MAX_LENGTH,
+                        keyboardType = KeyboardType.Password,
+                        masked = !currentVisible,
+                        autofill = ContentType.Password,
+                        imeAction = ImeAction.Next,
+                        enabled = !form.running,
+                        trailing = { ShowPasswordSwitch(currentVisible) { currentVisible = it } },
+                    )
+                }
                 LabeledTextField(
                     label = stringResource(R.string.password_new),
                     value = new,
                     onValueChange = { new = it },
                     maxChars = PasswordRules.MAX_LENGTH,
                     keyboardType = KeyboardType.Password,
-                    masked = !visible,
+                    masked = !newVisible,
                     autofill = ContentType.NewPassword,
                     imeAction = ImeAction.Done,
                     onImeAction = save,
                     enabled = !form.running,
-                    trailing = { ShowPasswordSwitch(visible) { visible = it } },
+                    trailing = { ShowPasswordSwitch(newVisible) { newVisible = it } },
                 )
                 PasswordRule(R.string.password_rule_length, PasswordRules.longEnough(new))
-                PasswordRule(R.string.password_rule_different, PasswordRules.different(current, new))
+                if (askCurrent) PasswordRule(R.string.password_rule_different, PasswordRules.different(current, new))
                 FormStatus(form)
             }
         }

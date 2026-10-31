@@ -1,5 +1,10 @@
 package io.github.sorry4nothing.cevios
 
+import io.github.sorry4nothing.cevios.ui.screenTransition
+import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
+import io.github.sorry4nothing.cevios.ui.loginTransition
+import io.github.sorry4nothing.cevios.ui.fadeTransition
+import androidx.compose.animation.AnimatedContent
 import android.Manifest
 import android.app.LocaleManager
 import android.content.ActivityNotFoundException
@@ -136,43 +141,51 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
     val pending by client.pending.collectAsState()
     val context = LocalContext.current
     val openPrivacy = { openInBrowser(context, authApi.privacyUrl()) }
+    val motion = rememberMotionEnabled()
     Surface(Modifier.fillMaxSize()) {
-        when (val current = state) {
-            AuthState.Loading -> StartScreen()
-            is AuthState.Failed -> Box(Modifier.safeDrawingPadding()) { ErrorState(current.error, onRetry = auth::start) }
-            is AuthState.SignedOut -> {
-                var loginRequested by rememberSaveable { mutableStateOf(false) }
-                if (current.expired && !loginRequested) {
-                    Box(Modifier.safeDrawingPadding()) {
-                        ErrorState(ApiError.NOT_SIGNED_IN, onRetry = {}, onSignIn = { loginRequested = true })
+        AnimatedContent(
+            state,
+            transitionSpec = { loginTransition(initialState, motion) },
+            contentKey = { it::class },
+            label = "anmeldung",
+        ) { current ->
+            when (current) {
+                AuthState.Loading -> StartScreen()
+                is AuthState.Failed -> Box(Modifier.safeDrawingPadding()) { ErrorState(current.error, onRetry = auth::start) }
+                is AuthState.SignedOut -> {
+                    var loginRequested by rememberSaveable { mutableStateOf(false) }
+                    if (current.expired && !loginRequested) {
+                        Box(Modifier.safeDrawingPadding()) {
+                            ErrorState(ApiError.NOT_SIGNED_IN, onRetry = {}, onSignIn = { loginRequested = true })
+                        }
+                    } else {
+                        LoginScreen(form, onSignIn = auth::signIn)
                     }
-                } else {
-                    LoginScreen(form, onSignIn = auth::signIn)
                 }
-            }
-            AuthState.MustChangePassword -> PasswordScreen(
-                first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
-            )
-            is AuthState.Welcome -> WelcomeScreen(
-                name = current.profile.name,
-                passwordSaved = passwordSaved,
-                form = form,
-                onReadPrivacy = openPrivacy,
-                onAccept = auth::acceptPrivacy,
-            )
-            is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
-                // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
-                val images = viewModel { ProfileImages(ProfileImageApi(client)) }
-                val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
-                CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
-                    MainContent(
-                        ProgramsApi(client), ChatApi(client), PushApi(client), AttendanceApi(client), current.profile,
-                        passwordSaved, form, imageForm, auth,
-                        pushTarget, onPushTargetHandled,
-                        onOpenPrivacy = openPrivacy,
-                        onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
-                        onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
-                    )
+                AuthState.MustChangePassword -> PasswordScreen(
+                    first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
+                )
+                is AuthState.Welcome -> WelcomeScreen(
+                    name = current.profile.name,
+                    passwordSaved = passwordSaved,
+                    form = form,
+                    onReadPrivacy = openPrivacy,
+                    onAccept = auth::acceptPrivacy,
+                )
+                is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
+                    // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
+                    val images = viewModel { ProfileImages(ProfileImageApi(client)) }
+                    val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
+                    CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
+                        MainContent(
+                            ProgramsApi(client), ChatApi(client), PushApi(client), AttendanceApi(client), current.profile,
+                            passwordSaved, form, imageForm, auth,
+                            pushTarget, onPushTargetHandled,
+                            onOpenPrivacy = openPrivacy,
+                            onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
+                            onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
+                        )
+                    }
                 }
             }
         }
@@ -187,6 +200,21 @@ private fun openInBrowser(context: Context, url: String) {
     } catch (e: ActivityNotFoundException) {
         // Kein Browser auf dem Gerät: Die Seite lässt sich dann nicht öffnen.
     }
+}
+
+/** Der Bildschirm, den `MainContent` zeigt; `depth` bestimmt die Richtung des Übergangs (tiefer: von rechts herein). */
+private sealed interface Screen {
+    val depth: Int
+
+    data object Home : Screen { override val depth = 0 }
+    data object Phone : Screen { override val depth = 1 }
+    data object Notifications : Screen { override val depth = 1 }
+    data object Password : Screen { override val depth = 1 }
+    data class Program(val programId: String) : Screen { override val depth = 1 }
+    data class Chat(val chatId: String) : Screen { override val depth = 1 }
+    data class Registrations(val programId: String) : Screen { override val depth = 2 }
+    data class Attendance(val programId: String) : Screen { override val depth = 2 }
+    data class Assign(val programId: String) : Screen { override val depth = 2 }
 }
 
 @Composable
@@ -273,159 +301,190 @@ private fun MainContent(
         val detail by programs.detail.collectAsState()
         val programProfile = (programs.profile.collectAsState().value as? ApiResult.Ok)?.value
         val assignedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
-        when {
-            programId != null && assigning && assignedProgram != null -> {
-                val leave = { assigning = false; programs.resetEdit() }
-                BackHandler(onBack = leave)
-                val edit = programs.edit.collectAsState().value
-                AssignmentScreen(
-                    assignedProgram, programs.ageGroups.collectAsState().value, programProfile, edit,
-                    onSave = { request -> programs.saveAssignment(programId, request, leave) },
-                    onBack = leave,
-                    onRetry = programs::loadAgeGroups,
-                )
-            }
-            programId != null && viewingRegistrations -> {
-                BackHandler { viewingRegistrations = false }
-                val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
-                MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingRegistrations = false }) {
-                    RegistrationsScreen(
-                        eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
-                        state = programs.registrations.collectAsState().value,
-                        onBack = { viewingRegistrations = false },
-                        onRetry = { programs.loadRegistrations(programId) },
+        val target = when {
+            programId != null && assigning && assignedProgram != null -> Screen.Assign(programId)
+            programId != null && viewingRegistrations -> Screen.Registrations(programId)
+            programId != null && viewingAttendance -> Screen.Attendance(programId)
+            programId != null -> Screen.Program(programId)
+            chatId != null -> Screen.Chat(chatId)
+            phoneOpen -> Screen.Phone
+            notificationsOpen -> Screen.Notifications
+            changingPassword -> Screen.Password
+            else -> Screen.Home
+        }
+        val motion = rememberMotionEnabled()
+        AnimatedContent(
+            target,
+            transitionSpec = { screenTransition(initialState.depth, targetState.depth, motion) },
+            label = "bildschirm",
+        ) { screen ->
+            when (screen) {
+                is Screen.Assign -> {
+                    val programId = screen.programId
+                    val assigned = assignedProgram ?: return@AnimatedContent
+                    val leave = { assigning = false; programs.resetEdit() }
+                    BackHandler(onBack = leave)
+                    val edit = programs.edit.collectAsState().value
+                    AssignmentScreen(
+                        assigned, programs.ageGroups.collectAsState().value, programProfile, edit,
+                        onSave = { request -> programs.saveAssignment(programId, request, leave) },
+                        onBack = leave,
+                        onRetry = programs::loadAgeGroups,
                     )
                 }
-            }
-            programId != null && viewingAttendance -> {
-                BackHandler { viewingAttendance = false }
-                val attendanceGroup = assignedProgram?.let { AttendanceRules.ageGroupFor(it, programProfile) }
-                LaunchedEffect(attendanceGroup) { attendanceGroup?.let(attendance::load) }
-                val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
-                MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingAttendance = false }) {
-                    AttendanceScreen(
-                        eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
-                        programId = programId,
-                        state = attendance.overview.collectAsState().value,
-                        save = attendance.save.collectAsState().value,
-                        onRecord = { personId, leader, present ->
-                            attendanceGroup?.let { attendance.record(it, programId, personId, leader, present) }
-                        },
-                        onBack = { viewingAttendance = false; attendance.clearError() },
-                        onRetry = { attendanceGroup?.let(attendance::load) },
-                    )
-                }
-            }
-            programId != null -> {
-                BackHandler { openedProgram = null }
-                MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }) {
-                    ProgramDetailScreen(
-                        detail,
-                        programs.rsvp.collectAsState().value,
-                        canAssign = AssignmentRules.mayAssign(programProfile),
-                        canSeeRegistrations = assignedProgram?.let { RegistrationsRules.maySee(it, programProfile) } == true,
-                        canRecordAttendance = assignedProgram?.let { AttendanceRules.ageGroupFor(it, programProfile) } != null,
-                        contacts = programs.contacts.collectAsState().value,
-                        onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
-                        onLeader = { attending -> programs.rsvpLeader(programId, attending) },
-                        onAssign = { assigning = true },
-                        onRegistrations = { viewingRegistrations = true },
-                        onAttendance = { viewingAttendance = true },
-                        onBack = { openedProgram = null },
-                        onRetry = { programs.loadDetail(programId) },
-                    )
-                }
-            }
-            chatId != null -> {
-                BackHandler { openedChat = null }
-                LaunchedEffect(chatId) {
-                    lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        while (true) {
-                            delay(CHAT_POLL_INTERVAL_MS)
-                            chat.refresh()
-                        }
+                is Screen.Registrations -> {
+                    val programId = screen.programId
+                    BackHandler { viewingRegistrations = false }
+                    val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
+                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingRegistrations = false }) {
+                        RegistrationsScreen(
+                            eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
+                            state = programs.registrations.collectAsState().value,
+                            onBack = { viewingRegistrations = false },
+                            onRetry = { programs.loadRegistrations(programId) },
+                        )
                     }
                 }
-                val list by chat.list.collectAsState()
-                val profile by chat.profile.collectAsState()
-                val chatEntry = (list as? ApiResult.Ok)?.value?.chats?.firstOrNull { it.id == chatId }
-                ChatConversationScreen(
-                    title = chatTitle(chatEntry),
-                    chat = chatEntry,
-                    profile = (profile as? ApiResult.Ok)?.value,
-                    state = chat.conversation.collectAsState().value,
-                    contacts = chat.contacts.collectAsState().value,
-                    loadingOlder = chat.loadingOlder.collectAsState().value,
-                    send = chat.send.collectAsState().value,
-                    action = chat.action.collectAsState().value,
-                    onSend = chat::send,
-                    onOlder = chat::loadOlder,
-                    onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },
-                    onLoadContacts = chat::loadContacts,
-                    onBack = { openedChat = null },
-                    onRetry = { chat.openChat(chatId) },
-                )
-            }
-            phoneOpen -> {
-                val leave = { phoneOpen = false; chat.resetPhone() }
-                BackHandler(onBack = leave)
-                val phoneProfile = (chat.profile.collectAsState().value as? ApiResult.Ok)?.value
-                PhoneScreen(
-                    phone = phoneProfile?.phone,
-                    canSet = PhoneRules.maySet(phoneProfile),
-                    state = chat.phone.collectAsState().value,
-                    onSave = { chat.savePhone(it, leave) },
-                    onBack = leave,
-                )
-            }
-            notificationsOpen -> {
-                val leave = { notificationsOpen = false; push.clearError() }
-                BackHandler(onBack = leave)
-                NotificationsScreen(
-                    switches = push.switches.collectAsState().value,
-                    form = push.form.collectAsState().value,
-                    onChat = push::setChat,
-                    onPrograms = push::setPrograms,
-                    onRegistrations = push::setRegistrations,
-                    onBack = leave,
-                )
-            }
-            changingPassword -> {
-                val leave = { changingPassword = false; auth.clearError() }
-                BackHandler(onBack = leave)
-                PasswordScreen(first = false, form, onSave = auth::changePassword, onBack = leave)
-            }
-            else -> MainScaffold(destination, onDestination = { destination = it }) {
-                if (destination == Destination.PROGRAMS) {
-                    ProgramListScreen(
-                        programs.list.collectAsState().value,
-                        onOpen = { openedProgram = it },
-                        onRetry = programs::loadList,
+                is Screen.Attendance -> {
+                    val programId = screen.programId
+                    BackHandler { viewingAttendance = false }
+                    val attendanceGroup = assignedProgram?.let { AttendanceRules.ageGroupFor(it, programProfile) }
+                    LaunchedEffect(attendanceGroup) { attendanceGroup?.let(attendance::load) }
+                    val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
+                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingAttendance = false }) {
+                        AttendanceScreen(
+                            eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
+                            programId = programId,
+                            state = attendance.overview.collectAsState().value,
+                            save = attendance.save.collectAsState().value,
+                            onRecord = { personId, leader, present ->
+                                attendanceGroup?.let { attendance.record(it, programId, personId, leader, present) }
+                            },
+                            onBack = { viewingAttendance = false; attendance.clearError() },
+                            onRetry = { attendanceGroup?.let(attendance::load) },
+                        )
+                    }
+                }
+                is Screen.Program -> {
+                    val programId = screen.programId
+                    BackHandler { openedProgram = null }
+                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }) {
+                        ProgramDetailScreen(
+                            detail,
+                            programs.rsvp.collectAsState().value,
+                            canAssign = AssignmentRules.mayAssign(programProfile),
+                            canSeeRegistrations = assignedProgram?.let { RegistrationsRules.maySee(it, programProfile) } == true,
+                            canRecordAttendance = assignedProgram?.let { AttendanceRules.ageGroupFor(it, programProfile) } != null,
+                            contacts = programs.contacts.collectAsState().value,
+                            onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
+                            onLeader = { attending -> programs.rsvpLeader(programId, attending) },
+                            onAssign = { assigning = true },
+                            onRegistrations = { viewingRegistrations = true },
+                            onAttendance = { viewingAttendance = true },
+                            onBack = { openedProgram = null },
+                            onRetry = { programs.loadDetail(programId) },
+                        )
+                    }
+                }
+                is Screen.Chat -> {
+                    val chatId = screen.chatId
+                    BackHandler { openedChat = null }
+                    LaunchedEffect(chatId) {
+                        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                            while (true) {
+                                delay(CHAT_POLL_INTERVAL_MS)
+                                chat.refresh()
+                            }
+                        }
+                    }
+                    val list by chat.list.collectAsState()
+                    val profile by chat.profile.collectAsState()
+                    val chatEntry = (list as? ApiResult.Ok)?.value?.chats?.firstOrNull { it.id == chatId }
+                    ChatConversationScreen(
+                        title = chatTitle(chatEntry),
+                        chat = chatEntry,
+                        profile = (profile as? ApiResult.Ok)?.value,
+                        state = chat.conversation.collectAsState().value,
+                        contacts = chat.contacts.collectAsState().value,
+                        loadingOlder = chat.loadingOlder.collectAsState().value,
+                        send = chat.send.collectAsState().value,
+                        action = chat.action.collectAsState().value,
+                        onSend = chat::send,
+                        onOlder = chat::loadOlder,
+                        onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },
+                        onLoadContacts = chat::loadContacts,
+                        onBack = { openedChat = null },
+                        onRetry = { chat.openChat(chatId) },
                     )
-                } else if (destination == Destination.PROFILE) {
-                    ProfileScreen(
-                        account, passwordSaved, form, imageForm,
-                        onPickImage = { uri -> auth.uploadImage { withContext(Dispatchers.Default) { ProfileImageEncoder.encode(resolver, uri) } } },
-                        onRemoveImage = auth::removeImage,
-                        onChangePassword = { changingPassword = true },
-                        onOpenNotifications = { notificationsOpen = true },
-                        onOpenPrivacy = onOpenPrivacy,
-                        onOpenSupport = onOpenSupport,
-                        onOpenDeleteAccount = onOpenDeleteAccount,
-                        onSignOut = auth::signOut,
-                        onLeave = { auth.clearPasswordSaved(); auth.clearImageError() },
+                }
+                Screen.Phone -> {
+                    val leave = { phoneOpen = false; chat.resetPhone() }
+                    BackHandler(onBack = leave)
+                    val phoneProfile = (chat.profile.collectAsState().value as? ApiResult.Ok)?.value
+                    PhoneScreen(
+                        phone = phoneProfile?.phone,
+                        canSet = PhoneRules.maySet(phoneProfile),
+                        state = chat.phone.collectAsState().value,
+                        onSave = { chat.savePhone(it, leave) },
+                        onBack = leave,
                     )
-                } else {
-                    ChatListScreen(
-                        chat.list.collectAsState().value,
-                        (chat.profile.collectAsState().value as? ApiResult.Ok)?.value,
-                        chat.action.collectAsState().value,
-                        onOpen = { openedChat = it },
-                        onDirectChat = { ageGroupId -> chat.openDirectChat(ageGroupId, null) { openedChat = it } },
-                        phoneVisible = PhoneRules.mayEdit((chat.profile.collectAsState().value as? ApiResult.Ok)?.value),
-                        onPhone = { phoneOpen = true },
-                        onRetry = { chat.loadList() },
+                }
+                Screen.Notifications -> {
+                    val leave = { notificationsOpen = false; push.clearError() }
+                    BackHandler(onBack = leave)
+                    NotificationsScreen(
+                        switches = push.switches.collectAsState().value,
+                        form = push.form.collectAsState().value,
+                        onChat = push::setChat,
+                        onPrograms = push::setPrograms,
+                        onRegistrations = push::setRegistrations,
+                        onBack = leave,
                     )
+                }
+                Screen.Password -> {
+                    val leave = { changingPassword = false; auth.clearError() }
+                    BackHandler(onBack = leave)
+                    PasswordScreen(first = false, form, onSave = auth::changePassword, onBack = leave)
+                }
+                Screen.Home -> MainScaffold(destination, onDestination = { destination = it }) {
+                    AnimatedContent(
+                        destination,
+                        modifier = Modifier.fillMaxSize(),
+                        transitionSpec = { fadeTransition(motion) },
+                        label = "bereich",
+                    ) { tab ->
+                        if (tab == Destination.PROGRAMS) {
+                            ProgramListScreen(
+                                programs.list.collectAsState().value,
+                                onOpen = { openedProgram = it },
+                                onRetry = programs::loadList,
+                            )
+                        } else if (tab == Destination.PROFILE) {
+                            ProfileScreen(
+                                account, passwordSaved, form, imageForm,
+                                onPickImage = { uri -> auth.uploadImage { withContext(Dispatchers.Default) { ProfileImageEncoder.encode(resolver, uri) } } },
+                                onRemoveImage = auth::removeImage,
+                                onChangePassword = { changingPassword = true },
+                                onOpenNotifications = { notificationsOpen = true },
+                                onOpenPrivacy = onOpenPrivacy,
+                                onOpenSupport = onOpenSupport,
+                                onOpenDeleteAccount = onOpenDeleteAccount,
+                                onSignOut = auth::signOut,
+                                onLeave = { auth.clearPasswordSaved(); auth.clearImageError() },
+                            )
+                        } else {
+                            ChatListScreen(
+                                chat.list.collectAsState().value,
+                                (chat.profile.collectAsState().value as? ApiResult.Ok)?.value,
+                                chat.action.collectAsState().value,
+                                onOpen = { openedChat = it },
+                                onDirectChat = { ageGroupId -> chat.openDirectChat(ageGroupId, null) { openedChat = it } },
+                                phoneVisible = PhoneRules.mayEdit((chat.profile.collectAsState().value as? ApiResult.Ok)?.value),
+                                onPhone = { phoneOpen = true },
+                                onRetry = { chat.loadList() },
+                            )
+                        }
+                    }
                 }
             }
         }

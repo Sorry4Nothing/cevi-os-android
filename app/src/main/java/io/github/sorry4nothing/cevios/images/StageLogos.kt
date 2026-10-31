@@ -4,6 +4,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.net.Background
 import io.github.sorry4nothing.cevios.programs.AgeGroupList
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +25,7 @@ class StageLogos(api: ProgramsApi) : ViewModel() {
     val paths: StateFlow<Map<String, String>> = _paths.asStateFlow()
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Background()) {
             (api.ageGroups() as? ApiResult.Ok)?.let { _paths.value = stageLogoPaths(it.value) }
         }
     }

@@ -209,4 +209,25 @@ class ApiClientTest {
         api.get<Me>("/api/v1/chats")
         assertEquals(Unit, withTimeout(5_000) { announced.await() })
     }
+
+    @Test
+    fun pendingCountsRequestsOfThePersonOnly() = runBlocking {
+        val client = client()
+        server.enqueue(MockResponse.Builder().body("{\"name\":\"a\"}").headersDelay(300, java.util.concurrent.TimeUnit.MILLISECONDS).build())
+        server.enqueue(MockResponse.Builder().body("{\"name\":\"b\"}").headersDelay(300, java.util.concurrent.TimeUnit.MILLISECONDS).build())
+        val foreground = async { client.get<Me>("/api/v1/ich") }
+        val background = async(Background()) { client.get<Me>("/api/v1/ich") }
+        withTimeout(2_000) { client.pending.first { it == 1 } }
+        foreground.await()
+        background.await()
+        assertEquals(0, client.pending.value)
+    }
+
+    @Test
+    fun pendingFallsBackAfterAFailure() = runBlocking {
+        val client = client()
+        server.enqueue(MockResponse.Builder().code(500).build())
+        client.get<Me>("/api/v1/ich")
+        assertEquals(0, client.pending.value)
+    }
 }

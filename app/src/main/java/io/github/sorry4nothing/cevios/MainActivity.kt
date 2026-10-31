@@ -461,15 +461,13 @@ private fun MainContent(
                         chat = chatEntry,
                         profile = (profile as? ApiResult.Ok)?.value,
                         state = chat.conversation.collectAsState().value,
-                        contacts = chat.contacts.collectAsState().value,
-                        loadingOlder = chat.loadingOlder.collectAsState().value,
+                            loadingOlder = chat.loadingOlder.collectAsState().value,
                         send = chat.send.collectAsState().value,
                         action = chat.action.collectAsState().value,
                         onSend = chat::send,
                         onOlder = chat::loadOlder,
                         onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },
-                        onLoadContacts = chat::loadContacts,
-                        onBack = { openedChat = null },
+                            onBack = { openedChat = null },
                         onRetry = { chat.openChat(chatId) },
                     )
                 }

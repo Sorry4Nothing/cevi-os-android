@@ -3,7 +3,6 @@ package io.github.sorry4nothing.cevios.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sorry4nothing.cevios.R
-import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.net.Background
@@ -43,8 +42,6 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     private val _profile = MutableStateFlow<ApiResult<Profile>?>(null)
     val profile: StateFlow<ApiResult<Profile>?> = _profile.asStateFlow()
 
-    private val _contacts = MutableStateFlow<ApiResult<ContactList>?>(null)
-    val contacts: StateFlow<ApiResult<ContactList>?> = _contacts.asStateFlow()
 
     private val _phone = MutableStateFlow(PhoneState())
     val phone: StateFlow<PhoneState> = _phone.asStateFlow()
@@ -63,11 +60,6 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     }
 
     /** Die Stufenleitungen der Stufe für den Dialog «Kontakt» im Gruppenchat. */
-    fun loadContacts(ageGroupId: String) {
-        _contacts.value = null
-        viewModelScope.launch { _contacts.value = api.contacts(ageGroupId) }
-    }
-
     fun resetPhone() {
         _phone.value = PhoneState()
     }

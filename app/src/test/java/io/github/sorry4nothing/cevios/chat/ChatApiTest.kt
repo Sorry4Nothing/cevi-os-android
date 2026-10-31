@@ -174,14 +174,6 @@ class ChatApiTest {
     }
 
     @Test
-    fun ageGroupContactsAreReadFromTheAgeGroup() {
-        server.enqueue(json(200, """{"kontakte":[{"id":"l1","name":"Beispiel Leitung","telefon":null}]}"""))
-        val contacts = (runBlocking { chat.contacts("s1") } as ApiResult.Ok).value.contacts
-        assertEquals("GET /api/v1/stufen/s1/kontakte HTTP/1.1", server.takeRequest().requestLine)
-        assertNull(contacts.single().phone)
-    }
-
-    @Test
     fun phoneIsPatchedAndRemovedWithEmptyText() {
         server.enqueue(MockResponse.Builder().code(204).build())
         server.enqueue(MockResponse.Builder().code(204).build())

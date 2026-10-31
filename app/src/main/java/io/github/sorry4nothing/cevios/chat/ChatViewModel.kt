@@ -6,11 +6,13 @@ import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.net.Background
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** Zustand beim Senden einer Nachricht. */
 data class SendState(val running: Boolean = false, val error: ApiError? = null)
@@ -89,7 +91,7 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     /** Mit `silent` bleibt die alte Liste sichtbar, bis die neue da ist. */
     fun loadList(silent: Boolean = false) {
         if (!silent) _list.value = null
-        viewModelScope.launch { _list.value = api.chats() }
+        viewModelScope.launch(if (silent) Background() else EmptyCoroutineContext) { _list.value = api.chats() }
     }
 
     fun openChat(id: String) {
@@ -115,7 +117,7 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     /** Holt die neueste Seite und führt sie mit dem Geladenen zusammen (von Hand oder im Takt). */
     fun refresh() {
         val id = openedId ?: return
-        viewModelScope.launch {
+        viewModelScope.launch(Background()) {
             val result = api.messages(id)
             if (openedId != id) return@launch
             // Ein Fehler im Takt ersetzt einen guten Verlauf nicht; nur ein fehlender Verlauf zeigt den Fehler.
@@ -132,7 +134,7 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
 
     /** Meldet dem Server, bis wohin gelesen wurde. Ein Fehler stört das Lesen nicht, der Zähler stimmt dann etwas später. */
     private fun markRead(chatId: String) {
-        viewModelScope.launch { api.markRead(chatId) }
+        viewModelScope.launch(Background()) { api.markRead(chatId) }
     }
 
     fun loadOlder() {
@@ -141,7 +143,7 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
         val cursor = existing.next ?: return
         if (_loadingOlder.value) return
         _loadingOlder.value = true
-        viewModelScope.launch {
+        viewModelScope.launch(Background()) {
             val result = api.messages(id, before = cursor)
             if (openedId == id) {
                 if (result is ApiResult.Ok) _conversation.value = ApiResult.Ok(existing.withOlder(result.value))

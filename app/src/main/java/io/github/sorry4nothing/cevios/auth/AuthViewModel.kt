@@ -67,6 +67,7 @@ class AuthViewModel(
     forbidden: Flow<Unit>,
     private val forgetSession: () -> Unit,
     private val lock: LockState,
+    private val hasSession: () -> Boolean,
 ) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(AuthState.Loading)
     val state: StateFlow<AuthState> = _state.asStateFlow()
@@ -114,7 +115,7 @@ class AuthViewModel(
     }
 
     fun start() {
-        if (lock.enabled && !unlocked) {
+        if (lock.enabled && !unlocked && hasSession()) {
             _state.value = AuthState.Locked
             return
         }
@@ -178,6 +179,8 @@ class AuthViewModel(
                     forgetSession()
                     _form.value = FormState(error = R.string.login_admin_only)
                 } else {
+                    // Das Passwort ist ein Ausweis wie die Biometrie: Wer sich damit anmeldet, wird nicht gleich noch einmal gefragt.
+                    unlocked = true
                     rememberStartPassword(password)
                     resolve()
                     // Wer nicht zum Pflichtwechsel kommt, braucht es nicht.
@@ -272,7 +275,6 @@ class AuthViewModel(
         _form.value = FormState(running = true)
         viewModelScope.launch {
             api.signOut()
-            turnLockOff()
             leave(expired = false)
         }
     }

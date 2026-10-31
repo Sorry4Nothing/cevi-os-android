@@ -467,7 +467,7 @@ fun WelcomeScreen(
             Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 if (passwordSaved && lockAvailable) {
                     SwitchRow(
-                        R.drawable.ic_lock, stringResource(R.string.lock_switch), stringResource(R.string.lock_switch_hint_short),
+                        R.drawable.ic_lock, stringResource(R.string.lock_switch), null,
                         lockEnabled, enabled = !form.running, onChange = onLockChange,
                     )
                 }

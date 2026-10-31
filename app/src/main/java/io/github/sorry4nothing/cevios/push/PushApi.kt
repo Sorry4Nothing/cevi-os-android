@@ -14,6 +14,7 @@ data class PushTokenRequest(val token: String, @SerialName("plattform") val plat
 data class PushSwitchesRequest(
     @SerialName("pushChat") val chat: Boolean? = null,
     @SerialName("pushProgramme") val programs: Boolean? = null,
+    @SerialName("pushAnmeldungen") val registrations: Boolean? = null,
 )
 
 class PushApi(private val api: ApiClient) {

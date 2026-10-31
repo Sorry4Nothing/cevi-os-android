@@ -49,7 +49,8 @@ import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 
 /**
- * Welche Mitteilungen die Person bekommt: neue Chat-Nachrichten und Änderungen bei Programmen. Die Schalter gelten beim
+ * Welche Mitteilungen die Person bekommt: neue Chat-Nachrichten, Mitteilungen und Erinnerungen, und für Leitende die An- und
+ * Abmeldungen für Programme. Die Schalter gelten beim
  * Server, nicht auf diesem Gerät; ob das Gerät der App Mitteilungen zeigen lässt, entscheidet das System, und der
  * Bildschirm sagt es, wenn es sie sperrt.
  */
@@ -59,6 +60,7 @@ fun NotificationsScreen(
     form: FormState,
     onChat: (Boolean) -> Unit,
     onPrograms: (Boolean) -> Unit,
+    onRegistrations: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -95,6 +97,14 @@ fun NotificationsScreen(
                     R.drawable.ic_calendar, stringResource(R.string.notifications_programs), stringResource(R.string.notifications_programs_hint),
                     switches.programs, enabled = !form.running, onChange = onPrograms,
                 )
+                switches.registrations?.let {
+                    SettingsDivider()
+                    SwitchRow(
+                        R.drawable.ic_group, stringResource(R.string.notifications_registrations),
+                        stringResource(R.string.notifications_registrations_hint),
+                        it, enabled = !form.running, onChange = onRegistrations,
+                    )
+                }
             }
             SlowHint(form.running)
             formErrorText(form)?.let { NoticeBanner(NoticeKind.ERROR, it) }

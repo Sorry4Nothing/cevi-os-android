@@ -377,6 +377,7 @@ private fun MainContent(
                     form = push.form.collectAsState().value,
                     onChat = push::setChat,
                     onPrograms = push::setPrograms,
+                    onRegistrations = push::setRegistrations,
                     onBack = leave,
                 )
             }

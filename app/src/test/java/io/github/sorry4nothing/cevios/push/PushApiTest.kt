@@ -83,6 +83,25 @@ class PushApiTest {
     }
 
     @Test
+    fun theRegistrationSwitchIsOnlyThereForPeopleWithARole() {
+        val json = Json { ignoreUnknownKeys = true }
+        assertEquals(false, json.decodeFromString<Profile>("""{"id":"u1","pushAnmeldungen":false}""").pushRegistrations)
+        assertNull(json.decodeFromString<Profile>("""{"id":"u1"}""").pushRegistrations)
+    }
+
+    @Test
+    fun theRegistrationSwitchGoesOutAsPushAnmeldungen() {
+        server.enqueue(reply(204))
+        runBlocking { push.setSwitches(PushSwitchesRequest(registrations = false)) }
+        assertEquals("""{"pushAnmeldungen":false}""", server.takeRequest().body?.utf8())
+    }
+
+    @Test
+    fun aMessageFromTheAdminLeadsNowhere() {
+        assertNull(PushTarget.from("mitteilung", ""))
+    }
+
+    @Test
     fun aPushLeadsToChatOrProgram() {
         val id = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
         assertEquals(PushTarget.Chat(id), PushTarget.from("chat", id))

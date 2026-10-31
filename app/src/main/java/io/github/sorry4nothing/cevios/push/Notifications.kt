@@ -12,6 +12,7 @@ object Notifications {
     /** Die Kanäle, die der Server in jedem Push nennt: Ein Kanal, den das Gerät nicht kennt, zeigt den Push nicht. */
     const val CHAT_CHANNEL = "chat"
     const val PROGRAMS_CHANNEL = "programme"
+    const val MESSAGES_CHANNEL = "mitteilungen"
 
     private const val PREFS = "push"
     private const val ASKED = "permission_asked"
@@ -22,6 +23,7 @@ object Notifications {
             listOf(
                 NotificationChannel(CHAT_CHANNEL, context.getString(R.string.channel_chat), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(PROGRAMS_CHANNEL, context.getString(R.string.channel_programs), NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(MESSAGES_CHANNEL, context.getString(R.string.channel_messages), NotificationManager.IMPORTANCE_DEFAULT),
             ),
         )
     }

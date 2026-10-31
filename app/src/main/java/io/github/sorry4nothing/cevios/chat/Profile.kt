@@ -34,6 +34,8 @@ data class Profile(
     /** Die Push-Schalter beim Server: Sie sind standardmässig an. */
     @SerialName("pushChat") val pushChat: Boolean = true,
     @SerialName("pushProgramme") val pushPrograms: Boolean = true,
+    /** Der Server liefert ihn nur Personen mit Stufenrolle; `null`: kein Schalter anzeigen. */
+    @SerialName("pushAnmeldungen") val pushRegistrations: Boolean? = null,
 ) {
     fun isGroupLeader(ageGroupId: String) = roles.any { it.type == "stufenleitung" && it.ageGroupId == ageGroupId }
 }

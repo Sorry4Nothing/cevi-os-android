@@ -123,7 +123,7 @@ fun NotificationsScreen(
 internal fun SwitchRow(
     @DrawableRes icon: Int,
     title: String,
-    hint: String,
+    hint: String?,
     checked: Boolean,
     enabled: Boolean,
     onChange: (Boolean) -> Unit,
@@ -141,7 +141,7 @@ internal fun SwitchRow(
         Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.cevi.accent)
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
-            Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         Switch(
             checked = checked,

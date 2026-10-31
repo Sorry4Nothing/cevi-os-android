@@ -120,7 +120,7 @@ fun ProfileScreen(
             SettingsCard {
                 if (lockAvailable) {
                     SwitchRow(
-                        R.drawable.ic_lock, stringResource(R.string.lock_switch), stringResource(R.string.lock_switch_hint),
+                        R.drawable.ic_lock, stringResource(R.string.lock_switch), null,
                         lockEnabled, enabled = !form.running, onChange = onLockChange,
                     )
                     SettingsDivider()

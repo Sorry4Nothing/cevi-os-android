@@ -62,6 +62,9 @@ class ApiClient(
     /** Anzahl der laufenden Anfragen, die eine Person ausgelöst hat (ohne [Background]); über 0 sperrt die App und zeigt den Ladekreis. */
     val pending: StateFlow<Int> = _pending.asStateFlow()
 
+    /** Ob ein Sitzungs-Cookie da ist; ohne eins gibt es nichts zu entsperren. */
+    fun hasSession(): Boolean = storage?.read() != null
+
     /** Vergisst das gespeicherte Cookie, auch ein halbes (`two_factor`). */
     fun forgetSession() {
         storage?.write(null)

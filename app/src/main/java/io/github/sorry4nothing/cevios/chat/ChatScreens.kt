@@ -69,8 +69,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
-import io.github.sorry4nothing.cevios.contacts.ContactCard
-import io.github.sorry4nothing.cevios.contacts.ContactList
 import kotlinx.coroutines.delay
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
@@ -79,7 +77,6 @@ import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.CeviDialog
 import io.github.sorry4nothing.cevios.ui.avatarInitial
 import io.github.sorry4nothing.cevios.ui.DashedButton
-import io.github.sorry4nothing.cevios.ui.DialogText
 import io.github.sorry4nothing.cevios.ui.InitialText
 import io.github.sorry4nothing.cevios.ui.scaledWithFont
 import io.github.sorry4nothing.cevios.ui.EmptyState
@@ -301,14 +298,12 @@ fun ChatConversationScreen(
     chat: Chat?,
     profile: Profile?,
     state: ApiResult<Conversation>?,
-    contacts: ApiResult<ContactList>?,
     loadingOlder: Boolean,
     send: SendState,
     action: ActionState,
     onSend: (text: String, onSent: () -> Unit) -> Unit,
     onOlder: () -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
-    onLoadContacts: (ageGroupId: String) -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -318,20 +313,6 @@ fun ChatConversationScreen(
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     val compact = keyboardOpen && windowHeight < COMPACT_HEIGHT
-    var contactOpen by remember { mutableStateOf(false) }
-    if (contactOpen) {
-        CeviDialog(
-            title = stringResource(R.string.contact_title),
-            onDismiss = { contactOpen = false },
-            confirmButton = { TextActionButton(stringResource(R.string.close), { contactOpen = false }) },
-        ) {
-            when (contacts) {
-                null -> DialogText(stringResource(R.string.loading))
-                is ApiResult.Failure -> DialogText(stringResource(contacts.error.text))
-                is ApiResult.Ok -> ContactCard(contacts.value.contacts)
-            }
-        }
-    }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         // Alles ausser Eingabe: Die Eingabe wird zuerst gemessen und behält immer ihren Platz.
         Column(Modifier.weight(1f)) {
@@ -341,12 +322,6 @@ fun ChatConversationScreen(
                     eyebrow = chat?.ageGroup?.name,
                     eyebrowStages = listOfNotNull(chat?.ageGroup?.id),
                     back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
-                    action = chat?.takeIf { it.isGroup }?.let { group ->
-                        HeaderButton(R.drawable.ic_phone, stringResource(R.string.contact_button)) {
-                            contactOpen = true
-                            onLoadContacts(group.ageGroup.id)
-                        }
-                    },
                     titleStyle = MaterialTheme.typography.headlineMedium,
                     focusOnTitle = true,
                 )

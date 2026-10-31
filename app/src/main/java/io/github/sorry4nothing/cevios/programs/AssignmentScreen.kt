@@ -48,6 +48,7 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.SlowHint
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.StageLogo
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
@@ -106,6 +107,7 @@ private fun AssignmentForm(
                 ChoiceRow(
                     title = group.name,
                     text = null,
+                    stageId = group.id,
                     enabled = !edit.running,
                     control = { Checkbox(checked = checked, onCheckedChange = null) },
                     modifier = Modifier.toggleable(
@@ -171,6 +173,7 @@ private fun ChoiceRow(
     title: String,
     text: String?,
     enabled: Boolean,
+    stageId: String? = null,
     control: @Composable () -> Unit,
     modifier: Modifier,
 ) {
@@ -187,6 +190,7 @@ private fun ChoiceRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         control()
+        stageId?.let { StageLogo(it, size = 32.dp) }
         Column(Modifier.weight(1f)) {
             Text(
                 title,

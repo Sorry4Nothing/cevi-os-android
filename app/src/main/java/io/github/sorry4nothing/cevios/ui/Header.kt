@@ -47,6 +47,8 @@ fun Header(
     title: String?,
     modifier: Modifier = Modifier,
     eyebrow: String? = null,
+    /** Stufen, deren Logo vor der Überzeile steht (dekorativ, der Name steht in der Überzeile). */
+    eyebrowStages: List<String> = emptyList(),
     back: HeaderButton? = null,
     action: HeaderButton? = null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge,
@@ -66,7 +68,12 @@ fun Header(
         }
         if (title != null) {
             Column(Modifier.padding(horizontal = Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
-                eyebrow?.let { Text(it.uppercase(), style = Eyebrow, color = MaterialTheme.cevi.accent) }
+                if (eyebrow != null || eyebrowStages.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1), verticalAlignment = Alignment.CenterVertically) {
+                        eyebrowStages.forEach { StageLogo(it, size = 20.dp) }
+                        eyebrow?.let { Text(it.uppercase(), style = Eyebrow, color = MaterialTheme.cevi.accent) }
+                    }
+                }
                 val focus = remember { FocusRequester() }
                 if (focusOnTitle) LaunchedEffect(title) { focus.requestFocus() }
                 Text(

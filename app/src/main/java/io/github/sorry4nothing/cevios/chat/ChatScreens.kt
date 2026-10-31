@@ -339,6 +339,7 @@ fun ChatConversationScreen(
                 Header(
                     title = title,
                     eyebrow = chat?.ageGroup?.name,
+                    eyebrowStages = listOfNotNull(chat?.ageGroup?.id),
                     back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
                     action = chat?.takeIf { it.isGroup }?.let { group ->
                         HeaderButton(R.drawable.ic_phone, stringResource(R.string.contact_button)) {

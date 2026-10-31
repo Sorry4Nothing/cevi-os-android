@@ -120,7 +120,7 @@ fun NotificationsScreen(
 
 /** Eine ganze Zeile ist der Schalter (mindestens 48 dp); der Zustand steht in der Stellung und im Haken, nie nur in der Farbe. */
 @Composable
-private fun SwitchRow(
+internal fun SwitchRow(
     @DrawableRes icon: Int,
     title: String,
     hint: String,

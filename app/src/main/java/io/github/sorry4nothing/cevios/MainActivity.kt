@@ -4,6 +4,13 @@ import io.github.sorry4nothing.cevios.ui.screenTransition
 import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
 import io.github.sorry4nothing.cevios.ui.loginTransition
 import io.github.sorry4nothing.cevios.ui.fadeTransition
+import io.github.sorry4nothing.cevios.security.LockOutcome
+import io.github.sorry4nothing.cevios.security.BiometricPrompter
+import io.github.sorry4nothing.cevios.security.AppLock
+import io.github.sorry4nothing.cevios.auth.LockedScreen
+import androidx.compose.runtime.SideEffect
+import android.view.WindowManager
+import android.app.Activity
 import androidx.compose.animation.AnimatedContent
 import android.Manifest
 import android.app.LocaleManager
@@ -13,7 +20,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -101,7 +108,7 @@ private const val CHAT_POLL_INTERVAL_MS = 5_000L
 /** So oft fragt die sichtbare Chatliste nach: So kommen die Zähler «ungelesen» an (Takt laut API). */
 private const val LIST_POLL_INTERVAL_MS = 30_000L
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     /** Wohin das Tippen auf einen Push führt; bleibt stehen, bis die Person angemeldet ist und der Bildschirm es aufgreift. */
     private var pushTarget by mutableStateOf<PushTarget?>(null)
 
@@ -125,21 +132,37 @@ class MainActivity : ComponentActivity() {
         // Nach Drehen oder Prozess-Ende gilt der Push nicht noch einmal: Das Intent ist dann dasselbe wie beim ersten Start.
         if (savedInstanceState == null) pushTarget = targetOf(intent)
         val client = ApiClient.create(applicationContext)
-        setContent { CeviTheme { Root(client, pushTarget) { pushTarget = null } } }
+        val lock = AppLock(applicationContext)
+        val prompter = BiometricPrompter(this, lock)
+        setContent { CeviTheme { Root(client, lock, prompter, pushTarget) { pushTarget = null } } }
     }
 }
 
 /** Je nach Anmeldestand: Start, Fehler, Anmelden, Passwort wählen, Willkommen oder die App selbst. */
 @Composable
-private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
+private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
     val authApi = remember(client) { AuthApi(client) }
-    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, client::forgetSession) }
+    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, client::forgetSession, lock) }
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()
     val imageForm by auth.imageForm.collectAsState()
     val pending by client.pending.collectAsState()
     val context = LocalContext.current
+    val lockEnabled by auth.lockEnabled.collectAsState()
+    val lockAvailable = remember { lock.isAvailable() }
+    val onLockChange: (Boolean) -> Unit = { on ->
+        if (on) {
+            prompter.enable { if (it == LockOutcome.Success) auth.lockTurnedOn() else if (it == LockOutcome.Failed) auth.unlockFailed() }
+        } else {
+            auth.turnLockOff()
+        }
+    }
+    // Ist das Entsperren an, zeigen weder Bildschirmfotos noch «Zuletzt benutzt» etwas von der App.
+    SideEffect {
+        val window = (context as? Activity)?.window
+        if (lockEnabled) window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
     val openPrivacy = { openInBrowser(context, authApi.privacyUrl()) }
     val motion = rememberMotionEnabled()
     Surface(Modifier.fillMaxSize()) {
@@ -151,6 +174,20 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
         ) { current ->
             when (current) {
                 AuthState.Loading -> StartScreen()
+                AuthState.Locked -> LockedScreen(
+                    form,
+                    onUnlock = {
+                        prompter.unlock {
+                            when (it) {
+                                LockOutcome.Success -> auth.unlock()
+                                LockOutcome.Invalidated -> auth.lockInvalidated()
+                                LockOutcome.Failed -> auth.unlockFailed()
+                                LockOutcome.Declined -> Unit
+                            }
+                        }
+                    },
+                    onUsePassword = auth::signOut,
+                )
                 is AuthState.Failed -> Box(Modifier.safeDrawingPadding()) { ErrorState(current.error, onRetry = auth::start) }
                 is AuthState.SignedOut -> {
                     var loginRequested by rememberSaveable { mutableStateOf(false) }
@@ -171,6 +208,9 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
                     form = form,
                     onReadPrivacy = openPrivacy,
                     onAccept = auth::acceptPrivacy,
+                    lockAvailable = lockAvailable,
+                    lockEnabled = lockEnabled,
+                    onLockChange = onLockChange,
                 )
                 is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
                     // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
@@ -184,6 +224,9 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
                             onOpenPrivacy = openPrivacy,
                             onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
                             onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
+                            lockAvailable = lockAvailable,
+                            lockEnabled = lockEnabled,
+                            onLockChange = onLockChange,
                         )
                     }
                 }
@@ -233,6 +276,9 @@ private fun MainContent(
     onOpenPrivacy: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenDeleteAccount: () -> Unit,
+    lockAvailable: Boolean,
+    lockEnabled: Boolean,
+    onLockChange: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val resolver = context.contentResolver
@@ -471,6 +517,9 @@ private fun MainContent(
                                 onOpenDeleteAccount = onOpenDeleteAccount,
                                 onSignOut = auth::signOut,
                                 onLeave = { auth.clearPasswordSaved(); auth.clearImageError() },
+                                lockAvailable = lockAvailable,
+                                lockEnabled = lockEnabled,
+                                onLockChange = onLockChange,
                             )
                         } else {
                             ChatListScreen(

@@ -83,6 +83,7 @@ import io.github.sorry4nothing.cevios.programs.weekdayShort
 import io.github.sorry4nothing.cevios.programs.ProgramsViewModel
 import io.github.sorry4nothing.cevios.ui.MainScaffold
 import io.github.sorry4nothing.cevios.ui.Destination
+import io.github.sorry4nothing.cevios.ui.BusyOverlay
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.theme.CeviTheme
 import kotlinx.coroutines.Dispatchers
@@ -132,6 +133,7 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()
     val imageForm by auth.imageForm.collectAsState()
+    val pending by client.pending.collectAsState()
     val context = LocalContext.current
     val openPrivacy = { openInBrowser(context, authApi.privacyUrl()) }
     Surface(Modifier.fillMaxSize()) {
@@ -174,6 +176,8 @@ private fun Root(client: ApiClient, pushTarget: PushTarget?, onPushTargetHandled
                 }
             }
         }
+        // Über dem Start gibt es keinen zweiten Ladekreis.
+        BusyOverlay(busy = pending > 0 && state !is AuthState.Loading)
     }
 }
 

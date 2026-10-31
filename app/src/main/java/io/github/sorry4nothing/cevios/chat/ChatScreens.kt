@@ -213,7 +213,7 @@ private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (chat.isGroup) StageLogo(chat.ageGroup.id, size = 48.dp) else ChatAvatar()
+        if (chat.isGroup) StageLogo(chat.ageGroup.id, size = 56.dp) else ChatAvatar()
         Column(Modifier.weight(1f)) {
             Text(chatTitle(chat), style = MaterialTheme.typography.titleMedium)
             if (!chat.isGroup) {

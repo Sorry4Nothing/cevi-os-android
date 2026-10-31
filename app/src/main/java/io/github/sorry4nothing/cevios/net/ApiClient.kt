@@ -3,9 +3,14 @@ package io.github.sorry4nothing.cevios.net
 import android.content.Context
 import io.github.sorry4nothing.cevios.BuildConfig
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.Call
@@ -20,7 +25,18 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
 import java.security.GeneralSecurityException
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
+
+/**
+ * Marke für Anfragen im Hintergrund (regelmässiges Nachladen, Bilder, «gelesen» melden): Sie zählen nicht in
+ * [ApiClient.pending] und sperren die App nicht. Aufruf: `launch(Background()) { … }`.
+ */
+class Background : AbstractCoroutineContextElement(Background) {
+    companion object Key : CoroutineContext.Key<Background>
+}
 
 /** Dünner Zugang zur Cevi-OS-API. Antworten kommen als [ApiResult], nie als Exception. */
 class ApiClient(
@@ -40,6 +56,11 @@ class ApiClient(
 
     /** Meldet jedes 403 unter `/api/v1`: Es kann «kein Recht» heissen oder «Passwortwechsel offen» (der Server sagt es nicht im Status). */
     val forbidden: SharedFlow<Unit> = _forbidden.asSharedFlow()
+
+    private val _pending = MutableStateFlow(0)
+
+    /** Anzahl der laufenden Anfragen, die eine Person ausgelöst hat (ohne [Background]); über 0 sperrt die App und zeigt den Ladekreis. */
+    val pending: StateFlow<Int> = _pending.asStateFlow()
 
     /** Vergisst das gespeicherte Cookie, auch ein halbes (`two_factor`). */
     fun forgetSession() {
@@ -91,33 +112,42 @@ class ApiClient(
 
     /** GET einer Datei (Bild) als Bytes; mehr als `maxBytes` gilt als Fehler. */
     suspend fun getBytes(path: String, maxBytes: Int): ApiResult<ByteArray> =
-        sendRaw(request(path).get().build()) { response ->
-            val source = response.body.source()
-            source.request(maxBytes + 1L)
-            if (source.buffer.size > maxBytes) throw IllegalArgumentException("Antwort zu gross")
-            source.readByteArray()
+        withContext(Background()) {
+            sendRaw(request(path).get().build()) { response ->
+                val source = response.body.source()
+                source.request(maxBytes + 1L)
+                if (source.buffer.size > maxBytes) throw IllegalArgumentException("Antwort zu gross")
+                source.readByteArray()
+            }
         }
 
     /** Für Antworten ohne Inhalt oder ohne Interesse am Inhalt: `decode = { }`. */
     suspend fun <T> send(request: Request, decode: (String) -> T): ApiResult<T> =
         sendRaw(request) { decode(it.body.string()) }
 
-    private suspend fun <T> sendRaw(request: Request, decode: (Response) -> T): ApiResult<T> =
-        suspendCancellableCoroutine { continuation ->
-            val httpCall = http.newCall(request)
-            continuation.invokeOnCancellation { httpCall.cancel() }
-            httpCall.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    val error = if (e.cause is GeneralSecurityException) ApiError.UNKNOWN else ApiError.NETWORK
-                    continuation.resume(ApiResult.Failure(error))
-                }
+    private suspend fun <T> sendRaw(request: Request, decode: (Response) -> T): ApiResult<T> {
+        val counted = coroutineContext[Background] == null
+        if (counted) _pending.update { it + 1 }
+        try {
+            return suspendCancellableCoroutine { continuation ->
+                val httpCall = http.newCall(request)
+                continuation.invokeOnCancellation { httpCall.cancel() }
+                httpCall.enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        val error = if (e.cause is GeneralSecurityException) ApiError.UNKNOWN else ApiError.NETWORK
+                        continuation.resume(ApiResult.Failure(error))
+                    }
 
-                // Darf nie werfen, sonst bleibt die Fortsetzung hängen.
-                override fun onResponse(call: Call, response: Response) {
-                    continuation.resume(response.use { evaluate(it, decode) })
-                }
-            })
+                    // Darf nie werfen, sonst bleibt die Fortsetzung hängen.
+                    override fun onResponse(call: Call, response: Response) {
+                        continuation.resume(response.use { evaluate(it, decode) })
+                    }
+                })
+            }
+        } finally {
+            if (counted) _pending.update { it - 1 }
         }
+    }
 
     private fun <T> evaluate(response: Response, decode: (Response) -> T): ApiResult<T> {
         if (!response.isSuccessful) {

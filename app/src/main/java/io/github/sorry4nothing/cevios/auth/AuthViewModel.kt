@@ -9,6 +9,7 @@ import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.security.LockState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,9 @@ class SessionScope : ViewModelStoreOwner {
 sealed interface AuthState {
     /** Die App fragt den Server, ob eine Sitzung besteht. */
     data object Loading : AuthState
+
+    /** Die Person hat das Entsperren mit Fingerabdruck oder Gesicht eingeschaltet: Bis sie sich ausgewiesen hat, zeigt die App nichts. */
+    data object Locked : AuthState
 
     /** Die Antwort kam nicht (offline, Fehler); `error` sagt warum. */
     data class Failed(val error: ApiError) : AuthState
@@ -62,6 +66,7 @@ class AuthViewModel(
     unauthorized: Flow<Unit>,
     forbidden: Flow<Unit>,
     private val forgetSession: () -> Unit,
+    private val lock: LockState,
 ) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(AuthState.Loading)
     val state: StateFlow<AuthState> = _state.asStateFlow()
@@ -90,6 +95,14 @@ class AuthViewModel(
         _startPasswordKnown.value = value != null
     }
 
+    private val _lockEnabled = MutableStateFlow(lock.enabled)
+
+    /** Ob die App sich beim Start mit Fingerabdruck oder Gesicht entsperrt. */
+    val lockEnabled: StateFlow<Boolean> = _lockEnabled.asStateFlow()
+
+    /** Gilt ab dem Entsperren, bis der Prozess endet: Danach fragt der Start wieder. */
+    private var unlocked = false
+
     private var scope: SessionScope? = null
 
     init {
@@ -101,8 +114,42 @@ class AuthViewModel(
     }
 
     fun start() {
+        if (lock.enabled && !unlocked) {
+            _state.value = AuthState.Locked
+            return
+        }
         _state.value = AuthState.Loading
         viewModelScope.launch { resolve() }
+    }
+
+    /** Die Person hat sich ausgewiesen: Jetzt fragt die App den Server. */
+    fun unlock() {
+        unlocked = true
+        _form.value = FormState()
+        start()
+    }
+
+    /** Das Entsperren hat nicht geklappt (Gerätefehler, zu viele Versuche); die App bleibt gesperrt. */
+    fun unlockFailed() {
+        _form.value = FormState(error = R.string.lock_failed)
+    }
+
+    /** Die Biometrie des Geräts hat sich geändert: Der Schlüssel gilt nicht mehr, die Anmeldung mit Passwort folgt. */
+    fun lockInvalidated() {
+        turnLockOff()
+        leave(expired = false)
+        _form.value = FormState(error = R.string.lock_changed)
+    }
+
+    /** Die Person hat das Entsperren eingeschaltet (der Schlüssel ist angelegt und einmal benutzt). */
+    fun lockTurnedOn() {
+        _form.value = FormState()
+        _lockEnabled.value = true
+    }
+
+    fun turnLockOff() {
+        lock.disable()
+        _lockEnabled.value = false
     }
 
     fun signIn(username: String, password: String) {
@@ -210,6 +257,7 @@ class AuthViewModel(
         _form.value = FormState(running = true)
         viewModelScope.launch {
             api.signOut()
+            turnLockOff()
             leave(expired = false)
         }
     }

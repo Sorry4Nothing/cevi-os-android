@@ -72,6 +72,7 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.SlowHint
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.push.SwitchRow
 import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
 import io.github.sorry4nothing.cevios.ui.theme.Eyebrow
 import io.github.sorry4nothing.cevios.ui.theme.Pill
@@ -384,6 +385,38 @@ private fun PasswordRule(@StringRes text: Int, met: Boolean) {
 }
 
 /**
+ * Gesperrt: Die Person weist sich mit Fingerabdruck oder Gesicht aus. Die Abfrage startet von selbst; der Knopf fragt noch einmal,
+ * und «Mit Passwort anmelden» beendet die Sitzung (der Ausweg, wenn die Biometrie nicht geht).
+ */
+@Composable
+fun LockedScreen(form: FormState, onUnlock: () -> Unit, onUsePassword: () -> Unit) {
+    LaunchedEffect(Unit) { onUnlock() }
+    LogoPage(
+        top = {
+            DepartmentEyebrow()
+            Text(
+                stringResource(R.string.lock_title),
+                style = MaterialTheme.typography.displayMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                stringResource(R.string.lock_text),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Spacing.s3),
+            )
+        },
+        bottom = {
+            Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FormStatus(form)
+                PrimaryButton(stringResource(R.string.lock_unlock), onClick = onUnlock, modifier = Modifier.fillMaxWidth())
+                TextActionButton(stringResource(R.string.lock_use_password), onUsePassword, Modifier.fillMaxWidth())
+            }
+        },
+    )
+}
+
+/**
  * Willkommen beim ersten Start: Die Person nimmt die Datenschutzerklärung zur Kenntnis (Kenntnisnahme, keine Einwilligung).
  * Der Text der Erklärung steht auf dem Backend und öffnet im Browser.
  */
@@ -394,6 +427,10 @@ fun WelcomeScreen(
     form: FormState,
     onReadPrivacy: () -> Unit,
     onAccept: () -> Unit,
+    /** Das Gerät kann Fingerabdruck oder Gesicht; dann bietet der Schalter das Entsperren an (nur direkt nach dem eigenen Passwort). */
+    lockAvailable: Boolean = false,
+    lockEnabled: Boolean = false,
+    onLockChange: (Boolean) -> Unit = {},
 ) {
     var acknowledged by rememberSaveable { mutableStateOf(false) }
     val ready = acknowledged
@@ -428,6 +465,12 @@ fun WelcomeScreen(
         },
         bottom = {
             Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                if (passwordSaved && lockAvailable) {
+                    SwitchRow(
+                        R.drawable.ic_lock, stringResource(R.string.lock_switch), stringResource(R.string.lock_switch_hint_short),
+                        lockEnabled, enabled = !form.running, onChange = onLockChange,
+                    )
+                }
                 TextActionButton(stringResource(R.string.welcome_privacy_read), onReadPrivacy)
                 Row(
                     Modifier

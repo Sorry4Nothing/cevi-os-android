@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.chat.Profile
+import io.github.sorry4nothing.cevios.push.SwitchRow
 import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.Header
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
@@ -80,6 +81,9 @@ fun ProfileScreen(
     onOpenDeleteAccount: () -> Unit,
     onSignOut: () -> Unit,
     onLeave: () -> Unit,
+    lockAvailable: Boolean = false,
+    lockEnabled: Boolean = false,
+    onLockChange: (Boolean) -> Unit = {},
 ) {
     DisposableEffect(Unit) { onDispose(onLeave) }
     // Die Systemauswahl braucht keine Berechtigung: Die Person wählt, die App bekommt nur dieses eine Bild.
@@ -114,6 +118,13 @@ fun ProfileScreen(
             }
             SectionTitle(R.string.profile_section_account)
             SettingsCard {
+                if (lockAvailable) {
+                    SwitchRow(
+                        R.drawable.ic_lock, stringResource(R.string.lock_switch), stringResource(R.string.lock_switch_hint),
+                        lockEnabled, enabled = !form.running, onChange = onLockChange,
+                    )
+                    SettingsDivider()
+                }
                 SettingsRow(R.drawable.ic_lock, stringResource(R.string.profile_change_password), onClick = onChangePassword, chevron = true)
                 SettingsDivider()
                 if (profile.imageUrl != null) {

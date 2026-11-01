@@ -186,6 +186,9 @@ private fun PersonRow(profile: Profile, uploading: Boolean, onChangeImage: () ->
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() },
             )
+            profile.ceviName?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                Text(stringResource(R.string.profile_cevi_name, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             roleLine(profile).takeIf { it.isNotEmpty() }?.let {
                 Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

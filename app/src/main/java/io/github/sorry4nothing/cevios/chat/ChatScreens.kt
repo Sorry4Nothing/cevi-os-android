@@ -105,7 +105,7 @@ private const val MAX_INPUT_LINES = 5
 fun chatTitle(chat: Chat?): String = when {
     chat == null -> stringResource(R.string.chat_title)
     chat.isGroup -> stringResource(R.string.chat_group, chat.ageGroup.name)
-    else -> stringResource(R.string.chat_direct, chat.parent?.name.orEmpty()).trim()
+    else -> stringResource(R.string.chat_direct, chat.parent?.displayName.orEmpty()).trim()
 }
 
 @Composable
@@ -224,7 +224,7 @@ private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
                 val preview = if (last.own) {
                     stringResource(R.string.chat_preview_own, last.text)
                 } else {
-                    stringResource(R.string.chat_preview_other, last.author.name, last.text)
+                    stringResource(R.string.chat_preview_other, last.author.displayName, last.text)
                 }
                 Text(
                     preview,
@@ -380,7 +380,7 @@ private val COMPACT_HEIGHT = 500.dp
 @Composable
 private fun ReadAlongNote(leaders: List<ChatPerson>, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    val names = leaders.joinToString(", ") { it.name }
+    val names = leaders.joinToString(", ") { it.displayName }
     val full = stringResource(R.string.chat_read_along, names)
     val text = buildAnnotatedString {
         append(full)
@@ -399,7 +399,7 @@ private fun ReadAlongNote(leaders: List<ChatPerson>, modifier: Modifier = Modifi
                     contentAlignment = Alignment.Center,
                 ) {
                     // Eine Initiale: zwei Buchstaben würde der nächste Kreis überdecken.
-                    InitialText(avatarInitial(leader.name), 11.sp, scheme.onSecondary)
+                    InitialText(avatarInitial(leader.displayName), 11.sp, scheme.onSecondary)
                 }
             }
         }
@@ -477,7 +477,7 @@ private fun Messages(
 
     selected?.let { message ->
         CeviDialog(
-            title = stringResource(R.string.actions_title, message.author.name),
+            title = stringResource(R.string.actions_title, message.author.displayName),
             onDismiss = { selected = null },
             confirmButton = { TextActionButton(stringResource(R.string.cancel), { selected = null }) },
         ) {
@@ -496,7 +496,7 @@ private fun Messages(
 
 @Composable
 private fun actionLabel(action: MessageAction, message: ChatMessage): String = when (action) {
-    MessageAction.OPEN_DIRECT_CHAT -> stringResource(R.string.action_direct_chat, message.author.name)
+    MessageAction.OPEN_DIRECT_CHAT -> stringResource(R.string.action_direct_chat, message.author.displayName)
 }
 
 @Composable
@@ -553,9 +553,9 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
         ) {
             if (!own) {
                 val authorLine = if (message.author.groupLeader) {
-                    stringResource(R.string.message_author_leader, message.author.name)
+                    stringResource(R.string.message_author_leader, message.author.displayName)
                 } else {
-                    message.author.name
+                    message.author.displayName
                 }
                 Text(authorLine, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.cevi.accent)
             }
@@ -586,7 +586,7 @@ private fun MessageBubble(message: ChatMessage, actions: List<MessageAction>, on
         // Avatar unten bündig mit der Blase: Er rückt um die Zeile der Zeit nach oben.
         val timeHeight = with(LocalDensity.current) { MaterialTheme.typography.bodySmall.lineHeight.toDp() } + Spacing.s1
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.Bottom) {
-            Avatar(message.author.name, Modifier.padding(bottom = timeHeight), imageUrl = message.author.imageUrl)
+            Avatar(message.author.displayName, Modifier.padding(bottom = timeHeight), imageUrl = message.author.imageUrl)
             Box(Modifier.weight(1f)) { column() }
         }
     }

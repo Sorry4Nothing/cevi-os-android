@@ -4,9 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 import io.github.sorry4nothing.cevios.ui.focusRing
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -92,20 +90,15 @@ private fun ContactRow(contact: Contact) {
             contact.fullName?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             contact.phone?.takeIf { it.isNotBlank() }?.let { number ->
                 if (canCall) {
-                    // Ein Tipp auf die Nummer öffnet die Telefon-App mit der Nummer; mindestens 48 dp hoch.
-                    Box(
-                        Modifier
-                            .heightIn(min = Sizes.touchTarget)
+                    // Ein Tipp auf die Nummer öffnet die Telefon-App mit der Nummer; der grosse Treffer bleibt der Knopf «Anrufen».
+                    Text(
+                        number,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.cevi.accent,
+                        modifier = Modifier
                             .focusRing(MaterialTheme.shapes.small)
                             .clickable(onClickLabel = stringResource(R.string.contact_call), role = Role.Button, onClick = dial),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Text(
-                            number,
-                            style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline),
-                            color = MaterialTheme.cevi.accent,
-                        )
-                    }
+                    )
                 } else {
                     Text(number, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

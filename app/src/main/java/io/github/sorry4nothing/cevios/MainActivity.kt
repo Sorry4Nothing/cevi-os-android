@@ -77,10 +77,6 @@ import io.github.sorry4nothing.cevios.contacts.PhoneScreen
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
-import io.github.sorry4nothing.cevios.attendance.AttendanceApi
-import io.github.sorry4nothing.cevios.attendance.AttendanceRules
-import io.github.sorry4nothing.cevios.attendance.AttendanceScreen
-import io.github.sorry4nothing.cevios.attendance.AttendanceViewModel
 import io.github.sorry4nothing.cevios.push.Notifications
 import io.github.sorry4nothing.cevios.push.NotificationsScreen
 import io.github.sorry4nothing.cevios.push.PushApi
@@ -228,7 +224,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                     val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
                     CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
                         MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), AttendanceApi(client), current.profile,
+                            ProgramsApi(client), ChatApi(client), PushApi(client), current.profile,
                             passwordSaved, form, imageForm, auth,
                             pushTarget, onPushTargetHandled,
                             onOpenPrivacy = openPrivacy,
@@ -266,7 +262,6 @@ private sealed interface Screen {
     data class Program(val programId: String) : Screen { override val depth = 1 }
     data class Chat(val chatId: String) : Screen { override val depth = 1 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
-    data class Attendance(val programId: String) : Screen { override val depth = 2 }
     data class Assign(val programId: String) : Screen { override val depth = 2 }
 }
 
@@ -275,7 +270,6 @@ private fun MainContent(
     programsApi: ProgramsApi,
     chatApi: ChatApi,
     pushApi: PushApi,
-    attendanceApi: AttendanceApi,
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
@@ -295,7 +289,6 @@ private fun MainContent(
     val programs = viewModel { ProgramsViewModel(programsApi) }
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
-    val attendance = viewModel { AttendanceViewModel(attendanceApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
@@ -304,7 +297,6 @@ private fun MainContent(
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var assigning by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
-    var viewingAttendance by rememberSaveable { mutableStateOf(false) }
 
     // Ein gespeichertes Passwort schliesst den Wechsel; der Hinweis erscheint im Profil.
     LaunchedEffect(passwordSaved) { if (passwordSaved) changingPassword = false }
@@ -320,7 +312,6 @@ private fun MainContent(
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
         notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false
-        viewingAttendance = false
         when (target) {
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
             is PushTarget.Program -> { destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
@@ -360,7 +351,6 @@ private fun MainContent(
         val target = when {
             programId != null && assigning && assignedProgram != null -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
-            programId != null && viewingAttendance -> Screen.Attendance(programId)
             programId != null -> Screen.Program(programId)
             chatId != null -> Screen.Chat(chatId)
             phoneOpen -> Screen.Phone
@@ -401,26 +391,6 @@ private fun MainContent(
                         )
                     }
                 }
-                is Screen.Attendance -> {
-                    val programId = screen.programId
-                    BackHandler { viewingAttendance = false }
-                    val attendanceGroup = assignedProgram?.let { AttendanceRules.ageGroupFor(it, programProfile) }
-                    LaunchedEffect(attendanceGroup) { attendanceGroup?.let(attendance::load) }
-                    val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
-                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingAttendance = false }) {
-                        AttendanceScreen(
-                            eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
-                            programId = programId,
-                            state = attendance.overview.collectAsState().value,
-                            save = attendance.save.collectAsState().value,
-                            onRecord = { personId, leader, present ->
-                                attendanceGroup?.let { attendance.record(it, programId, personId, leader, present) }
-                            },
-                            onBack = { viewingAttendance = false; attendance.clearError() },
-                            onRetry = { attendanceGroup?.let(attendance::load) },
-                        )
-                    }
-                }
                 is Screen.Program -> {
                     val programId = screen.programId
                     BackHandler { openedProgram = null }
@@ -430,13 +400,11 @@ private fun MainContent(
                             programs.rsvp.collectAsState().value,
                             canAssign = AssignmentRules.mayAssign(programProfile),
                             canSeeRegistrations = assignedProgram?.let { RegistrationsRules.maySee(it, programProfile) } == true,
-                            canRecordAttendance = assignedProgram?.let { AttendanceRules.ageGroupFor(it, programProfile) } != null,
                             contacts = programs.contacts.collectAsState().value,
                             onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                             onLeader = { attending -> programs.rsvpLeader(programId, attending) },
                             onAssign = { assigning = true },
                             onRegistrations = { viewingRegistrations = true },
-                            onAttendance = { viewingAttendance = true },
                             onBack = { openedProgram = null },
                             onRetry = { programs.loadDetail(programId) },
                         )

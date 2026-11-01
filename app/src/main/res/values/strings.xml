@@ -244,18 +244,4 @@
     <string name="registrations_empty_children">In den Stufen dieses Programms gibt es keine Kinder.</string>
     <string name="registrations_empty_leaders">In den Stufen dieses Programms gibt es keine Leitenden.</string>
     <string name="registrations_chip_open">Offen</string>
-    <string name="error_attendance_closed">Die Anwesenheit lässt sich erst nach Beginn des Programms und bis 14 Tage danach ändern.</string>
-    <string name="attendance_title">Anwesenheit</string>
-    <string name="attendance_loading">Anwesenheit wird geladen</string>
-    <string name="attendance_action">Anwesenheit erfassen</string>
-    <string name="attendance_present">Da</string>
-    <string name="attendance_absent">Nicht da</string>
-    <string name="attendance_unrecorded">Nicht erfasst</string>
-    <string name="attendance_answer_present">%1$s, da</string>
-    <string name="attendance_answer_absent">%1$s, nicht da</string>
-    <string name="attendance_not_started">Das Programm hat noch nicht begonnen. Die Anwesenheit lässt sich ab Beginn festhalten.</string>
-    <string name="attendance_closed">Die Anwesenheit lässt sich nur bis 14 Tage nach dem Programm ändern. Hier ist sie nur noch zu lesen.</string>
-    <string name="attendance_not_listed">Zu diesem Programm gibt es noch keine Anwesenheit.</string>
-    <string name="attendance_empty_children">In dieser Stufe gibt es keine Kinder.</string>
-    <string name="attendance_empty_leaders">In dieser Stufe gibt es keine Leitenden.</string>
 </resources>

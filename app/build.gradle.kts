@@ -18,8 +18,9 @@ android {
         applicationId = "io.github.sorry4nothing.cevios"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        // versionCode = Major·10000 + Minor·100 + Patch; versionName im Format x.y.z, das das Backend verlangt (sonst 426).
+        versionCode = 900
+        versionName = "0.9.0"
 
         // Echte Adresse nur lokal (~/.gradle/gradle.properties oder -PceviApiBaseUrl), nie im Repo.
         val apiBaseUrl = providers.gradleProperty("ceviApiBaseUrl").getOrElse("https://api.example.org")
@@ -31,12 +32,26 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        // Schlüssel und Passwörter nur lokal (~/.gradle/gradle.properties), nie im Repo. Ohne sie bleibt die Release-Variante
+        // unsigniert, damit CI und andere Rechner weiter bauen.
+        providers.gradleProperty("ceviSigningStoreFile").orNull?.let { storePath ->
+            create("release") {
+                storeFile = file(storePath)
+                storePassword = providers.gradleProperty("ceviSigningStorePassword").get()
+                keyAlias = providers.gradleProperty("ceviSigningKeyAlias").get()
+                keyPassword = providers.gradleProperty("ceviSigningKeyPassword").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
     compileOptions {

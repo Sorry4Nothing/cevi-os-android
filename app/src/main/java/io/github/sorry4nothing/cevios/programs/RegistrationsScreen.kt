@@ -110,7 +110,8 @@ private fun RegistrationsContent(data: Registrations) {
             } else {
                 if (data.leaders.isEmpty()) item { NoticeBanner(NoticeKind.INFO, stringResource(R.string.registrations_empty_leaders)) }
                 items(data.leaders, key = { it.id }) {
-                    PersonRow(it.name, stringResource(if (it.isGroupLeader) R.string.role_group_leader else R.string.role_leader), it.status)
+                    val role = stringResource(if (it.isGroupLeader) R.string.role_group_leader else R.string.role_leader)
+                    PersonRow(it.title, listOfNotNull(it.fullName, role).joinToString(" · "), it.status)
                 }
             }
         }
@@ -185,9 +186,9 @@ internal fun TabPill(text: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** Eine Person: Initialen, Name (bei Leitenden mit Rolle) und der Stand als Chip. Name und Stand lesen sich als ein Element. */
+/** Eine Person: Initialen, Name (bei Leitenden mit vollem Namen und Rolle darunter) und der Stand als Chip. Name und Stand lesen sich als ein Element. */
 @Composable
-private fun PersonRow(name: String, role: String?, status: String) {
+private fun PersonRow(name: String, subtitle: String?, status: String) {
     val scheme = MaterialTheme.colorScheme
     val kind = registrationChip(status)
     val word = stringResource(
@@ -212,7 +213,7 @@ private fun PersonRow(name: String, role: String?, status: String) {
         }
         Column(Modifier.weight(1f)) {
             Text(name, style = MaterialTheme.typography.bodyLarge)
-            role?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant) }
+            subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant) }
         }
         StatusChip(kind, word)
     }

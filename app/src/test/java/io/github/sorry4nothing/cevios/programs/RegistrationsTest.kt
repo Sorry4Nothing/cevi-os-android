@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RegistrationsTest {
@@ -72,5 +73,16 @@ class RegistrationsTest {
         assertEquals(0.55f, RegistrationsRules.share(11, 20), 0.0001f)
         assertEquals(0f, RegistrationsRules.share(0, 20), 0f)
         assertEquals(0f, RegistrationsRules.share(0, 0), 0f)
+    }
+
+    @Test
+    fun leadersShowTheCeviNameAboveTheFullName() {
+        val withCevi = LeaderRegistration("1", "Anna Muster", "leitung", "ja", ceviName = "Fuchs")
+        assertEquals("Fuchs", withCevi.title)
+        assertEquals("Anna Muster", withCevi.fullName)
+        val without = LeaderRegistration("2", "Ben Beispiel", "stufenleitung", "nein")
+        assertEquals("Ben Beispiel", without.title)
+        assertNull(without.fullName)
+        assertNull(LeaderRegistration("3", "Cara Test", "leitung", "offen", ceviName = " ").fullName)
     }
 }

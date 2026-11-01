@@ -274,7 +274,7 @@ private fun ProgramContent(
     }
 }
 
-/** «Kontakt» mit den Stufenleitungen, die sich angemeldet haben. Ein Fehler beim Laden zeigt keinen Abschnitt. */
+/** «Kontakt» mit den Stufenleitungen des Programms (wer abgesagt hat, fehlt). Ein Fehler beim Laden zeigt keinen Abschnitt. */
 @Composable
 private fun ContactSection(program: Program, contacts: ApiResult<ContactList>?) {
     if (program.unassigned || contacts !is ApiResult.Ok) return

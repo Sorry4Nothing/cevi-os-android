@@ -37,8 +37,8 @@ import io.github.sorry4nothing.cevios.ui.theme.Spacing
 private val CARD = RoundedCornerShape(16.dp)
 
 /**
- * Die Kontaktpersonen in einer Karte, je Zeile Name und Nummer. Ohne Eintrag steht «Stufenleitung»: Dann hat sich noch
- * niemand angemeldet, und der Einzelchat mit der Stufenleitung geht trotzdem.
+ * Die Kontaktpersonen in einer Karte, je Zeile Name und Nummer. Ohne Eintrag steht «Stufenleitung»: Dann hat die Stufe
+ * keine SL, und der Einzelchat mit der Stufenleitung geht trotzdem.
  */
 @Composable
 fun ContactCard(contacts: List<Contact>, modifier: Modifier = Modifier) {

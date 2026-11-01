@@ -1,6 +1,7 @@
 package io.github.sorry4nothing.cevios.programs
 
 import io.github.sorry4nothing.cevios.chat.Profile
+import io.github.sorry4nothing.cevios.chat.displayName
 import io.github.sorry4nothing.cevios.ui.ChipKind
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -26,8 +27,21 @@ data class ChildRegistration(
 
 /** `role` ist «leitung» oder «stufenleitung». */
 @Serializable
-data class LeaderRegistration(val id: String, val name: String, @SerialName("rolle") val role: String, val status: String) {
+data class LeaderRegistration(
+    val id: String,
+    val name: String,
+    @SerialName("rolle") val role: String,
+    val status: String,
+    /** Cevi-Name (Spitzname); `null` oder leer ohne Angabe. */
+    val ceviName: String? = null,
+) {
     val isGroupLeader get() = role == "stufenleitung"
+
+    /** Titel der Zeile: der Cevi-Name, ohne ihn der volle Name. */
+    val title get() = displayName(name, ceviName)
+
+    /** Der volle Name darunter; nur, wenn der Titel ein Cevi-Name ist. */
+    val fullName get() = name.takeIf { title != name }
 }
 
 /** `GET /api/v1/programme/{id}/teilnahmen`: Zahlen und Listen. Sie zählen genau die gelieferten Listen. */

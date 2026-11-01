@@ -153,6 +153,11 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
                     _rsvp.value = RsvpState(sentAt = existing + (key to TIME_FORMAT.format(LocalTime.now(SWISS_ZONE))))
                     val fresh = api.read(programId)
                     if (openedId == programId) _detail.value = fresh
+                    // Die Kontakte sind die SL mit Antwort «ja»: Meldet sich eine SL ab oder an, ändert sich die Karte sofort.
+                    if (key == LEADER_KEY) {
+                        val contacts = api.contacts(programId)
+                        if (openedId == programId) _contacts.value = contacts
+                    }
                 }
             }
         }

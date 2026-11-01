@@ -34,6 +34,8 @@ data class LeaderRegistration(
     val status: String,
     /** Cevi-Name (Spitzname); `null` oder leer ohne Angabe. */
     val ceviName: String? = null,
+    /** Pfad zum Profilbild (`GET /api/v1/personen/{id}/bild`); `null` ohne Bild. Kinder haben keins. */
+    @SerialName("bildUrl") val imageUrl: String? = null,
 ) {
     val isGroupLeader get() = role == "stufenleitung"
 

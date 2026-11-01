@@ -25,6 +25,12 @@ class ChatPersonTest {
     }
 
     @Test
+    fun theProfileReadsTheCeviName() {
+        assertEquals("Fuchs", json.decodeFromString<Profile>("""{"id":"1","name":"Anna Muster","ceviName":"Fuchs"}""").ceviName)
+        assertNull(json.decodeFromString<Profile>("""{"id":"1","name":"Anna Muster","ceviName":null}""").ceviName)
+    }
+
+    @Test
     fun contactsShowBothNames() {
         val list = json.decodeFromString<ContactList>(
             """{"kontakte":[{"id":"1","name":"Anna Muster","ceviName":"Fuchs"},{"id":"2","name":"Ben Beispiel","ceviName":null}]}""",

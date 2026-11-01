@@ -189,6 +189,7 @@
     <string name="welcome_start">Los geht\'s</string>
     <string name="tab_profile">Profil</string>
     <string name="profile_title">Profil</string>
+    <string name="profile_cevi_name">Cevi-Name: %1$s</string>
     <string name="profile_section_app">App</string>
     <string name="profile_section_account">Konto</string>
     <string name="profile_notifications">Benachrichtigungen</string>

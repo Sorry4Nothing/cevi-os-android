@@ -6,6 +6,7 @@ import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.net.Background
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -115,6 +116,21 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
                     onSaved()
                 }
             }
+        }
+    }
+
+    /**
+     * Liest Programm und Kontakte im Takt still neu: Es gibt keinen Ladezustand, ein Fehler lässt den alten Stand stehen, und
+     * während eine Antwort gespeichert wird, bleibt der Stand, den die Person gerade bestätigt.
+     */
+    fun refreshDetail() {
+        val id = openedId ?: return
+        viewModelScope.launch(Background()) {
+            val program = api.read(id)
+            val contacts = api.contacts(id)
+            if (openedId != id || _rsvp.value.running) return@launch
+            if (program is ApiResult.Ok) _detail.value = program
+            if (contacts is ApiResult.Ok) _contacts.value = contacts
         }
     }
 

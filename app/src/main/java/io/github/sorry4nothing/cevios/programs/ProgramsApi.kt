@@ -31,7 +31,7 @@ class ProgramsApi(private val api: ApiClient) {
 
     suspend fun ageGroups(): ApiResult<AgeGroupList> = api.get("/api/v1/stufen")
 
-    /** Die Stufenleitungen, die sich für das Programm angemeldet haben; leer, wenn keine angemeldet ist. */
+    /** Die Stufenleitungen der Stufen des Programms, ohne die, die abgesagt haben («nein»); der Hauptkontakt steht zuerst. Leer nur, wenn die Stufe keine SL hat. */
     suspend fun contacts(id: String): ApiResult<ContactList> = api.get("/api/v1/programme/$id/kontakte")
 
     /** Zahlen und Listen der Anmeldungen (nur ansehen): Admins sowie Leitende und Stufenleitungen der Stufen des Programms. */

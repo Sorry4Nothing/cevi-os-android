@@ -11,7 +11,15 @@ data class ChatPerson(
     @SerialName("stufenleitung") val groupLeader: Boolean = false,
     /** Pfad zum Profilbild (`GET /api/v1/personen/{id}/bild`); `null` ohne Bild. Nur bei Autoren von Nachrichten gefüllt. */
     @SerialName("bildUrl") val imageUrl: String? = null,
-)
+    /** Cevi-Name (Spitzname); `null` oder leer ohne Angabe. */
+    val ceviName: String? = null,
+) {
+    /** Im Chat steht der Cevi-Name, ohne ihn der volle Name. */
+    val displayName get() = displayName(name, ceviName)
+}
+
+/** Cevi-Name, wenn einer da ist (nicht leer), sonst der volle Name. */
+fun displayName(name: String, ceviName: String?): String = ceviName?.trim()?.takeIf { it.isNotEmpty() } ?: name
 
 @Serializable
 data class ChatAgeGroup(val id: String, val name: String, @SerialName("kuerzel") val abbreviation: String)

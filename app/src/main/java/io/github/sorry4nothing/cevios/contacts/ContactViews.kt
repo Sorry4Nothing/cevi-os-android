@@ -73,15 +73,16 @@ private fun ContactRow(contact: Contact) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Avatar(contact.name, size = 40.dp, imageUrl = contact.imageUrl, initialSize = 16.sp)
+        Avatar(contact.title, size = 40.dp, imageUrl = contact.imageUrl, initialSize = 16.sp)
         Column(Modifier.weight(1f)) {
-            Text(contact.name, style = MaterialTheme.typography.titleMedium)
+            Text(contact.title, style = MaterialTheme.typography.titleMedium)
+            contact.fullName?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             contact.phone?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         if (canCall && intent != null) {
-            val description = stringResource(R.string.contact_call_name, contact.name)
+            val description = stringResource(R.string.contact_call_name, contact.title)
             OutlinedPillButton(
                 stringResource(R.string.contact_call),
                 onClick = {

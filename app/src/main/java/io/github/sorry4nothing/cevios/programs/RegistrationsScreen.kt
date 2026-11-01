@@ -43,19 +43,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
-import io.github.sorry4nothing.cevios.chat.initials
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.ChipKind
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.Header
 import io.github.sorry4nothing.cevios.ui.HeaderButton
-import io.github.sorry4nothing.cevios.ui.InitialText
 import io.github.sorry4nothing.cevios.ui.LoadingSkeleton
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.focusRing
-import io.github.sorry4nothing.cevios.ui.scaledWithFont
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
@@ -106,12 +104,12 @@ private fun RegistrationsContent(data: Registrations) {
         ) {
             if (selected == Tab.CHILDREN) {
                 if (data.children.isEmpty()) item { NoticeBanner(NoticeKind.INFO, stringResource(R.string.registrations_empty_children)) }
-                items(data.children, key = { it.id }) { PersonRow(it.name, null, it.status) }
+                items(data.children, key = { it.id }) { PersonRow(it.name, null, null, it.status) }
             } else {
                 if (data.leaders.isEmpty()) item { NoticeBanner(NoticeKind.INFO, stringResource(R.string.registrations_empty_leaders)) }
                 items(data.leaders, key = { it.id }) {
                     val role = stringResource(if (it.isGroupLeader) R.string.role_group_leader else R.string.role_leader)
-                    PersonRow(it.title, listOfNotNull(it.fullName, role).joinToString(" · "), it.status)
+                    PersonRow(it.title, listOfNotNull(it.fullName, role).joinToString(" · "), it.imageUrl, it.status)
                 }
             }
         }
@@ -186,9 +184,9 @@ internal fun TabPill(text: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** Eine Person: Initialen, Name (bei Leitenden mit vollem Namen und Rolle darunter) und der Stand als Chip. Name und Stand lesen sich als ein Element. */
+/** Eine Person: Profilbild oder Initiale, Name (bei Leitenden mit vollem Namen und Rolle darunter) und der Stand als Chip. Name und Stand lesen sich als ein Element. */
 @Composable
-private fun PersonRow(name: String, subtitle: String?, status: String) {
+private fun PersonRow(name: String, subtitle: String?, imageUrl: String?, status: String) {
     val scheme = MaterialTheme.colorScheme
     val kind = registrationChip(status)
     val word = stringResource(
@@ -208,9 +206,7 @@ private fun PersonRow(name: String, subtitle: String?, status: String) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(scaledWithFont(36.dp)).background(scheme.secondaryContainer, Pill), contentAlignment = Alignment.Center) {
-            InitialText(initials(name), 13.sp, scheme.onSecondaryContainer)
-        }
+        Avatar(name, size = 36.dp, imageUrl = imageUrl, initialSize = 13.sp)
         Column(Modifier.weight(1f)) {
             Text(name, style = MaterialTheme.typography.bodyLarge)
             subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant) }

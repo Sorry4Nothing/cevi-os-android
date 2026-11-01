@@ -76,6 +76,14 @@ class RegistrationsTest {
     }
 
     @Test
+    fun leadersReadTheProfileImagePath() {
+        val json = Json { ignoreUnknownKeys = true }
+        val withImage = json.decodeFromString<LeaderRegistration>("""{"id":"1","name":"Anna Muster","rolle":"leitung","status":"ja","bildUrl":"/api/v1/personen/1/bild?v=2"}""")
+        assertEquals("/api/v1/personen/1/bild?v=2", withImage.imageUrl)
+        assertNull(json.decodeFromString<LeaderRegistration>("""{"id":"2","name":"Ben","rolle":"leitung","status":"nein","bildUrl":null}""").imageUrl)
+    }
+
+    @Test
     fun leadersShowTheCeviNameAboveTheFullName() {
         val withCevi = LeaderRegistration("1", "Anna Muster", "leitung", "ja", ceviName = "Fuchs")
         assertEquals("Fuchs", withCevi.title)

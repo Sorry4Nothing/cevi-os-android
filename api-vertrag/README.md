@@ -7,7 +7,7 @@ Diese Ordner enthält eine Kopie des Vertrags, an den sich die App hält. Die Qu
 | `openapi.yaml` | Routen, Request- und Response-Typen, Pflichtfelder, Nullability, Fehlercodes |
 | `endpunkte.md` | Pro Route: Zweck und welche Rolle welchen Status bekommt (2xx erlaubt, 401 nicht angemeldet, 403 kein Recht, 404 unsichtbar). Vom Backend aus der Rechte-Matrix erzeugt |
 
-**Stand der Kopie:** 1. November 2026, beide Dateien wie auf `develop` des Backends (nach PR #288: Reihenfolge der Stufenleitung, der Hauptkontakt steht in den Kontakten zuerst).
+**Stand der Kopie:** 1. November 2026, beide Dateien wie auf `develop` des Backends (nach PR #290: Profilbild der Leitenden in den Anmeldungen).
 
 Beide Dateien enthalten nur Platzhalter (`https://api.example.org`, `…@benutzer.invalid`): keine echten Adressen, Namen oder Zugangsdaten. Die Adresse des Servers steht nie im Repo, sondern in `~/.gradle/gradle.properties` (`ceviApiBaseUrl`).
 

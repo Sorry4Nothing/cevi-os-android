@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,6 +79,7 @@ import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.push.Notifications
+import io.github.sorry4nothing.cevios.push.OpenChat
 import io.github.sorry4nothing.cevios.push.NotificationsScreen
 import io.github.sorry4nothing.cevios.push.PushApi
 import io.github.sorry4nothing.cevios.push.PushTarget
@@ -331,6 +333,11 @@ private fun MainContent(
     LaunchedEffect(openedChat) {
         val id = openedChat
         if (id == null) chat.closeChat() else chat.openChat(id)
+    }
+    // Ein Push zum offenen Chat zeigt nichts (siehe PushService).
+    DisposableEffect(openedChat) {
+        OpenChat.id = openedChat
+        onDispose { OpenChat.id = null }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(destination, openedChat, phoneOpen) {

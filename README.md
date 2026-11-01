@@ -27,6 +27,8 @@ Android Studio oder Gradle mit JDK 17 oder neuer:
 
 Die Adresse des Servers kommt nicht aus dem Repo, sondern lokal aus `~/.gradle/gradle.properties` oder per `-PceviApiBaseUrl=https://…`. Ohne Angabe gilt der Platzhalter `https://api.example.org`.
 
+Eine signierte APK für den Pilot baut man nach `docs/release.md` (Schlüssel und Passwörter ebenfalls nur lokal).
+
 ## Push
 
 Push-Nachrichten laufen über Firebase Cloud Messaging (FCM).

@@ -108,6 +108,9 @@ private const val CHAT_POLL_INTERVAL_MS = 5_000L
 /** So oft fragt die sichtbare Chatliste nach: So kommen die Zähler «ungelesen» an (Takt laut API). */
 private const val LIST_POLL_INTERVAL_MS = 30_000L
 
+/** So oft liest das offene Programm Stand und Kontakte still neu. */
+private const val DETAIL_POLL_INTERVAL_MS = 15_000L
+
 class MainActivity : FragmentActivity() {
     /** Wohin das Tippen auf einen Push führt; bleibt stehen, bis die Person angemeldet ist und der Bildschirm es aufgreift. */
     private var pushTarget by mutableStateOf<PushTarget?>(null)
@@ -394,6 +397,14 @@ private fun MainContent(
                 is Screen.Program -> {
                     val programId = screen.programId
                     BackHandler { openedProgram = null }
+                    LaunchedEffect(programId) {
+                        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                            while (true) {
+                                delay(DETAIL_POLL_INTERVAL_MS)
+                                programs.refreshDetail()
+                            }
+                        }
+                    }
                     MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }) {
                         ProgramDetailScreen(
                             detail,

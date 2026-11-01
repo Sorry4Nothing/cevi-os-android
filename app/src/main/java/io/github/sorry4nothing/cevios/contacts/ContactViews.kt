@@ -2,6 +2,12 @@ package io.github.sorry4nothing.cevios.contacts
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import io.github.sorry4nothing.cevios.ui.theme.cevi
+import io.github.sorry4nothing.cevios.ui.focusRing
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +74,13 @@ private fun ContactRow(contact: Contact) {
         contact.phone?.takeIf { it.isNotBlank() }?.let { Intent(Intent.ACTION_DIAL, PhoneRules.dialUri(it).toUri()) }
     }
     val canCall = intent != null && intent.resolveActivity(context.packageManager) != null
+    val dial = {
+        try {
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            // Die Telefon-App ist zwischen Prüfung und Klick verschwunden: Es gibt nichts zu tun.
+        }
+    }
     Row(
         Modifier.fillMaxWidth().heightIn(min = Sizes.touchTarget).padding(vertical = Spacing.s2),
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
@@ -77,21 +90,32 @@ private fun ContactRow(contact: Contact) {
         Column(Modifier.weight(1f)) {
             Text(contact.title, style = MaterialTheme.typography.titleMedium)
             contact.fullName?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            contact.phone?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            contact.phone?.takeIf { it.isNotBlank() }?.let { number ->
+                if (canCall) {
+                    // Ein Tipp auf die Nummer öffnet die Telefon-App mit der Nummer; mindestens 48 dp hoch.
+                    Box(
+                        Modifier
+                            .heightIn(min = Sizes.touchTarget)
+                            .focusRing(MaterialTheme.shapes.small)
+                            .clickable(onClickLabel = stringResource(R.string.contact_call), role = Role.Button, onClick = dial),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            number,
+                            style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline),
+                            color = MaterialTheme.cevi.accent,
+                        )
+                    }
+                } else {
+                    Text(number, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         if (canCall && intent != null) {
             val description = stringResource(R.string.contact_call_name, contact.title)
             OutlinedPillButton(
                 stringResource(R.string.contact_call),
-                onClick = {
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: ActivityNotFoundException) {
-                        // Die Telefon-App ist zwischen Prüfung und Klick verschwunden: Es gibt nichts zu tun.
-                    }
-                },
+                onClick = dial,
                 modifier = Modifier.semantics { contentDescription = description },
             )
         }

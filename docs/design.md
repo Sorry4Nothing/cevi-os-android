@@ -4,12 +4,12 @@ Stil «Nachthimmel»: ruhiges, blau getöntes Dunkel, Cevi-Blau für Orientierun
 
 ## Vorlage (verbindlich)
 
-| Was | Link |
+| Was | Wo |
 | --- | --- |
-| Design System «Cevi App»: Farben, Schrift, Abstände, Bausteine, Brandbook | <https://claude.ai/artifact/9mAd5832pLn8DCnG8AAY8e> |
-| Bildschirme «Cevi App Screens»: Login bis Zustände, Nacht (`B…`, `S…`) und Tag (`L…`, `T…`) | <https://claude.ai/artifact/3590108e-92e4-4a95-8442-a12e98ac9287> |
+| Design System «Cevi App»: Farben, Schrift, Abstände, Bausteine, Brandbook | Entwurf des Auftraggebers |
+| Bildschirme «Cevi App Screens»: Login bis Zustände, Nacht (`B…`, `S…`) und Tag (`L…`, `T…`) | Entwurf des Auftraggebers |
 
-Beide Seiten gehören dem Projekt und sind privat: Zum Lesen braucht es Zugang. Die Werte, die der Code braucht, stehen deshalb auch hier und in den Kommentaren der Theme-Dateien. Weicht der Code vom Entwurf ab, ist das ein Fehler im Code, ausser der Entwurf wurde geändert: Dann zuerst den Entwurf anpassen, dann den Code, und dieses Dokument nachführen.
+Beide Entwürfe gehören dem Projekt und sind nicht öffentlich: Zum Lesen braucht es Zugang. Die Werte, die der Code braucht, stehen deshalb auch hier und in den Kommentaren der Theme-Dateien. Weicht der Code vom Entwurf ab, ist das ein Fehler im Code, ausser der Entwurf wurde geändert: Dann zuerst den Entwurf anpassen, dann den Code, und dieses Dokument nachführen.
 
 ## Regeln aus dem Brandbook
 

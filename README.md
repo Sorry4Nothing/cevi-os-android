@@ -6,14 +6,16 @@ Das Backend liegt in [Sorry4Nothing/cevi-os](https://github.com/Sorry4Nothing/ce
 
 ## Stand
 
-Der Aufbau beginnt. Das Gerüst (Compose, Material 3, `minSdk` 26) und die CI stehen. Die frühere Expo-App im Backend-Repo (`apps/mobile`) dient nur als Referenz für Verhalten und Texte.
+Pilot-Version 0.9.0 (Vorabversion) als signierte APK im [GitHub-Release](https://github.com/Sorry4Nothing/cevi-os-android/releases). Die Veröffentlichung im Play Store folgt (Epic #7). Die frühere Expo-App im Backend-Repo (`apps/mobile`) diente nur als Referenz für Verhalten und Texte.
 
 ## Design
 
-Aussehen und Bildschirme der App kommen aus zwei Entwürfen. Sie sind die verbindliche Vorlage; weicht der Code ab, gilt der Entwurf (Änderungen zuerst dort):
+Aussehen und Bildschirme der App kommen aus zwei Entwürfen des Auftraggebers. Sie sind die verbindliche Vorlage; weicht der Code ab, gilt der Entwurf (Änderungen zuerst dort):
 
-- **Design System «Cevi App»** (Farben, Schrift, Bausteine): <https://claude.ai/artifact/9mAd5832pLn8DCnG8AAY8e>
-- **Bildschirme «Cevi App Screens»** (Nacht und Tag, alle Zustände): <https://claude.ai/artifact/3590108e-92e4-4a95-8442-a12e98ac9287>
+- **Design System «Cevi App»** (Farben, Schrift, Bausteine)
+- **Bildschirme «Cevi App Screens»** (Nacht und Tag, alle Zustände)
+
+Die Entwürfe sind nicht öffentlich; Zugang gibt der Auftraggeber.
 
 Wie der Entwurf in Compose umgesetzt ist, steht in [`docs/design.md`](docs/design.md).
 

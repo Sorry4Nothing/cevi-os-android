@@ -11,7 +11,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
- * Rollen, die Material 3 nicht kennt (Design: https://claude.ai/artifact/9mAd5832pLn8DCnG8AAY8e, `tokens.json`).
+ * Rollen, die Material 3 nicht kennt (Design System «Cevi App», `tokens.json`).
  * Kein Zustand nur über Farbe: Jede dieser Farben steht immer mit Icon und Wort.
  */
 @Immutable

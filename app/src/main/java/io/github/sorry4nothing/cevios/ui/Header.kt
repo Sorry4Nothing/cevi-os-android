@@ -38,8 +38,8 @@ import io.github.sorry4nothing.cevios.ui.theme.cevi
 class HeaderButton(@DrawableRes val icon: Int, val description: String, val onClick: () -> Unit)
 
 /**
- * Derselbe Kopf auf jedem Screen: oben eine Zeile (48 dp) mit Zurück links und höchstens einer Aktion rechts, darunter
- * Überzeile und Titel.
+ * Derselbe Kopf auf jedem Screen: oben, nur mit Knopf, eine Zeile (48 dp) mit Zurück links und höchstens einer Aktion
+ * rechts, darunter Überzeile und Titel.
  * Der Titel ist eine Überschrift; nach dem Öffnen springt der Fokus auf ihn (`focusOnTitle`).
  */
 @Composable
@@ -58,8 +58,8 @@ fun Header(
         modifier.fillMaxWidth().padding(start = Spacing.s3, top = Spacing.s3, end = Spacing.s3, bottom = Spacing.s4),
         verticalArrangement = Arrangement.spacedBy(Spacing.s2),
     ) {
-        // Die Zeile bleibt auch ohne Knöpfe, damit der Titel zwischen den Screens nicht springt; ohne Titel und Knopf fällt sie weg.
-        if (title != null || back != null || action != null) {
+        // Ohne Knopf fällt die Zeile weg: Auf den Startscreens steht der Titel direkt oben.
+        if (back != null || action != null) {
             Row(Modifier.fillMaxWidth().height(Sizes.touchTarget), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 back?.let { RoundButton(it) }
                 Spacer(Modifier.weight(1f))

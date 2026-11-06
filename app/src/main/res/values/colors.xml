@@ -2,4 +2,18 @@
 <resources>
     <!-- surface (Tag) aus dem Design -->
     <color name="window_background">#F7F7FC</color>
+    <!-- Widget (Tag): Werte aus dem Design System -->
+    <color name="widget_card">#FFFFFF</color>
+    <color name="widget_border">#E2E2EC</color>
+    <color name="widget_text">#141412</color>
+    <color name="widget_muted">#5C5C57</color>
+    <color name="widget_accent">#323394</color>
+    <color name="widget_stage_bg">#ECECF8</color>
+    <color name="widget_stage_text">#323394</color>
+    <color name="widget_yes_bg">#E7F4EC</color>
+    <color name="widget_yes_text">#17703A</color>
+    <color name="widget_no_bg">#FCE9EC</color>
+    <color name="widget_no_text">#9E1B2C</color>
+    <color name="widget_open_bg">#ECECF8</color>
+    <color name="widget_open_text">#5C5C57</color>
 </resources>

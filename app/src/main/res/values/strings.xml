@@ -257,4 +257,12 @@
     <string name="registrations_empty_children">In den Stufen dieses Programms gibt es keine Kinder.</string>
     <string name="registrations_empty_leaders">In den Stufen dieses Programms gibt es keine Leitenden.</string>
     <string name="registrations_chip_open">Offen</string>
+
+    <string name="widget_label">Nächste Programme</string>
+    <string name="widget_description">Die nächsten Programme und die Antwort deiner Kinder</string>
+    <string name="widget_header">Cevi OS · Nächste Programme</string>
+    <string name="widget_empty">Keine Programme in Sicht</string>
+    <string name="widget_signed_out">Zum Anzeigen in der App anmelden</string>
+    <string name="widget_locked">Zum Anzeigen die App öffnen</string>
+    <string name="widget_offline">Keine Verbindung</string>
 </resources>

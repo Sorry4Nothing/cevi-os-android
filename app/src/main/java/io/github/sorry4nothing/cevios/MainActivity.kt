@@ -3,7 +3,7 @@ package io.github.sorry4nothing.cevios
 import io.github.sorry4nothing.cevios.ui.screenTransition
 import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
 import io.github.sorry4nothing.cevios.ui.loginTransition
-import io.github.sorry4nothing.cevios.ui.fadeTransition
+import io.github.sorry4nothing.cevios.ui.tabTransition
 import io.github.sorry4nothing.cevios.security.LockOutcome
 import io.github.sorry4nothing.cevios.security.BiometricPrompter
 import io.github.sorry4nothing.cevios.security.AppLock
@@ -522,7 +522,7 @@ private fun MainContent(
                     AnimatedContent(
                         destination,
                         modifier = Modifier.fillMaxSize(),
-                        transitionSpec = { fadeTransition(motion) },
+                        transitionSpec = { tabTransition(initialState, targetState, motion) },
                         label = "bereich",
                     ) { tab ->
                         if (tab == Destination.PROGRAMS) {

@@ -46,7 +46,14 @@ fun fadeTransition(motion: Boolean): ContentTransform =
 fun screenTransition(fromDepth: Int, toDepth: Int, motion: Boolean): ContentTransform {
     if (!motion) return NO_TRANSITION
     if (fromDepth == toDepth) return fadeTransition(true)
-    val forward = toDepth > fromDepth
+    return slideTransition(forward = toDepth > fromDepth)
+}
+
+/** Wechsel zwischen den Hauptbereichen des Docks: Wer weiter rechts im Dock liegt, schiebt von rechts herein, sonst von links. */
+fun tabTransition(from: Destination, to: Destination, motion: Boolean): ContentTransform =
+    if (motion) slideTransition(forward = to.ordinal > from.ordinal) else NO_TRANSITION
+
+private fun slideTransition(forward: Boolean): ContentTransform {
     val sign = if (forward) 1 else -1
     val fade = tween<Float>(TRANSITION_MS, easing = FastOutSlowInEasing)
     val slide = tween<androidx.compose.ui.unit.IntOffset>(TRANSITION_MS, easing = FastOutSlowInEasing)

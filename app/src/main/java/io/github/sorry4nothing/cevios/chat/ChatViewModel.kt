@@ -48,6 +48,14 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
 
     private var openedId: String? = null
     private var conversationJob: Job? = null
+    private val drafts = mutableMapOf<String, String>()
+
+    /** Der angefangene Text eines Chats, nur im Arbeitsspeicher der Sitzung. */
+    fun draft(chatId: String): String = drafts[chatId].orEmpty()
+
+    fun setDraft(chatId: String, text: String) {
+        if (text.isEmpty()) drafts.remove(chatId) else drafts[chatId] = text
+    }
 
     init {
         loadList()

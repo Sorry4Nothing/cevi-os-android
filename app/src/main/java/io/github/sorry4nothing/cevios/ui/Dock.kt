@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -31,13 +33,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.chat.unreadBadgeText
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.WideBreakpoint
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
@@ -57,11 +63,11 @@ private val DestinationShape = RoundedCornerShape(18.dp)
  * Das Dock sitzt unter dem Inhalt, nichts scrollt dahinter durch.
  */
 @Composable
-fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, content: @Composable () -> Unit) {
+fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, unread: Int = 0, content: @Composable () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         if (maxWidth >= WideBreakpoint) {
             Row(Modifier.fillMaxSize().padding(start = Spacing.s3)) {
-                Dock(active, onDestination, vertical = true, Modifier.padding(vertical = Spacing.s3).widthIn(min = Sizes.dockWidth).width(IntrinsicSize.Max))
+                Dock(active, onDestination, unread, vertical = true, Modifier.padding(vertical = Spacing.s3).widthIn(min = Sizes.dockWidth).width(IntrinsicSize.Max))
                 Spacer(Modifier.width(Spacing.s4))
                 content()
             }
@@ -69,7 +75,7 @@ fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, cont
             Column(Modifier.fillMaxSize()) {
                 Column(Modifier.weight(1f)) { content() }
                 Dock(
-                    active, onDestination, vertical = false,
+                    active, onDestination, unread, vertical = false,
                     Modifier.padding(start = Spacing.s3, end = Spacing.s3, top = Spacing.s2, bottom = Spacing.s3),
                 )
             }
@@ -78,7 +84,7 @@ fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, cont
 }
 
 @Composable
-private fun Dock(active: Destination, onDestination: (Destination) -> Unit, vertical: Boolean, modifier: Modifier) {
+private fun Dock(active: Destination, onDestination: (Destination) -> Unit, unread: Int, vertical: Boolean, modifier: Modifier) {
     val shell = modifier
         .clip(DockShape)
         .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -87,29 +93,36 @@ private fun Dock(active: Destination, onDestination: (Destination) -> Unit, vert
         .selectableGroup()
     if (vertical) {
         Column(shell, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Destination.entries.forEach { DockDestination(it, it == active, onDestination, Modifier.fillMaxWidth().heightIn(min = 64.dp)) }
+            Destination.entries.forEach { DockDestination(it, it == active, onDestination, unread, Modifier.fillMaxWidth().heightIn(min = 64.dp)) }
         }
     } else {
         Row(shell.heightIn(min = Sizes.footer).height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Destination.entries.forEach { DockDestination(it, it == active, onDestination, Modifier.weight(1f).fillMaxHeight()) }
+            Destination.entries.forEach { DockDestination(it, it == active, onDestination, unread, Modifier.weight(1f).fillMaxHeight()) }
         }
     }
 }
 
 /** Ein Ziel über die ganze Fläche (mindestens 48 dp): aktiv Cevi-Blau mit weissem Wort, inaktiv ruhig. Das Wort steht immer da. */
 @Composable
-private fun DockDestination(destination: Destination, active: Boolean, onDestination: (Destination) -> Unit, modifier: Modifier) {
+private fun DockDestination(destination: Destination, active: Boolean, onDestination: (Destination) -> Unit, unread: Int, modifier: Modifier) {
     val color = if (active) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+    // Der Zähler gehört dem Chat; die Zahl steht für den Screenreader als Zustand am Reiter.
+    val badge = if (destination == Destination.CHAT) unreadBadgeText(unread) else null
+    val unreadText = if (badge != null) pluralStringResource(R.plurals.unread_messages, unread, unread) else null
     Column(
         modifier
             .focusRing(DestinationShape)
             .clip(DestinationShape)
             .then(if (active) Modifier.background(MaterialTheme.colorScheme.secondary) else Modifier)
-            .selectable(selected = active, role = Role.Tab, onClick = { onDestination(destination) }),
+            .selectable(selected = active, role = Role.Tab, onClick = { onDestination(destination) })
+            .semantics { unreadText?.let { stateDescription = it } },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
-        Icon(painterResource(destination.icon), contentDescription = null, tint = color, modifier = Modifier.padding(0.dp))
+        Box {
+            Icon(painterResource(destination.icon), contentDescription = null, tint = color, modifier = Modifier.padding(0.dp))
+            badge?.let { CountBadge(it, Modifier.align(Alignment.TopEnd).offset(x = 18.dp, y = (-10).dp)) }
+        }
         Text(
             stringResource(destination.text),
             style = MaterialTheme.typography.labelMedium,

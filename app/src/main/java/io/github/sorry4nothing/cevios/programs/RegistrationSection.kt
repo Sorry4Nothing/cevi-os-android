@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -161,6 +163,7 @@ private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, loa
     }
     val borderSpec = if (selected) 2.dp to contentColor else 1.dp to scheme.outline
     val word = stringResource(if (attending) R.string.button_yes else R.string.button_no)
+    val haptic = LocalHapticFeedback.current
     Row(
         Modifier
             .height(Sizes.touchTarget)
@@ -168,7 +171,10 @@ private fun RsvpPill(attending: Boolean, selected: Boolean, active: Boolean, loa
             .clip(Pill)
             .background(surfaceColor)
             .border(borderSpec.first, borderSpec.second, Pill)
-            .selectable(selected = selected, enabled = active, role = Role.RadioButton, onClick = onClick)
+            .selectable(selected = selected, enabled = active, role = Role.RadioButton, onClick = {
+                haptic.performHapticFeedback(if (attending) HapticFeedbackType.Confirm else HapticFeedbackType.Reject)
+                onClick()
+            })
             .padding(horizontal = 18.dp)
             .clearAndSetSemantics { contentDescription = "$word, $name" },
         verticalAlignment = Alignment.CenterVertically,

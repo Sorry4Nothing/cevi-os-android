@@ -50,7 +50,7 @@ data class DirectChatRequest(@SerialName("stufeId") val ageGroupId: String, @Ser
 data class ChatIdResponse(val id: String)
 
 /** Was man mit einer Nachricht tun kann (langes Drücken und Screenreader-Aktionen). */
-enum class MessageAction { OPEN_DIRECT_CHAT }
+enum class MessageAction { OPEN_DIRECT_CHAT, COPY }
 
 /**
  * Wann die App eine Aktion anbietet: «Einzelchat öffnen» leitet sie aus dem Profil ab. Die Entscheidung trifft trotzdem der
@@ -62,9 +62,10 @@ object ChatRules {
         chat != null && profile != null && chat.isGroup && !message.own &&
             profile.isGroupLeader(chat.ageGroup.id) && !message.author.groupLeader
 
-    /** Alle Aktionen, die zu einer Nachricht erlaubt sind, in der Reihenfolge des Dialogs. Leer heisst: keine Aktion. */
+    /** Alle Aktionen, die zu einer Nachricht erlaubt sind, in der Reihenfolge des Dialogs. Kopieren gilt für jede Nachricht mit Text. */
     fun actions(chat: Chat?, message: ChatMessage, profile: Profile?): List<MessageAction> = buildList {
         if (mayOpenDirectChat(chat, message, profile)) add(MessageAction.OPEN_DIRECT_CHAT)
+        if (!message.text.isNullOrBlank()) add(MessageAction.COPY)
     }
 
     /**

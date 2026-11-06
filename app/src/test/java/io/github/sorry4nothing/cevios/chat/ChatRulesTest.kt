@@ -22,8 +22,9 @@ class ChatRulesTest {
         authorId: String = "e2",
         authorIsLeader: Boolean = false,
         own: Boolean = false,
+        text: String? = "t",
     ) = ChatMessage(
-        id = "m1", text = "t", createdAt = "2027-01-01T10:00:00Z",
+        id = "m1", text = text, createdAt = "2027-01-01T10:00:00Z",
         author = ChatPerson(authorId, "Name", groupLeader = authorIsLeader), own = own,
     )
 
@@ -39,11 +40,12 @@ class ChatRulesTest {
     @Test
     fun actionsListOnlyWhatIsAllowed() {
         assertEquals(
-            listOf(MessageAction.OPEN_DIRECT_CHAT),
+            listOf(MessageAction.OPEN_DIRECT_CHAT, MessageAction.COPY),
             ChatRules.actions(group, message(), groupLeader),
         )
-        assertEquals("Eltern haben keine Aktion", emptyList<MessageAction>(), ChatRules.actions(group, message(), parent))
-        assertEquals(emptyList<MessageAction>(), ChatRules.actions(null, message(own = true), null))
+        assertEquals("Eltern können nur kopieren", listOf(MessageAction.COPY), ChatRules.actions(group, message(), parent))
+        assertEquals(listOf(MessageAction.COPY), ChatRules.actions(null, message(own = true), null))
+        assertEquals("ohne Text nichts zu kopieren", emptyList<MessageAction>(), ChatRules.actions(null, message(text = null), null))
     }
 
     @Test

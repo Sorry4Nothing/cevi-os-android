@@ -84,7 +84,7 @@ Bezeichner im Code sind Englisch, Texte (`strings.xml`) und Kommentare Deutsch; 
 
 Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erfinden: Der Baustein bleibt weg, die Stelle ist mit dem Backend-Issue verknüpft.
 
-- **Ungelesen-Zähler am Chat-Icon im Dock:** gibt es nicht. Die API zählt je Chat (`ungelesen`), die Chatliste zeigt es; die App fragt sie nur, solange sie sichtbar ist (alle 30 Sekunden).
+- **Ungelesen-Zähler am Chat-Icon im Dock (#163):** die Summe der `ungelesen` aus der Chatliste. Es gibt keinen eigenen Endpunkt dafür: Die App liest die Liste einmal still neu, wenn der Reiter wechselt oder ein Chat zugeht; im Takt (alle 30 Sekunden) fragt sie weiter nur, solange die Chatliste sichtbar ist. Auf den anderen Reitern kann der Zähler deshalb bis zum nächsten Wechsel veraltet sein.
 - **Cevi-Name (#120):** Im Chat steht überall der Cevi-Name (`ChatPerson.displayName`), ohne ihn der volle Name; so bei Autoren, Vorschau, Titel des Einzelchats, «liest mit» und im Aktionsmenü. Nur die Kontaktkarte zeigt beides. Das Profil zeigt den vollen Namen und darunter «Cevi-Name: …», wenn einer gesetzt ist. Anmeldungen (Leitende) zeigen das Profilbild (`bildUrl`, #136; Kinder haben keins und zeigen die Initiale) und den Cevi-Namen als Titel und darunter «voller Name · Rolle» (#122); Kinder haben keinen Cevi-Namen.
 - **Profilbild (#80):** Bilder erscheinen im Chat bei Autoren, bei Kontakten und im Profil. In der Chatliste bleiben die Initialen: Der Vertrag liefert dort kein `bildUrl`. Die App baut keine Adressen selbst (`personen/{id}/bild`), sie nimmt nur die `bildUrl` der API und nur, wenn sie ein Profilbild nennt.
 - **Biometrisches Login:** nicht Teil der API-Beschreibung.

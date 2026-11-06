@@ -72,6 +72,8 @@
     <string name="direct_chat_start">Einzelchat mit der Stufenleitung %1$s starten</string>
     <string name="actions_title">Nachricht von %1$s</string>
     <string name="action_direct_chat">Einzelchat mit %1$s öffnen</string>
+    <string name="action_copy">Text kopieren</string>
+    <string name="copied">Text kopiert</string>
     <string name="action_running">Wird ausgeführt …</string>
 
     <string name="programs_title">Programme</string>

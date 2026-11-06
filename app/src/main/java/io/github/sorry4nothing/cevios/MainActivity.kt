@@ -21,6 +21,7 @@ import android.app.LocaleManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
@@ -56,6 +57,7 @@ import io.github.sorry4nothing.cevios.auth.AuthApi
 import io.github.sorry4nothing.cevios.auth.AuthState
 import io.github.sorry4nothing.cevios.auth.AuthViewModel
 import io.github.sorry4nothing.cevios.auth.FormState
+import io.github.sorry4nothing.cevios.auth.CropImageScreen
 import io.github.sorry4nothing.cevios.auth.LoginScreen
 import io.github.sorry4nothing.cevios.auth.PasswordScreen
 import io.github.sorry4nothing.cevios.auth.ProfileScreen
@@ -264,6 +266,7 @@ private sealed interface Screen {
     data object Phone : Screen { override val depth = 1 }
     data object Notifications : Screen { override val depth = 1 }
     data object Password : Screen { override val depth = 1 }
+    data class CropImage(val uri: Uri) : Screen { override val depth = 1 }
     data class Program(val programId: String) : Screen { override val depth = 1 }
     data class Chat(val chatId: String) : Screen { override val depth = 1 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
@@ -302,6 +305,8 @@ private fun MainContent(
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var assigning by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
+    // Das gewählte Profilfoto, solange die Person den Ausschnitt wählt.
+    var croppingImage by rememberSaveable { mutableStateOf<Uri?>(null) }
 
     // Ein gespeichertes Passwort schliesst den Wechsel; der Hinweis erscheint im Profil.
     LaunchedEffect(passwordSaved) { if (passwordSaved) changingPassword = false }
@@ -358,7 +363,9 @@ private fun MainContent(
         val detail by programs.detail.collectAsState()
         val programProfile = (programs.profile.collectAsState().value as? ApiResult.Ok)?.value
         val assignedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
+        val cropping = croppingImage
         val target = when {
+            cropping != null -> Screen.CropImage(cropping)
             programId != null && assigning && assignedProgram != null -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
@@ -481,6 +488,17 @@ private fun MainContent(
                         onBack = leave,
                     )
                 }
+                is Screen.CropImage -> {
+                    BackHandler { croppingImage = null }
+                    CropImageScreen(
+                        screen.uri,
+                        onCancel = { croppingImage = null },
+                        onConfirm = { crop ->
+                            croppingImage = null
+                            auth.uploadImage { withContext(Dispatchers.Default) { ProfileImageEncoder.encode(resolver, screen.uri, crop) } }
+                        },
+                    )
+                }
                 Screen.Password -> {
                     val leave = { changingPassword = false; auth.clearError() }
                     BackHandler(onBack = leave)
@@ -502,7 +520,7 @@ private fun MainContent(
                         } else if (tab == Destination.PROFILE) {
                             ProfileScreen(
                                 account, passwordSaved, form, imageForm,
-                                onPickImage = { uri -> auth.uploadImage { withContext(Dispatchers.Default) { ProfileImageEncoder.encode(resolver, uri) } } },
+                                onPickImage = { uri -> croppingImage = uri },
                                 onRemoveImage = auth::removeImage,
                                 onChangePassword = { changingPassword = true },
                                 onOpenNotifications = { notificationsOpen = true },

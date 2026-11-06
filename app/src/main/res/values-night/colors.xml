@@ -2,4 +2,18 @@
 <resources>
     <!-- surface (Nacht) aus dem Design -->
     <color name="window_background">#161620</color>
+    <!-- Widget (Nacht) -->
+    <color name="widget_card">#17172A</color>
+    <color name="widget_border">#2C2C44</color>
+    <color name="widget_text">#EDEDEB</color>
+    <color name="widget_muted">#ABABA6</color>
+    <color name="widget_accent">#A9ABF2</color>
+    <color name="widget_stage_bg">#23244A</color>
+    <color name="widget_stage_text">#DCDDF9</color>
+    <color name="widget_yes_bg">#16271D</color>
+    <color name="widget_yes_text">#6FD39A</color>
+    <color name="widget_no_bg">#2E1519</color>
+    <color name="widget_no_text">#FF8E9A</color>
+    <color name="widget_open_bg">#23244A</color>
+    <color name="widget_open_text">#C2C3EC</color>
 </resources>

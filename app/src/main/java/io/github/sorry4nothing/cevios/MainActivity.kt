@@ -7,6 +7,7 @@ import io.github.sorry4nothing.cevios.ui.fadeTransition
 import io.github.sorry4nothing.cevios.security.LockOutcome
 import io.github.sorry4nothing.cevios.security.BiometricPrompter
 import io.github.sorry4nothing.cevios.security.AppLock
+import io.github.sorry4nothing.cevios.widget.ProgramsWidget
 import io.github.sorry4nothing.cevios.auth.LockedScreen
 import io.github.sorry4nothing.cevios.security.shouldRelock
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -124,6 +125,12 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         targetOf(intent)?.let { pushTarget = it }
+    }
+
+    /** Das Widget zeigt dann den neuen Stand: Antworten, Anmelden und Abmelden betreffen es. */
+    override fun onStop() {
+        super.onStop()
+        ProgramsWidget.refresh(applicationContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

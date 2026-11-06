@@ -528,8 +528,10 @@ private fun MainContent(
                         if (tab == Destination.PROGRAMS) {
                             ProgramListScreen(
                                 programs.list.collectAsState().value,
+                                programs.refreshing.collectAsState().value,
                                 onOpen = { openedProgram = it },
                                 onRetry = programs::loadList,
+                                onRefresh = programs::refreshList,
                             )
                         } else if (tab == Destination.PROFILE) {
                             ProfileScreen(

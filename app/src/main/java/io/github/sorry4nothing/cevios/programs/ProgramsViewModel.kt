@@ -41,6 +41,10 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
     private val _list = MutableStateFlow<ApiResult<ProgramList>?>(null)
     val list: StateFlow<ApiResult<ProgramList>?> = _list.asStateFlow()
 
+    /** Wahr, solange die Liste per Herunterziehen neu lädt; sie bleibt dabei sichtbar. */
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
+
     private val _detail = MutableStateFlow<ApiResult<Program>?>(null)
     val detail: StateFlow<ApiResult<Program>?> = _detail.asStateFlow()
 
@@ -76,10 +80,17 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
         fetchList()
     }
 
+    fun refreshList() {
+        if (_refreshing.value) return
+        _refreshing.value = true
+        fetchList()
+    }
+
     private fun fetchList() {
         viewModelScope.launch {
             val today = LocalDate.now(SWISS_ZONE)
             _list.value = api.list(today, today.plusMonths(WINDOW_MONTHS))
+            _refreshing.value = false
         }
     }
 

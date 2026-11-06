@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -64,15 +67,15 @@ private val CARD = RoundedCornerShape(16.dp)
 @Composable
 fun ProgramListScreen(
     state: ApiResult<ProgramList>?,
+    refreshing: Boolean,
     onOpen: (String) -> Unit,
     onRetry: () -> Unit,
+    onRefresh: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize()) {
-        Header(
-            title = stringResource(R.string.programs_title),
-            action = HeaderButton(R.drawable.ic_refresh, stringResource(R.string.refresh), onRetry),
-            focusOnTitle = true,
-        )
+    val refreshLabel = stringResource(R.string.refresh)
+    // Das Herunterziehen erreichen nicht alle; für TalkBack und Schalterzugriff gibt es dieselbe Aktion als Menüeintrag.
+    Column(Modifier.fillMaxSize().semantics { customActions = listOf(CustomAccessibilityAction(refreshLabel) { onRefresh(); true }) }) {
+        Header(title = stringResource(R.string.programs_title), focusOnTitle = true)
         when (state) {
             null -> LoadingSkeleton(stringResource(R.string.programs_loading))
             is ApiResult.Failure -> ErrorState(state.error, onRetry)
@@ -85,7 +88,9 @@ fun ProgramListScreen(
                         onRetry,
                     )
                 } else {
-                    Timeline(groupByDay(state.value.programs), onOpen)
+                    PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh) {
+                        Timeline(groupByDay(state.value.programs), onOpen)
+                    }
                 }
         }
     }

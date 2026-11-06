@@ -127,7 +127,13 @@ class MainActivity : FragmentActivity() {
         targetOf(intent)?.let { pushTarget = it }
     }
 
-    /** Das Widget zeigt dann den neuen Stand: Antworten, Anmelden und Abmelden betreffen es. */
+    /** Das Widget lädt, solange die App im Vordergrund ist: Im Energiesparmodus hat nur sie dann Netz. */
+    override fun onStart() {
+        super.onStart()
+        ProgramsWidget.refresh(applicationContext)
+    }
+
+    /** Anmelden und Abmelden betreffen das Widget; es braucht dafür kein Netz. */
     override fun onStop() {
         super.onStop()
         ProgramsWidget.refresh(applicationContext)
@@ -301,7 +307,8 @@ private fun MainContent(
 ) {
     val context = LocalContext.current
     val resolver = context.contentResolver
-    val programs = viewModel { ProgramsViewModel(programsApi) }
+    val appContext = context.applicationContext
+    val programs = viewModel { ProgramsViewModel(programsApi) { ProgramsWidget.refresh(appContext) } }
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }

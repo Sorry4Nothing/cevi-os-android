@@ -259,10 +259,14 @@
     <string name="registrations_chip_open">Offen</string>
 
     <string name="widget_label">Nächste Programme</string>
-    <string name="widget_description">Die nächsten Programme und die Antwort deiner Kinder</string>
+    <string name="widget_description">Die nächsten Programme und deine Zusage sowie die deiner Kinder</string>
     <string name="widget_header">Cevi OS · Nächste Programme</string>
     <string name="widget_empty">Keine Programme in Sicht</string>
     <string name="widget_signed_out">Zum Anzeigen in der App anmelden</string>
     <string name="widget_locked">Zum Anzeigen die App öffnen</string>
-    <string name="widget_offline">Keine Verbindung</string>
+    <string name="widget_loading">Wird geladen, sobald die App geöffnet wird</string>
+    <string name="widget_own_name">Du</string>
+    <string name="widget_own_yes">Du kommst</string>
+    <string name="widget_own_no">Du kommst nicht</string>
+    <string name="widget_own_open">Deine Zusage ist offen</string>
 </resources>

@@ -37,7 +37,7 @@ data class EditState(val running: Boolean = false, val error: ApiError? = null)
 private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
 
 /** `null` heisst: wird geladen. Die Daten bleiben nur im Arbeitsspeicher. */
-class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
+class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: () -> Unit = {}) : ViewModel() {
     private val _list = MutableStateFlow<ApiResult<ProgramList>?>(null)
     val list: StateFlow<ApiResult<ProgramList>?> = _list.asStateFlow()
 
@@ -167,6 +167,7 @@ class ProgramsViewModel(private val api: ProgramsApi) : ViewModel() {
                 is ApiResult.Failure -> _rsvp.value = RsvpState(error = result.error, sentAt = existing)
                 is ApiResult.Ok -> {
                     _rsvp.value = RsvpState(sentAt = existing + (key to TIME_FORMAT.format(LocalTime.now(SWISS_ZONE))))
+                    onAnswered()
                     val fresh = api.read(programId)
                     if (openedId == programId) _detail.value = fresh
                     // Wer mit «nein» absagt, fehlt in den Kontakten: Antwortet eine SL, ändert sich die Karte sofort.

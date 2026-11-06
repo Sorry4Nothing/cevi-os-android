@@ -42,12 +42,13 @@
         android:gravity="center_vertical"
         android:textColor="@color/widget_text"
         android:textSize="15sp"
-        android:visibility="gone" />
+        android:text="@string/widget_loading" />
 
     <LinearLayout
         android:id="@+id/widget_rows"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="8dp"
         android:layout_weight="1"
         android:orientation="vertical" />
 </LinearLayout>

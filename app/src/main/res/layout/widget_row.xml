@@ -2,10 +2,19 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/row_root"
     android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_weight="1"
+    android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:orientation="vertical">
+
+    <!-- Ab dem zweiten Programm sichtbar (Design: Linie zwischen den Programmen). -->
+    <FrameLayout
+        android:id="@+id/row_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@color/widget_border"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/row_title"

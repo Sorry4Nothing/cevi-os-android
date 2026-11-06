@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.StringRes
@@ -46,7 +47,7 @@ class ProgramsWidget : AppWidgetProvider() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Ein Broadcast-Empfänger hat rund zehn Sekunden.
-                val state = withTimeoutOrNull(LOAD_TIMEOUT_MS) { load(context) } ?: WidgetState.Message(R.string.widget_offline)
+                val state = withTimeoutOrNull(LOAD_TIMEOUT_MS) { load(context) } ?: WidgetState.Message(offline(context))
                 manager.updateAppWidget(ids, render(context, state))
             } finally {
                 pending.finish()
@@ -73,6 +74,10 @@ class ProgramsWidget : AppWidgetProvider() {
             )
         }
 
+        /** Im Energiesparmodus sperrt Android das Netz für Hintergrundprozesse: Das Widget sagt es, statt «keine Verbindung» zu melden. */
+        private fun offline(context: Context): Int =
+            if (context.getSystemService(PowerManager::class.java).isPowerSaveMode) R.string.widget_power_save else R.string.widget_offline
+
         private suspend fun load(context: Context): WidgetState {
             if (AppLock(context).enabled) return WidgetState.Message(R.string.widget_locked)
             val client = ApiClient.create(context)
@@ -82,7 +87,7 @@ class ProgramsWidget : AppWidgetProvider() {
             val list = when (val result = api.list(now.toLocalDate(), now.toLocalDate().plusMonths(2))) {
                 is ApiResult.Ok -> result.value.programs
                 is ApiResult.Failure ->
-                    return WidgetState.Message(if (result.error == ApiError.NOT_SIGNED_IN) R.string.widget_signed_out else R.string.widget_offline)
+                    return WidgetState.Message(if (result.error == ApiError.NOT_SIGNED_IN) R.string.widget_signed_out else offline(context))
             }
             val next = upcoming(list, now)
             if (next.isEmpty()) return WidgetState.Message(R.string.widget_empty)
@@ -98,13 +103,14 @@ class ProgramsWidget : AppWidgetProvider() {
             views.setViewVisibility(R.id.widget_rows, if (programs.isEmpty()) View.GONE else View.VISIBLE)
             views.setViewVisibility(R.id.widget_message, if (programs.isEmpty()) View.VISIBLE else View.GONE)
             if (state is WidgetState.Message) views.setTextViewText(R.id.widget_message, context.getString(state.text))
-            programs.forEach { views.addView(R.id.widget_rows, row(context, it)) }
+            programs.forEachIndexed { i, program -> views.addView(R.id.widget_rows, row(context, program, divider = i > 0)) }
             return views
         }
 
-        private fun row(context: Context, program: Program): RemoteViews {
+        private fun row(context: Context, program: Program, divider: Boolean): RemoteViews {
             val row = RemoteViews(context.packageName, R.layout.widget_row)
             val stage = program.ageGroups.joinToString(", ") { it.name }
+            row.setViewVisibility(R.id.row_divider, if (divider) View.VISIBLE else View.GONE)
             row.setTextViewText(R.id.row_title, program.title)
             row.setTextViewText(R.id.row_time, dateLine(program, context.getString(R.string.time_list_all_day)))
             row.setTextViewText(R.id.row_stage, stage)
@@ -115,14 +121,14 @@ class ProgramsWidget : AppWidgetProvider() {
             return row
         }
 
-        /** Symbol, Name und Beschreibung («Lena kommt»): der Stand nie nur über die Farbe. */
+        /** Chip mit Symbol und Name, ab `COMPACT_FROM` Kinder ein Kreis mit Anfangsbuchstabe und Badge; beide mit Beschreibung («Lena kommt»), der Stand nie nur über die Farbe. */
         private fun chip(context: Context, child: ProgramChild, compact: Boolean): RemoteViews {
-            val (layout, description) = when (child.status) {
-                "ja" -> R.layout.widget_child_yes to R.string.child_status_yes
-                "nein" -> R.layout.widget_child_no to R.string.child_status_no
-                else -> R.layout.widget_child_open to R.string.child_status_open
+            val (chipLayout, dotLayout, description) = when (child.status) {
+                "ja" -> Triple(R.layout.widget_child_yes, R.layout.widget_dot_yes, R.string.child_status_yes)
+                "nein" -> Triple(R.layout.widget_child_no, R.layout.widget_dot_no, R.string.child_status_no)
+                else -> Triple(R.layout.widget_child_open, R.layout.widget_dot_open, R.string.child_status_open)
             }
-            val chip = RemoteViews(context.packageName, layout)
+            val chip = RemoteViews(context.packageName, if (compact) dotLayout else chipLayout)
             chip.setTextViewText(R.id.chip_text, if (compact) child.firstName.take(1).uppercase() else child.firstName)
             chip.setContentDescription(R.id.chip_root, context.getString(description, child.firstName))
             return chip

@@ -265,4 +265,5 @@
     <string name="widget_signed_out">Zum Anzeigen in der App anmelden</string>
     <string name="widget_locked">Zum Anzeigen die App öffnen</string>
     <string name="widget_offline">Keine Verbindung</string>
+    <string name="widget_power_save">Der Energiesparmodus verhindert das Aktualisieren</string>
 </resources>

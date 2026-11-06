@@ -4,10 +4,12 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
@@ -56,5 +60,22 @@ fun StatusChip(kind: ChipKind, text: String, modifier: Modifier = Modifier) {
     ) {
         kind.icon?.let { Icon(painterResource(it), contentDescription = null, tint = contentColor, modifier = Modifier.size(16.dp)) }
         Text(text, style = MaterialTheme.typography.labelMedium, color = contentColor)
+    }
+}
+
+/** Zahl in einer roten Pille (nie nur Farbe). Wächst mit der Schrift. Für den Screenreader steht die Zahl am Zustand der Zeile. */
+@Composable
+fun CountBadge(text: String, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .heightIn(min = 24.dp)
+            .widthIn(min = 24.dp)
+            .background(scheme.primary, Pill)
+            .padding(horizontal = 8.dp)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold, fontFeatureSettings = "tnum"), color = scheme.onPrimary)
     }
 }

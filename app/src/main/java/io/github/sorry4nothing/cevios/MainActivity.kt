@@ -45,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -359,13 +360,17 @@ private fun MainContent(
         onDispose { OpenChat.id = null }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
+    // fragt sie nur, solange sie sichtbar ist.
     LaunchedEffect(destination, openedChat, phoneOpen) {
-        if (destination == Destination.CHAT && openedChat == null && !phoneOpen) {
+        if (openedChat == null && !phoneOpen) {
             chat.loadList(silent = true)
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                while (true) {
-                    delay(LIST_POLL_INTERVAL_MS)
-                    chat.loadList(silent = true)
+            if (destination == Destination.CHAT) {
+                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    while (true) {
+                        delay(LIST_POLL_INTERVAL_MS)
+                        chat.loadList(silent = true)
+                    }
                 }
             }
         }
@@ -377,6 +382,8 @@ private fun MainContent(
         val detail by programs.detail.collectAsState()
         val programProfile = (programs.profile.collectAsState().value as? ApiResult.Ok)?.value
         val assignedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
+        val chatUnread = (chat.list.collectAsState().value as? ApiResult.Ok)?.value?.chats?.sumOf { it.unread } ?: 0
+        val tabState = rememberSaveableStateHolder()
         val cropping = croppingImage
         val target = when {
             cropping != null -> Screen.CropImage(cropping)
@@ -413,7 +420,7 @@ private fun MainContent(
                     val programId = screen.programId
                     BackHandler { viewingRegistrations = false }
                     val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
-                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingRegistrations = false }) {
+                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingRegistrations = false }, unread = chatUnread) {
                         RegistrationsScreen(
                             eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
                             state = programs.registrations.collectAsState().value,
@@ -433,7 +440,7 @@ private fun MainContent(
                             }
                         }
                     }
-                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }) {
+                    MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null }, unread = chatUnread) {
                         ProgramDetailScreen(
                             detail,
                             programs.rsvp.collectAsState().value,
@@ -471,6 +478,8 @@ private fun MainContent(
                             loadingOlder = chat.loadingOlder.collectAsState().value,
                         send = chat.send.collectAsState().value,
                         action = chat.action.collectAsState().value,
+                        draft = remember(chatId) { chat.draft(chatId) },
+                        onDraft = { chat.setDraft(chatId, it) },
                         onSend = chat::send,
                         onOlder = chat::loadOlder,
                         onDirectChat = { ageGroupId, parentId -> chat.openDirectChat(ageGroupId, parentId) { openedChat = it } },
@@ -518,13 +527,15 @@ private fun MainContent(
                     BackHandler(onBack = leave)
                     PasswordScreen(first = false, form, onSave = auth::changePassword, onBack = leave)
                 }
-                Screen.Home -> MainScaffold(destination, onDestination = { destination = it }) {
+                Screen.Home -> MainScaffold(destination, onDestination = { destination = it }, unread = chatUnread) {
                     AnimatedContent(
                         destination,
                         modifier = Modifier.fillMaxSize(),
                         transitionSpec = { tabTransition(initialState, targetState, motion) },
                         label = "bereich",
                     ) { tab ->
+                        // Der Reiter behält seine Scroll-Position, auch wenn er zwischendurch aus der Komposition fällt.
+                        tabState.SaveableStateProvider(tab.name) {
                         if (tab == Destination.PROGRAMS) {
                             ProgramListScreen(
                                 programs.list.collectAsState().value,
@@ -560,6 +571,7 @@ private fun MainContent(
                                 onPhone = { phoneOpen = true },
                                 onRetry = { chat.loadList() },
                             )
+                        }
                         }
                     }
                 }

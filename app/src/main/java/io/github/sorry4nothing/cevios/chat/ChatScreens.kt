@@ -1,5 +1,10 @@
 package io.github.sorry4nothing.cevios.chat
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
+import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -47,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -74,6 +80,7 @@ import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
 import io.github.sorry4nothing.cevios.programs.dayAndMonth
 import io.github.sorry4nothing.cevios.ui.Avatar
+import io.github.sorry4nothing.cevios.ui.CountBadge
 import io.github.sorry4nothing.cevios.ui.CeviDialog
 import io.github.sorry4nothing.cevios.ui.avatarInitial
 import io.github.sorry4nothing.cevios.ui.DashedButton
@@ -242,7 +249,7 @@ private fun ChatCard(chat: Chat, onOpen: (String) -> Unit) {
                 if (time.isNotEmpty()) {
                     Text(time, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 }
-                badge?.let { UnreadBadge(it) }
+                badge?.let { CountBadge(it) }
             }
         }
     }
@@ -261,23 +268,6 @@ private fun previewTimeText(createdAt: String): String {
 
 private const val PREVIEW_LINES = 2
 private val PREVIEW_DATE = DateTimeFormatter.ofPattern("d.M.")
-
-/** Zahl in einer roten Pille (nie nur Farbe). Wächst mit der Schrift. Für den Screenreader steht die Zahl am Zustand der Zeile. */
-@Composable
-private fun UnreadBadge(text: String) {
-    val scheme = MaterialTheme.colorScheme
-    Box(
-        Modifier
-            .heightIn(min = 24.dp)
-            .widthIn(min = 24.dp)
-            .background(scheme.primary, Pill)
-            .padding(horizontal = 8.dp)
-            .clearAndSetSemantics {},
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold, fontFeatureSettings = "tnum"), color = scheme.onPrimary)
-    }
-}
 
 /** Einzelchat: «SL» (Stufenleitung) auf `secondaryContainer`. Dekorativ. Der Gruppenchat zeigt das Stufenlogo ([StageLogo]). */
 @Composable
@@ -301,6 +291,8 @@ fun ChatConversationScreen(
     loadingOlder: Boolean,
     send: SendState,
     action: ActionState,
+    draft: String,
+    onDraft: (String) -> Unit,
     onSend: (text: String, onSent: () -> Unit) -> Unit,
     onOlder: () -> Unit,
     onDirectChat: (ageGroupId: String, parentUserId: String) -> Unit,
@@ -344,7 +336,7 @@ fun ChatConversationScreen(
             }
         }
         ActionNotice(action, Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2))
-        MessageInput(send, onSend)
+        MessageInput(send, draft, onDraft, onSend)
     }
 }
 
@@ -424,9 +416,11 @@ private fun Messages(
     val items = remember(conversation.messages) { withDayDividers(conversation.messages) }
     val today = LocalDate.now(SWISS_ZONE)
 
+    val context = LocalContext.current
     fun perform(message: ChatMessage, action: MessageAction) {
         when (action) {
             MessageAction.OPEN_DIRECT_CHAT -> chat?.let { onDirectChat(it.ageGroup.id, message.author.id) }
+            MessageAction.COPY -> message.text?.let { copyToClipboard(context, it) }
         }
     }
 
@@ -497,6 +491,13 @@ private fun Messages(
 @Composable
 private fun actionLabel(action: MessageAction, message: ChatMessage): String = when (action) {
     MessageAction.OPEN_DIRECT_CHAT -> stringResource(R.string.action_direct_chat, message.author.displayName)
+    MessageAction.COPY -> stringResource(R.string.action_copy)
+}
+
+/** Legt den Text in die Zwischenablage. Ab Android 13 bestätigt das System selbst, davor zeigt die App einen Hinweis. */
+private fun copyToClipboard(context: Context, text: String) {
+    context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(null, text))
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
 }
 
 @Composable
@@ -603,8 +604,9 @@ private fun ActionNotice(action: ActionState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) {
-    var draft by rememberSaveable { mutableStateOf("") }
+private fun MessageInput(send: SendState, initialDraft: String, onDraft: (String) -> Unit, onSend: (String, () -> Unit) -> Unit) {
+    // Der Entwurf lebt auch im Chatmodell, damit er das Verlassen des Chats überdauert.
+    var draft by rememberSaveable { mutableStateOf(initialDraft) }
     var emptyHint by remember { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
     val label = stringResource(R.string.message_input)
@@ -625,7 +627,7 @@ private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) 
             BasicTextField(
                 value = draft,
                 onValueChange = {
-                    if (it.length <= MAX_CHARS) draft = it
+                    if (it.length <= MAX_CHARS) { draft = it; onDraft(it) }
                     emptyHint = false
                 },
                 modifier = Modifier.weight(1f).semantics { contentDescription = label },
@@ -653,7 +655,7 @@ private fun MessageInput(send: SendState, onSend: (String, () -> Unit) -> Unit) 
             )
             Surface(
                 onClick = {
-                    if (draft.isBlank()) emptyHint = true else onSend(draft) { draft = "" }
+                    if (draft.isBlank()) emptyHint = true else onSend(draft) { draft = ""; onDraft("") }
                 },
                 enabled = !send.running,
                 modifier = Modifier.size(52.dp).focusRing(Pill).semantics {

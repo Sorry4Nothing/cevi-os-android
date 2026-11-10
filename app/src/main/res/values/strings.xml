@@ -115,9 +115,8 @@
     <string name="button_yes">Ja</string>
     <string name="button_no">Nein</string>
 
-    <string name="status_unassigned">Nicht zugeordnet</string>
+    <string name="stage_all">Alle Stufen</string>
     <string name="section_leaders">Für Leitende</string>
-    <string name="unassigned_notice">Dieses Programm ist noch keiner Stufe zugeordnet. Eltern und Leitende sehen es erst, wenn eine Stufe und eine Sichtbarkeit gesetzt sind.</string>
     <string name="save">Speichern</string>
     <string name="saving">Wird gespeichert …</string>
     <string name="back_to_program">Zurück zum Programm</string>

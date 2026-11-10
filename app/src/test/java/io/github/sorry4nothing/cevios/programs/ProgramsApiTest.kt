@@ -148,13 +148,13 @@ class ProgramsApiTest {
         server.enqueue(json(200, camp))
         val p = (runBlocking { programs.read("x") } as ApiResult.Ok).value
         assertEquals("eltern", p.visibility)
-        assertFalse(p.unassigned)
+        assertFalse(p.allAgeGroups)
     }
 
     @Test
-    fun programWithoutAgeGroupsIsUnassigned() {
+    fun programWithoutAgeGroupsIsForAllAgeGroups() {
         server.enqueue(json(200, camp.replace("\"stufen\":[{\"id\":\"a1\",\"name\":\"Stufe A\"}]", "\"stufen\":[]")))
-        assertTrue((runBlocking { programs.read("x") } as ApiResult.Ok).value.unassigned)
+        assertTrue((runBlocking { programs.read("x") } as ApiResult.Ok).value.allAgeGroups)
     }
 
     @Test

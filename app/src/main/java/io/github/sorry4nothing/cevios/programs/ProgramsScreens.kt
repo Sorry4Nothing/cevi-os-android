@@ -138,7 +138,7 @@ private fun DateColumn(day: Day, withLine: Boolean) {
 
 @Composable
 private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
-    val ageGroups = program.ageGroups.joinToString(", ") { it.name }
+    val ageGroups = if (program.allAgeGroups) stringResource(R.string.stage_all) else program.ageGroups.joinToString(", ") { it.name }
     val headerLine = listOf(listTime(program), ageGroups).filter { it.isNotBlank() }.joinToString(" · ")
     Column(
         Modifier
@@ -181,17 +181,15 @@ private fun ChildStatus(child: ProgramChild) {
 }
 
 /**
- * Abgesagt, «wird noch geprüft» oder «nicht zugeordnet» (nur Leitungen sehen solche Programme): als Etikett mit Icon und
- * Wort. Ein aktives, zugeordnetes Programm braucht keins.
+ * Abgesagt oder «wird noch geprüft»: als Etikett mit Icon und Wort. Ein aktives Programm braucht keins.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProgramStatus(program: Program, modifier: Modifier = Modifier) {
-    if (!program.cancelled && !program.inReview && !program.unassigned) return
+    if (!program.cancelled && !program.inReview) return
     FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
         if (program.cancelled) StatusChip(ChipKind.NO, stringResource(R.string.status_cancelled))
         if (program.inReview) StatusChip(ChipKind.REVIEW, stringResource(R.string.status_review))
-        if (program.unassigned) StatusChip(ChipKind.UNASSIGNED, stringResource(R.string.status_unassigned))
     }
 }
 
@@ -256,7 +254,7 @@ private fun ProgramContent(
     onAssign: () -> Unit,
     onRegistrations: () -> Unit,
 ) {
-    val ageGroups = program.ageGroups.joinToString(", ") { it.name }
+    val ageGroups = if (program.allAgeGroups) stringResource(R.string.stage_all) else program.ageGroups.joinToString(", ") { it.name }
     val date = program.startDay()?.let { "${weekdayShort(it)} ${dayAndMonth(it)}" }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Header(
@@ -282,7 +280,7 @@ private fun ProgramContent(
 /** «Kontakt» mit den Stufenleitungen des Programms (wer abgesagt hat, fehlt). Ein Fehler beim Laden zeigt keinen Abschnitt. */
 @Composable
 private fun ContactSection(program: Program, contacts: ApiResult<ContactList>?) {
-    if (program.unassigned || contacts !is ApiResult.Ok) return
+    if (contacts !is ApiResult.Ok) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
         Text(
             stringResource(R.string.contact_title),
@@ -312,7 +310,6 @@ private fun LeaderSection(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 6.dp).semantics { heading() },
         )
-        if (canAssign && program.unassigned) NoticeBanner(NoticeKind.INFO, stringResource(R.string.unassigned_notice))
         if (canSeeRegistrations) {
             OutlinedPillButton(stringResource(R.string.registrations_action), onRegistrations, Modifier.fillMaxWidth(), icon = R.drawable.ic_group)
         }

@@ -99,6 +99,8 @@ class ProgramsWidget : AppWidgetProvider() {
             views.setViewVisibility(R.id.widget_rows, if (programs.isEmpty()) View.GONE else View.VISIBLE)
             views.setViewVisibility(R.id.widget_message, if (programs.isEmpty()) View.VISIBLE else View.GONE)
             if (state is WidgetState.Message) views.setTextViewText(R.id.widget_message, context.getString(state.text))
+            // Launcher recyceln das Layout: Ohne Leeren hängt jedes Update die Zeilen erneut an.
+            views.removeAllViews(R.id.widget_rows)
             programs.forEachIndexed { i, program -> views.addView(R.id.widget_rows, row(context, program, divider = i > 0)) }
             return views
         }

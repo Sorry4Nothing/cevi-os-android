@@ -35,6 +35,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.chat.Profile
+import io.github.sorry4nothing.cevios.ui.Avatar
 import io.github.sorry4nothing.cevios.ui.ChipKind
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
@@ -55,6 +57,7 @@ import io.github.sorry4nothing.cevios.ui.theme.cevi
 fun RegistrationSection(
     program: Program,
     rsvp: RsvpState,
+    account: Profile,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
 ) {
@@ -89,6 +92,7 @@ fun RegistrationSection(
                 pending = rsvp.pendingAttending.takeIf { rsvp.pendingKey == LEADER_KEY },
                 sentAt = rsvp.sentAt[LEADER_KEY],
                 onRsvp = onLeader,
+                avatar = account,
             )
         }
 
@@ -107,6 +111,8 @@ private fun RsvpRow(
     pending: Boolean?,
     sentAt: String?,
     onRsvp: (Boolean) -> Unit,
+    /** Die Person der Zeile, wenn ihr Bild (oder die Initiale) vor dem Namen stehen soll; Kinder haben keins. */
+    avatar: Profile? = null,
 ) {
     val colors = MaterialTheme.cevi
     val scheme = MaterialTheme.colorScheme
@@ -118,6 +124,7 @@ private fun RsvpRow(
         else -> stringResource(R.string.rsvp_pending) to scheme.onSurfaceVariant
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        avatar?.let { Avatar(it.name, size = 40.dp, imageUrl = it.imageUrl) }
         Column(Modifier.weight(1f)) {
             Text(name, style = MaterialTheme.typography.titleMedium)
             // Ist die Anmeldung geschlossen, sagt schon das Etikett rechts denselben Stand: nicht doppelt zeigen.

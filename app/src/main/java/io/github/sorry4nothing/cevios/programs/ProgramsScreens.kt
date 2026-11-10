@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.contacts.ContactCard
 import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiResult
@@ -218,6 +219,7 @@ fun ProgramDetailScreen(
     canAssign: Boolean,
     canSeeRegistrations: Boolean,
     contacts: ApiResult<ContactList>?,
+    account: Profile,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
@@ -236,7 +238,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, contacts, back, onChild, onLeader, onAssign, onRegistrations)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, contacts, account, back, onChild, onLeader, onAssign, onRegistrations)
         }
     }
 }
@@ -248,6 +250,7 @@ private fun ProgramContent(
     canAssign: Boolean,
     canSeeRegistrations: Boolean,
     contacts: ApiResult<ContactList>?,
+    account: Profile,
     back: HeaderButton,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
@@ -269,7 +272,7 @@ private fun ProgramContent(
             ProgramStatus(program)
             Tiles(program)
             Facts(program)
-            RegistrationSection(program, rsvp, onChild, onLeader)
+            RegistrationSection(program, rsvp, account, onChild, onLeader)
             ContactSection(program, contacts)
             LeaderSection(program, canAssign, canSeeRegistrations, onAssign, onRegistrations)
             Box(Modifier.height(Spacing.s4))

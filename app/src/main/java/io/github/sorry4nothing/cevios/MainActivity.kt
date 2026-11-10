@@ -447,6 +447,7 @@ private fun MainContent(
                             canAssign = AssignmentRules.mayAssign(programProfile),
                             canSeeRegistrations = assignedProgram?.let { RegistrationsRules.maySee(it, programProfile) } == true,
                             contacts = programs.contacts.collectAsState().value,
+                            account = account,
                             onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                             onLeader = { attending -> programs.rsvpLeader(programId, attending) },
                             onAssign = { assigning = true },

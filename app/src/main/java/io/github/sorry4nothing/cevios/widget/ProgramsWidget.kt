@@ -107,12 +107,11 @@ class ProgramsWidget : AppWidgetProvider() {
 
         private fun row(context: Context, program: Program, divider: Boolean): RemoteViews {
             val row = RemoteViews(context.packageName, R.layout.widget_row)
-            val stage = program.ageGroups.joinToString(", ") { it.name }
+            val stage = if (program.allAgeGroups) context.getString(R.string.stage_all) else program.ageGroups.joinToString(", ") { it.name }
             row.setViewVisibility(R.id.row_divider, if (divider) View.VISIBLE else View.GONE)
             row.setTextViewText(R.id.row_title, program.title)
             row.setTextViewText(R.id.row_time, dateLine(program, context.getString(R.string.time_list_all_day)))
             row.setTextViewText(R.id.row_stage, stage)
-            row.setViewVisibility(R.id.row_stage, if (stage.isEmpty()) View.GONE else View.VISIBLE)
             row.setOnClickPendingIntent(R.id.row_root, open(context, program.id))
             // Als Leitung steht die eigene Zusage («Du») vor den Kindern.
             val own = program.ownRegistration?.let { Answer(context.getString(R.string.widget_own_name), it, own = true) }

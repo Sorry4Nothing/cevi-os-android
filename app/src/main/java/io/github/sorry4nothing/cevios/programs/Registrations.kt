@@ -63,10 +63,11 @@ fun registrationChip(status: String): ChipKind = when (status) {
 
 /** Wer die Übersicht ansehen darf; entschieden wird trotzdem beim Server (403). Ändern darf hier niemand etwas. */
 object RegistrationsRules {
-    /** Admins sowie Leitende und Stufenleitungen einer Stufe des Programms. Ohne Stufe gibt es nichts zu zählen. */
+    /** Admins sowie Leitende und Stufenleitungen einer Stufe des Programms; gilt es für alle Stufen, jede Leitung mit einer Rolle. */
     fun maySee(program: Program, profile: Profile?): Boolean {
-        if (profile == null || program.unassigned) return false
-        return profile.admin || profile.roles.any { role -> program.ageGroups.any { it.id == role.ageGroupId } }
+        if (profile == null) return false
+        if (profile.admin) return true
+        return if (program.allAgeGroups) profile.roles.isNotEmpty() else profile.roles.any { role -> program.ageGroups.any { it.id == role.ageGroupId } }
     }
 
     /** Anteil eines Wertes am Ganzen für die Breite des Balkens; 0, wenn niemand zählt. */

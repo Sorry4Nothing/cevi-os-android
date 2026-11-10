@@ -50,7 +50,8 @@ data class Program(
 ) {
     val cancelled get() = status == "abgesagt"
     val inReview get() = status == "pruefen"
-    val unassigned get() = ageGroups.isEmpty()
+    /** Ein Programm ohne Stufe gilt für alle Stufen; die API liefert dann eine leere Liste. */
+    val allAgeGroups get() = ageGroups.isEmpty()
 
     /** Der Treffpunkt der Leitung, sonst der Ort aus dem Google-Kalender. */
     val location get() = parseMeetingPoint(meetingPoint).place ?: googleLocation?.takeIf { it.isNotBlank() }

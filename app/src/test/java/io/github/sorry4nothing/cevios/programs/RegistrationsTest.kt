@@ -64,8 +64,11 @@ class RegistrationsTest {
     }
 
     @Test
-    fun withoutAgeGroupThereIsNothingToCount() {
-        assertFalse(RegistrationsRules.maySee(program(), profile(admin = true)))
+    fun forAllAgeGroupsEveryLeaderWithARoleMaySee() {
+        assertTrue(RegistrationsRules.maySee(program(), profile(admin = true)))
+        assertTrue(RegistrationsRules.maySee(program(), profile(roles = arrayOf("s9" to "leitung"))))
+        assertFalse("ohne Rolle", RegistrationsRules.maySee(program(), profile()))
+        assertFalse(RegistrationsRules.maySee(program(), null))
     }
 
     @Test

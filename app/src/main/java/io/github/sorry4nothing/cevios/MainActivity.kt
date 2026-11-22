@@ -926,6 +926,7 @@ private fun MainContent(
                         meetings, screen.meetingId, openedCamp, meetingRights, queueState, online, personNames,
                         onOpenQueue = { queueOpen = true },
                         onOpenRessort = { openedRessort = it },
+                        onOpenTask = { openedTask = it },
                         onEnd = leave,
                     )
                 }

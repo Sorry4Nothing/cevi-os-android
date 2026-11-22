@@ -161,6 +161,7 @@
     <string name="mode_ressort_none">Keine Ressorts.</string>
     <string name="mode_ressort_counts">%1$d von %2$d erledigt</string>
     <string name="mode_ressort_open">Ressort öffnen</string>
+    <string name="mode_task_open">Aufgabe öffnen</string>
     <plurals name="task_overdue_count">
         <item quantity="one">%d überfällig</item>
         <item quantity="other">%d überfällig</item>

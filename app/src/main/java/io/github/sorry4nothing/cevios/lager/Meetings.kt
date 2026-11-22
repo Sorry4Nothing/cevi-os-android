@@ -103,6 +103,17 @@ data class RessortRoundCounts(
     @SerialName("ueberfaellig") val overdue: Int,
 )
 
+/** Eine offene Aufgabe in der Ressort-Runde; der Server filtert sie nach dem Recht der Rolle. */
+@Serializable
+data class RoundTask(
+    val id: String,
+    @SerialName("titel") val title: String,
+    @SerialName("status") val statusWire: String = "offen",
+    @SerialName("verantwortlich") val responsible: RessortPerson? = null,
+) {
+    val status: TaskStatus get() = TaskStatus.from(statusWire)
+}
+
 @Serializable
 data class RessortRound(
     val id: String,
@@ -110,6 +121,8 @@ data class RessortRound(
     val name: String,
     @SerialName("leitung") val leader: RessortPerson? = null,
     @SerialName("aufgaben") val tasks: RessortRoundCounts? = null,
+    /** Höchstens 50 offene Aufgaben; `null`, wenn die Rolle keine Aufgaben lesen darf. */
+    @SerialName("offeneAufgaben") val openTasks: List<RoundTask>? = null,
 )
 
 /** `GET …/hoecks/{id}/modus`: alles für die Sitzung. `ressortRunde` ist `null` ohne das Recht, Ressorts zu lesen. */

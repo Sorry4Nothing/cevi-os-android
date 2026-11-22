@@ -156,14 +156,24 @@ class MeetingsApiTest {
                 200,
                 """{"hoeck":{"id":"$meetingId","version":2,"art":"lagerleitung","datum":"2027-03-17","zeit":null,"titel":"Höck","ort":null,"gaeste":null,"protokollId":null,"traktanden":[$item]},
                    "mitglieder":[{"id":"p1","name":"Beispiel Person","ceviName":"Spatz","rolle":"leitung","anwesend":true},{"id":"p2","name":null,"ceviName":"Fuchs","rolle":"team","anwesend":false}],
-                   "ressortRunde":[{"id":"r1","kuerzel":"LO","name":"Logistik","leitung":null,"aufgaben":{"gesamt":4,"erledigt":1,"offen":3,"ueberfaellig":2}}]}""",
+                   "ressortRunde":[{"id":"r1","kuerzel":"LO","name":"Logistik","leitung":null,"aufgaben":{"gesamt":4,"erledigt":1,"offen":3,"ueberfaellig":2},
+                     "offeneAufgaben":[{"id":"a1","titel":"Offerte einholen","status":"laeuft","verantwortlich":{"id":"p1","name":"Beispiel Person"}},
+                       {"id":"a2","titel":"Kasse prüfen","status":"offen","verantwortlich":null}]},
+                     {"id":"r2","kuerzel":"KU","name":"Küche","leitung":null,"aufgaben":null,"offeneAufgaben":null}]}""",
             ),
         )
         val mode = (runBlocking { api.mode(camp, meetingId) } as ApiResult.Ok).value
         assertEquals("GET /api/v1/lager/$camp/hoecks/$meetingId/modus HTTP/1.1", server.takeRequest().requestLine)
         assertEquals(1, MeetingRules.presentCount(mode.members))
         assertEquals("Fuchs", mode.members[1].display)
-        assertEquals(2, mode.ressortRound!!.single().tasks!!.overdue)
+        val logistics = mode.ressortRound!!.first()
+        assertEquals(2, logistics.tasks!!.overdue)
+        assertEquals(listOf("Offerte einholen", "Kasse prüfen"), logistics.openTasks!!.map { it.title })
+        assertEquals(TaskStatus.RUNNING, logistics.openTasks!![0].status)
+        assertEquals("Beispiel Person", logistics.openTasks!![0].responsible!!.display)
+        assertNull(logistics.openTasks!![1].responsible)
+        // Ohne Recht, Aufgaben zu lesen, fehlen Zahlen und Aufgaben.
+        assertNull(mode.ressortRound!![1].openTasks)
     }
 
     @Test

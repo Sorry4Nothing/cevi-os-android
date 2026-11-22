@@ -112,6 +112,25 @@ data class FeedPage(
     @SerialName("weitere") val more: Boolean,
 )
 
+/**
+ * Neuigkeiten-Stand (`GET /api/v1/lager/neuigkeiten`) für den Punkt an der Pille, ohne Inhalte: je Lager, ob es ungelesene
+ * Benachrichtigungen gibt, und ob es ungelesene Chat-Nachrichten gibt.
+ */
+@Serializable
+data class CampNews(
+    @SerialName("lager") val camps: List<CampNewsEntry> = emptyList(),
+    @SerialName("programme") val programs: ProgramsNews = ProgramsNews(),
+) {
+    /** Gibt es in irgendeinem Lager Neues (der Punkt an der Pille im Programm-Bereich)? */
+    val anyCamp: Boolean get() = camps.any { it.fresh }
+}
+
+@Serializable
+data class CampNewsEntry(@SerialName("lagerId") val campId: String, @SerialName("neu") val fresh: Boolean)
+
+@Serializable
+data class ProgramsNews(@SerialName("neu") val fresh: Boolean = false)
+
 @Serializable
 data class UnreadCount(@SerialName("anzahl") val count: Int)
 

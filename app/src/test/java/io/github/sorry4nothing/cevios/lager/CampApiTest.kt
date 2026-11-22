@@ -87,6 +87,19 @@ class CampApiTest {
     }
 
     @Test
+    fun newsReadsOnePointPerCampAndForThePrograms() {
+        server.enqueue(json(200, """{"lager":[{"lagerId":"$id","neu":true},{"lagerId":"x","neu":false}],"programme":{"neu":false}}"""))
+        val news = (runBlocking { camps.news() } as ApiResult.Ok).value
+        assertEquals("GET /api/v1/lager/neuigkeiten HTTP/1.1", server.takeRequest().requestLine)
+        assertTrue(news.anyCamp)
+        assertFalse(news.programs.fresh)
+        server.enqueue(json(200, """{"lager":[],"programme":{"neu":true}}"""))
+        val empty = (runBlocking { camps.news() } as ApiResult.Ok).value
+        assertFalse(empty.anyCamp)
+        assertTrue(empty.programs.fresh)
+    }
+
+    @Test
     fun listWithoutDetailFollowsStatus() {
         assertTrue(Camp(id, "x", "2027-07-17", "2027-07-24", null, "archiviert", "team").readOnly)
         assertFalse(Camp(id, "x", "2027-07-17", "2027-07-24", null, "entwurf", "team").readOnly)

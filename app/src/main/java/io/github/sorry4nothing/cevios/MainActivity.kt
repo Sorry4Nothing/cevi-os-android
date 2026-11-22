@@ -635,6 +635,7 @@ private fun MainContent(
                     while (true) {
                         delay(LIST_POLL_INTERVAL_MS)
                         chat.loadList(silent = true)
+                        camp.refreshNews()
                     }
                 }
             }
@@ -652,6 +653,7 @@ private fun MainContent(
         val cropping = croppingImage
         val camps = (camp.camps.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
         val campUnread by camp.unread.collectAsState()
+        val campNews by camp.news.collectAsState()
         val queueState = campId?.let { camp.queueFor(it).state.collectAsState().value } ?: QueueState()
         val online by camp.online.collectAsState()
         val lostAccess by camp.lostAccess.collectAsState()
@@ -693,9 +695,9 @@ private fun MainContent(
             val programs = stringResource(R.string.mode_area_programs)
             val lager = stringResource(R.string.mode_area_camp)
             if (campArea) {
-                ModeSwitch(openedCamp?.title ?: stringResource(R.string.camps_title), programs, news = false) { modeMenuOpen = true }
+                ModeSwitch(openedCamp?.title ?: stringResource(R.string.camps_title), programs, news = campNews?.programs?.fresh == true || chatUnread > 0) { modeMenuOpen = true }
             } else {
-                ModeSwitch(stringResource(R.string.department), lager, news = campUnread.values.any { it > 0 }) { modeMenuOpen = true }
+                ModeSwitch(stringResource(R.string.department), lager, news = campNews?.anyCamp ?: campUnread.values.any { it > 0 }) { modeMenuOpen = true }
             }
         }
         // Ein Ziel aus einer Benachrichtigung, «Neu für dich» oder einem Push: derselbe Weg überall.

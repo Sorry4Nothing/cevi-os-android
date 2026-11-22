@@ -33,6 +33,11 @@ class CampViewModel(
     private val _unread = MutableStateFlow<Map<String, Int>>(emptyMap())
     val unread: StateFlow<Map<String, Int>> = _unread.asStateFlow()
 
+    private val _news = MutableStateFlow<CampNews?>(null)
+
+    /** Der Punkt an der Pille: `null`, solange der Stand fehlt (dann gilt der Zähler der Benachrichtigungen). */
+    val news: StateFlow<CampNews?> = _news.asStateFlow()
+
     private val _detail = MutableStateFlow<ApiResult<Camp>?>(null)
     val detail: StateFlow<ApiResult<Camp>?> = _detail.asStateFlow()
 
@@ -78,6 +83,7 @@ class CampViewModel(
             when (result) {
                 is ApiResult.Ok -> {
                     _camps.value = ApiResult.Ok(result.value.camps)
+                    launch(Background()) { refreshNews() }
                     result.value.camps.filter { !it.readOnly }.forEach { camp ->
                         launch(Background()) { refreshUnread(camp.id) }
                     }
@@ -86,6 +92,11 @@ class CampViewModel(
                 is ApiResult.Failure -> if (!background || _camps.value == null) _camps.value = result
             }
         }
+    }
+
+    /** Liest den Neuigkeiten-Stand still neu; ein Fehler lässt den alten Punkt stehen. */
+    suspend fun refreshNews() {
+        (api.news() as? ApiResult.Ok)?.let { _news.value = it.value }
     }
 
     suspend fun refreshUnread(campId: String) {

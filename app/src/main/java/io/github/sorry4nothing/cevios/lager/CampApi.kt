@@ -27,6 +27,9 @@ class CampApi(private val api: ApiClient) : QueueSender {
     suspend fun events(id: String, lastEventId: Long?, onLine: suspend (String) -> Unit): ApiResult<Unit> =
         api.readStream("/api/v1/lager/$id/ereignisse", lastEventId, onLine)
 
+    /** Ein Punkt je Bereich, ohne Inhalte; die Person muss nichts mitgeben. */
+    suspend fun news(): ApiResult<CampNews> = api.get("/api/v1/lager/neuigkeiten")
+
     suspend fun unread(id: String): ApiResult<UnreadCount> = api.get("/api/v1/lager/$id/benachrichtigungen/ungelesen")
 
     /** In welchem Lager liegt das Objekt, das ein Push nennt? 404, wenn die Person es nicht (mehr) sehen darf. */

@@ -140,4 +140,14 @@ class CampSyncTest {
         val offline = CampSync(CampApi(ApiClient(url, ApiClient.httpClient(storage, "1.0.0"))), id)
         assertEquals(ListenResult.Failed(ApiError.NETWORK), runBlocking { offline.listen(onNews = {}, onReload = {}) })
     }
+
+    @Test
+    fun pullStopsWhenTheServerReportsMoreWithoutProgress() {
+        server.enqueue(json(200, """{"seq":10,"objekttypen":["aufgabe"]}"""))
+        // «weitere» bei gleicher Folgenummer: ohne Fortschrittsprüfung fragte die App endlos weiter.
+        server.enqueue(json(200, """{"eintraege":[],"bis":10,"weitere":true}"""))
+        runBlocking { sync.baseline() }
+        assertTrue(runBlocking { sync.pull() } is PullResult.Done)
+        assertEquals(2, server.requestCount)
+    }
 }

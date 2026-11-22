@@ -100,9 +100,11 @@ class CampSync(private val api: CampApi, private val campId: String) {
                 is ApiResult.Ok -> {
                     page.value.entries.forEach { types += it.type }
                     count += page.value.entries.size
+                    // Ohne Fortschritt der Folgenummer endet die Schleife, auch wenn der Server «weitere» meldet.
+                    val advanced = page.value.until > current
                     current = page.value.until
                     seq = current
-                    if (!page.value.more) return PullResult.Done(if (count == 0) null else CampChange(current, types, count))
+                    if (!page.value.more || !advanced) return PullResult.Done(if (count == 0) null else CampChange(current, types, count))
                 }
             }
         }

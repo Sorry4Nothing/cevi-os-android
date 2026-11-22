@@ -450,6 +450,12 @@
     <string name="task_move_down">Nach unten</string>
     <string name="task_select">Auswählen</string>
     <string name="task_delete">Löschen</string>
+    <string name="task_checkpoint_delete_title">Checkpunkt löschen?</string>
+    <string name="task_checkpoint_delete_text">«%1$s» ist danach für alle weg.</string>
+    <string name="task_link_delete_title">Link löschen?</string>
+    <string name="task_link_delete_text">«%1$s» ist danach für alle weg.</string>
+    <string name="pack_own_delete_title">Eigenen Punkt löschen?</string>
+    <string name="pack_own_delete_text">«%1$s» ist danach weg.</string>
     <string name="task_delete_text">Die Aufgabe ist danach für alle weg. In der App lässt sie sich nicht zurückholen.</string>
     <plurals name="task_delete_title">
         <item quantity="one">%d Aufgabe löschen?</item>

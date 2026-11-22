@@ -24,6 +24,9 @@
     <string name="field_text">Text</string>
     <string name="field_decision">Entscheid</string>
     <string name="field_duration">Dauer</string>
+    <string name="field_present">Anwesend</string>
+    <string name="summary_present">«%1$s» im Höck als anwesend eingetragen</string>
+    <string name="summary_absent">«%1$s» im Höck als abwesend eingetragen</string>
     <string name="field_date">Datum</string>
     <string name="field_time">Zeit</string>
     <string name="field_place">Ort</string>

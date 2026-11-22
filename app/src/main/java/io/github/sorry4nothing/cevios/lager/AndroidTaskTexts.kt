@@ -32,6 +32,8 @@ class AndroidTaskTexts(private val context: Context) : TaskTexts {
 
 /** Die Feldnamen des Konfliktbildschirms für Sitzungen und Kommunikation. */
 class AndroidCommsTexts(private val context: Context) : CommsTexts {
+    override fun presence(name: String, present: Boolean) = context.getString(if (present) R.string.summary_present else R.string.summary_absent, name)
+
     override fun fieldLabels(): Map<String, String> = mapOf(
         "titel" to context.getString(R.string.field_title),
         "text" to context.getString(R.string.field_text),
@@ -70,6 +72,7 @@ class AndroidCommsTexts(private val context: Context) : CommsTexts {
         "einkaeuferPersonId" to context.getString(R.string.shop_buyer),
         "tageschefPersonId" to context.getString(R.string.day_lead),
         "dauerMinuten" to context.getString(R.string.field_duration),
+        "anwesend" to context.getString(R.string.field_present),
         "ruhig" to context.getString(R.string.ressort_quiet),
     )
 }

@@ -20,6 +20,9 @@ import kotlinx.serialization.json.put
 /** Die Feldnamen des Konfliktbildschirms und die Sätze dazu; sie stehen in `strings.xml`, die ViewModels kennen sie nicht. */
 interface CommsTexts {
     fun fieldLabels(): Map<String, String>
+
+    /** Der Satz in der Warteschlange zum Haken «anwesend» einer Person im Höck-Modus. */
+    fun presence(name: String, present: Boolean): String
 }
 
 /** Ein Hinweis nach einer Aktion; `undo` ist nur gesetzt, wo sich die Aktion zurücknehmen lässt. */
@@ -365,9 +368,17 @@ class MeetingsViewModel(
 
     fun loadMode(meetingId: String, silent: Boolean = false) {
         val id = campId ?: return
+        // Nur was vor der Anfrage gesendet war, steht sicher in der Antwort; später Gesendetes bleibt über dem Stand.
+        val queue = camp.queueFor(id)
+        val sentBefore = queue.state.value.changes.filter { it.state == ChangeState.SENT && it.type == PRESENCE_OP }.map { it.clientOpId }.toSet()
         viewModelScope.launch(Background()) {
-            val result = api.mode(id, meetingId)
+            val fetched = api.mode(id, meetingId)
             if (campId != id) return@launch
+            if (fetched is ApiResult.Ok) queue.clearSent(sentBefore)
+            val result: ApiResult<MeetingMode> = when (fetched) {
+                is ApiResult.Ok -> ApiResult.Ok(fetched.value.copy(members = applyPresence(fetched.value.members, meetingId, queue.state.value.changes)))
+                is ApiResult.Failure -> fetched
+            }
             _mode.update { current ->
                 if (current?.id != meetingId) return@update current
                 val items = (result as? ApiResult.Ok)?.value?.meeting?.agenda?.let(MeetingRules::sorted).orEmpty()
@@ -394,17 +405,12 @@ class MeetingsViewModel(
     /** Haken bei einer Person: sofort sichtbar, bei einem Fehler wieder zurück und mit Hinweis. */
     fun setPresent(meetingId: String, personId: String, present: Boolean) {
         val id = campId ?: return
-        writer.dismissError()
+        val name = (_mode.value?.mode as? ApiResult.Ok)?.value?.members?.firstOrNull { it.id == personId }?.display.orEmpty()
+        val payload = presencePayload(meetingId, personId, present)
+        val summary = texts.presence(name, present)
+        // Der Haken geht durch die Warteschlange: Er gilt sofort und kommt auch ohne Netz an, sobald es wieder da ist.
+        routePresence(camp.queueFor(id), payload, summary) { camp.enqueue(id, PRESENCE_OP, payload, summary, texts.fieldLabels()) }
         updateMember(personId, present)
-        viewModelScope.launch {
-            when (val result = api.setPresent(id, meetingId, personId, present)) {
-                is ApiResult.Ok -> Unit
-                is ApiResult.Failure -> {
-                    updateMember(personId, !present)
-                    writer.fail(result) { setPresent(meetingId, personId, present) }
-                }
-            }
-        }
     }
 
     private fun updateMember(personId: String, present: Boolean) {

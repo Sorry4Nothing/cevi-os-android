@@ -100,6 +100,8 @@ fun TaskDetailScreen(
     val people = remember(state, members) { TaskRules.pickable((state as? ApiResult.Ok)?.value.orEmpty(), vm.self, members) }
     val today = remember { todayInCamp() }
     var edit by remember { mutableStateOf<DetailEdit?>(null) }
+    var deletingPoint by remember { mutableStateOf<Checkpoint?>(null) }
+    var deletingLink by remember { mutableStateOf<TaskLink?>(null) }
     val back = HeaderButton(R.drawable.ic_back, stringResource(R.string.task_back)) { onBack() }
 
     val task = (state as? ApiResult.Ok)?.value?.firstOrNull { it.id == taskId }
@@ -224,7 +226,7 @@ fun TaskDetailScreen(
                                 onToggle = { vm.toggleCheckpoint(task, point) },
                                 onUp = if (canEdit && list.first().id != point.id) ({ vm.moveCheckpoint(task, list, point.id, -1) }) else null,
                                 onDown = if (canEdit && list.last().id != point.id) ({ vm.moveCheckpoint(task, list, point.id, 1) }) else null,
-                                onDelete = if (canEdit) ({ vm.deleteCheckpoint(task, point) }) else null,
+                                onDelete = if (canEdit) ({ deletingPoint = point }) else null,
                             )
                         }
                         if (canEdit) DashedButton(stringResource(R.string.task_checkpoint_add), { edit = DetailEdit.CHECKPOINT }, Modifier.fillMaxWidth(), icon = R.drawable.ic_plus)
@@ -232,7 +234,7 @@ fun TaskDetailScreen(
                     if (details.value.links.isNotEmpty() || canEdit) {
                         Section(R.string.task_links) {
                             details.value.links.forEach { link ->
-                                LinkRow(link, onOpen = { openLink(uriHandler, link.url) }, onDelete = if (canEdit) ({ vm.deleteLink(task, link) }) else null)
+                                LinkRow(link, onOpen = { openLink(uriHandler, link.url) }, onDelete = if (canEdit) ({ deletingLink = link }) else null)
                             }
                             if (canEdit) DashedButton(stringResource(R.string.task_link_add), { edit = DetailEdit.LINK }, Modifier.fillMaxWidth(), icon = R.drawable.ic_plus)
                         }
@@ -252,6 +254,18 @@ fun TaskDetailScreen(
         }
     }
 
+    deletingPoint?.let { point ->
+        ConfirmDeleteDialog(
+            stringResource(R.string.task_checkpoint_delete_title), stringResource(R.string.task_checkpoint_delete_text, point.text),
+            onConfirm = { vm.deleteCheckpoint(task, point); deletingPoint = null }, onDismiss = { deletingPoint = null },
+        )
+    }
+    deletingLink?.let { link ->
+        ConfirmDeleteDialog(
+            stringResource(R.string.task_link_delete_title), stringResource(R.string.task_link_delete_text, link.title),
+            onConfirm = { vm.deleteLink(task, link); deletingLink = null }, onDismiss = { deletingLink = null },
+        )
+    }
     when (edit) {
         DetailEdit.TITLE -> TextDialog(stringResource(R.string.task_rename_title), stringResource(R.string.task_title_label), task.title, 200, stringResource(R.string.save), { vm.rename(task, it); edit = null }, { edit = null })
         DetailEdit.NOTE -> TextDialog(stringResource(R.string.task_note), stringResource(R.string.task_note), task.note.orEmpty(), 5000, stringResource(R.string.save), { vm.setNote(task, it); edit = null }, { edit = null }, multiline = true, allowEmpty = true)

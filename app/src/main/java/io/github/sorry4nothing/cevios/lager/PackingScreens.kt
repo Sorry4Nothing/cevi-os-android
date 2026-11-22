@@ -53,6 +53,7 @@ fun PackingScreen(frame: LiveFrame) {
     var showRemoved by remember { mutableStateOf(false) }
     var choosing by remember { mutableStateOf(false) }
     var chosen by remember { mutableStateOf<CampTemplate?>(null) }
+    var deletingOwn by remember { mutableStateOf<PackRow?>(null) }
     LaunchedEffect(frame.camp?.id) { vm.loadPack(silent = vm.pack.value is ApiResult.Ok) }
 
     LivePage(frame, stringResource(R.string.pack_title)) {
@@ -129,8 +130,14 @@ fun PackingScreen(frame: LiveFrame) {
             onDismiss = { chosen = null },
         )
     }
+    deletingOwn?.let { row ->
+        ConfirmDeleteDialog(
+            stringResource(R.string.pack_own_delete_title), stringResource(R.string.pack_own_delete_text, row.text),
+            onConfirm = { vm.deleteOwnPackItem(row); deletingOwn = null }, onDismiss = { deletingOwn = null },
+        )
+    }
     actions?.let { row ->
-        val entry = if (row.own) stringResource(R.string.task_delete) to { vm.deleteOwnPackItem(row) } else stringResource(R.string.pack_remove) to { vm.removePackItem(row) }
+        val entry = if (row.own) stringResource(R.string.task_delete) to { deletingOwn = row } else stringResource(R.string.pack_remove) to { vm.removePackItem(row) }
         ActionSheet(row.text, listOf(entry)) { actions = null }
     }
     if (adding) {

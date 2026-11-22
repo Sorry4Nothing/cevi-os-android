@@ -76,6 +76,7 @@ import io.github.sorry4nothing.cevios.ui.tabTransition
 import io.github.sorry4nothing.cevios.security.LockOutcome
 import io.github.sorry4nothing.cevios.security.BiometricPrompter
 import io.github.sorry4nothing.cevios.security.AppLock
+import io.github.sorry4nothing.cevios.widget.WidgetPreviews
 import io.github.sorry4nothing.cevios.widget.WidgetProvider
 import io.github.sorry4nothing.cevios.widget.forgetWidgets
 import io.github.sorry4nothing.cevios.auth.LockedScreen
@@ -234,6 +235,7 @@ class MainActivity : FragmentActivity() {
             getSystemService(LocaleManager::class.java).applicationLocales = LocaleList.forLanguageTags("de")
         }
         Notifications.createChannels(applicationContext)
+        WidgetPreviews.publish(applicationContext)
         // Nach Drehen oder Prozess-Ende gilt der Push nicht noch einmal: Das Intent ist dann dasselbe wie beim ersten Start.
         if (savedInstanceState == null) pushTarget = targetOf(intent)
         val client = ApiClient.create(applicationContext)

@@ -231,7 +231,7 @@ fun TaskDetailScreen(
                     if (details.value.links.isNotEmpty() || canEdit) {
                         Section(R.string.task_links) {
                             details.value.links.forEach { link ->
-                                LinkRow(link, onOpen = { if (link.url.startsWith("https://")) uriHandler.openUri(link.url) }, onDelete = if (canEdit) ({ vm.deleteLink(task, link) }) else null)
+                                LinkRow(link, onOpen = { openLink(uriHandler, link.url) }, onDelete = if (canEdit) ({ vm.deleteLink(task, link) }) else null)
                             }
                             if (canEdit) DashedButton(stringResource(R.string.task_link_add), { edit = DetailEdit.LINK }, Modifier.fillMaxWidth(), icon = R.drawable.ic_plus)
                         }

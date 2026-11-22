@@ -189,7 +189,7 @@ fun RessortScreen(
                                         .heightIn(min = Sizes.touchTarget)
                                         .focusRing(shape)
                                         .clip(shape)
-                                        .clickable(onClickLabel = stringResource(R.string.task_link_open), role = Role.Button) { if (link.url.startsWith("https://")) uriHandler.openUri(link.url) },
+                                        .clickable(onClickLabel = stringResource(R.string.task_link_open), role = Role.Button) { openLink(uriHandler, link.url) },
                                     verticalArrangement = Arrangement.Center,
                                 ) {
                                     Text(link.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.cevi.accent)

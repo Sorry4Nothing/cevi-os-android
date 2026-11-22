@@ -56,6 +56,7 @@ import io.github.sorry4nothing.cevios.ui.theme.cevi
 enum class Destination(@StringRes val text: Int, @DrawableRes val icon: Int) {
     START(R.string.tab_start, R.drawable.ic_home),
     TASKS(R.string.tab_tasks, R.drawable.ic_list_check),
+    PINBOARD(R.string.tab_pinboard, R.drawable.ic_pin),
     PROGRAMS(R.string.tab_programs, R.drawable.ic_calendar),
     CHAT(R.string.tab_chat, R.drawable.ic_chat),
     PROFILE(R.string.tab_profile, R.drawable.ic_profile),
@@ -65,8 +66,8 @@ enum class Destination(@StringRes val text: Int, @DrawableRes val icon: Int) {
     companion object {
         val PROGRAM = listOf(PROGRAMS, CHAT, PROFILE)
 
-        /** Im Lager kommen die Ziele der Module dazu (Pinnwand mit dem Schnitt A2), sobald es sie gibt. */
-        val CAMP = listOf(START, TASKS, CHAT, MORE)
+        /** Im Lager kommen die Ziele der Module dazu, sobald es sie gibt (Einteilung und «Im Lager» mit A3 und A4). */
+        val CAMP = listOf(START, TASKS, PINBOARD, CHAT, MORE)
     }
 }
 

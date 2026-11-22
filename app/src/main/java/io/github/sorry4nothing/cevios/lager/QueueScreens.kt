@@ -178,14 +178,15 @@ private fun ChangeRow(change: QueuedChange, onDecide: (QueuedChange) -> Unit, on
  * markiert mit Farbe und Wort. Wer entscheidet, behält seine Fassung oder übernimmt die aktuelle; geschlossen wird erst dann.
  */
 @Composable
-fun ConflictScreen(change: QueuedChange, onKeepMine: () -> Unit, onTakeCurrent: () -> Unit, onBack: () -> Unit) {
+fun ConflictScreen(change: QueuedChange, onKeepMine: () -> Unit, onTakeCurrent: () -> Unit, onBack: (() -> Unit)?) {
     val rows = conflictRows(change)
     val stacked = LocalDensity.current.fontScale >= 1.5f
     Column(Modifier.fillMaxSize()) {
         Header(
             title = stringResource(R.string.conflict_title),
             subtitle = change.summary,
-            back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_queue), onBack),
+            // Ohne Warteschlange (Konflikt bei einer direkten Änderung) gibt es keinen Weg zurück: Die Person entscheidet.
+            back = onBack?.let { HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_queue), it) },
             titleStyle = MaterialTheme.typography.headlineMedium,
             focusOnTitle = true,
         )
@@ -252,8 +253,21 @@ private fun Version(@StringRes title: Int, rows: List<ConflictRow>, mine: Boolea
 /** Werte, die die API als Wort der Maschine schickt, in Worten der Person: Status, Ja und Nein, Daten. */
 @Composable
 private fun conflictValue(key: String, raw: String): String = when (key) {
-    "status" -> stringResource(statusText(TaskStatus.from(raw)))
-    "stern", "laufend" -> stringResource(if (raw == "true") R.string.button_yes else R.string.button_no)
-    "frist", "spaeterAb" -> formatDayLong(raw)
+    "status" -> stringResource(
+        when (raw) {
+            "besprochen" -> R.string.agenda_done
+            "neu" -> R.string.inbox_status_new
+            "in_arbeit" -> R.string.inbox_status_progress
+            else -> statusText(TaskStatus.from(raw))
+        },
+    )
+    "art" -> when (raw) {
+        "lagerleitung" -> stringResource(R.string.meeting_kind_leadership)
+        "team" -> stringResource(R.string.meeting_kind_team)
+        else -> raw
+    }
+    "stern", "laufend", "wichtig", "angeheftet", "geschlossen" -> stringResource(if (raw == "true") R.string.button_yes else R.string.button_no)
+    "frist", "spaeterAb", "datum" -> formatDayLong(raw)
+    "sichtbarAb", "sichtbarBis" -> instantToDay(raw)?.let(::formatDayLong) ?: raw
     else -> raw
 }

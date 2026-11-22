@@ -57,6 +57,11 @@ class MeetingsViewModel(
     private val _mode = MutableStateFlow<ModeState?>(null)
     val mode: StateFlow<ModeState?> = _mode.asStateFlow()
 
+    private val _members = MutableStateFlow<List<MemberPresence>>(emptyList())
+
+    /** Die Mitglieder des Lagers (für Verantwortliche und Erwähnungen); nur Rollen, die den Höck-Modus lesen, bekommen sie. */
+    val members: StateFlow<List<MemberPresence>> = _members.asStateFlow()
+
     private val _minutes = MutableStateFlow<ApiResult<List<Minutes>>?>(null)
     val minutes: StateFlow<ApiResult<List<Minutes>>?> = _minutes.asStateFlow()
 
@@ -95,6 +100,7 @@ class MeetingsViewModel(
         _minutes.value = null
         _decisions.value = null
         _mentions.value = null
+        _members.value = emptyList()
         _notice.value = null
         _calendar.value = null
         writer.clear()
@@ -345,6 +351,14 @@ class MeetingsViewModel(
                 if (result is ApiResult.Ok || !silent || current.mode == null) current.copy(mode = result, index = index, indexSet = current.indexSet || result is ApiResult.Ok)
                 else current
             }
+        }
+    }
+
+    /** Lädt die Mitglieder für die Wahl von Verantwortlichen und Erwähnungen (über den Höck-Modus, eine Abfrage). */
+    fun loadMembers(meetingId: String) {
+        val id = campId ?: return
+        viewModelScope.launch(Background()) {
+            (api.mode(id, meetingId) as? ApiResult.Ok)?.value?.let { if (campId == id) _members.value = it.members }
         }
     }
 

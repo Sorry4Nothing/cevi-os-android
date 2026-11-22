@@ -8,6 +8,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/** Der Typ des Ziels einer Reaktion; die API kennt heute nur Beiträge der Pinnwand. */
+private const val REACTION_TARGET = "pinnwand_beitrag"
+
 /** Die Routen der Kommunikation: Pinnwand, Umfragen, Reaktionen, Eingang und Benachrichtigungen. Alle brauchen Netz. */
 class CommsApi(private val api: ApiClient) {
     // ---- Pinnwand ----
@@ -60,10 +63,10 @@ class CommsApi(private val api: ApiClient) {
         api.delete("/api/v1/lager/$campId/pinnwand/$postId/umfrage/stimme")
 
     suspend fun react(campId: String, postId: String, reaction: Reaction): ApiResult<ReactionState> =
-        api.putJson("/api/v1/lager/$campId/reaktionen/pinnwand_beitrag/$postId", buildJsonObject { put("emoji", reaction.wire) })
+        api.putJson("/api/v1/lager/$campId/reaktionen/$REACTION_TARGET/$postId", buildJsonObject { put("emoji", reaction.wire) })
 
     suspend fun unreact(campId: String, postId: String): ApiResult<Unit> =
-        api.delete("/api/v1/lager/$campId/reaktionen/pinnwand_beitrag/$postId")
+        api.delete("/api/v1/lager/$campId/reaktionen/$REACTION_TARGET/$postId")
 
     // ---- Eingang ----
 

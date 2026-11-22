@@ -73,6 +73,8 @@ fun ColumnScope.LeadershipStart(
     camp: Camp,
     onOpenTask: (String) -> Unit,
     onOpenTasks: () -> Unit,
+    onOpenTarget: (CampTarget) -> Unit = {},
+    onOpenMeeting: (String) -> Unit = {},
 ) {
     val data by vm.start.collectAsState()
     val reloads by vm.reloads.collectAsState()
@@ -107,6 +109,7 @@ fun ColumnScope.LeadershipStart(
             }
             data.meeting?.let { meeting ->
                 StartSection(R.string.start_next_meeting) {
+                    val shape = MaterialTheme.shapes.small
                     val whenText = when (val label = dayLabel(meeting.date, today)) {
                         DayLabel.Today -> stringResource(R.string.day_today)
                         DayLabel.Tomorrow -> stringResource(R.string.day_tomorrow)
@@ -114,12 +117,22 @@ fun ColumnScope.LeadershipStart(
                     }
                     val line = listOfNotNull(whenText, meeting.time?.takeIf { it.isNotBlank() }).joinToString(", ") +
                         (meeting.agendaCount?.let { ", " + pluralStringResource(R.plurals.start_agenda, it, it) } ?: "")
-                    Text(line, style = MaterialTheme.typography.bodyLarge)
-                    meeting.place?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = Sizes.touchTarget)
+                            .focusRing(shape)
+                            .clip(shape)
+                            .clickable(onClickLabel = stringResource(R.string.meetings_open), role = Role.Button) { onOpenMeeting(meeting.id) }
+                            .semantics(mergeDescendants = true) {},
+                    ) {
+                        Text(line, style = MaterialTheme.typography.bodyLarge)
+                        meeting.place?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
                 }
             }
             data.today?.let { TodaySection(it, camp) }
-            NewsSection(data.news, (tasks as? ApiResult.Ok)?.value.orEmpty(), onOpenTask)
+            NewsSection(data.news, (tasks as? ApiResult.Ok)?.value.orEmpty(), onOpenTask, onOpenTarget)
         }
     }
 }
@@ -128,7 +141,7 @@ private const val START_TASKS = 5
 
 /** Start des Teams (Entwurf L3): meine Aufgaben und was es Neues gibt. Dienste, Zimmer und Fahrten folgen mit den Schnitten A3 und A4. */
 @Composable
-fun ColumnScope.TeamStart(vm: TasksViewModel, camp: Camp, onOpenTask: (String) -> Unit, onOpenTasks: () -> Unit) {
+fun ColumnScope.TeamStart(vm: TasksViewModel, camp: Camp, onOpenTask: (String) -> Unit, onOpenTasks: () -> Unit, onOpenTarget: (CampTarget) -> Unit = {}) {
     val data by vm.start.collectAsState()
     val reloads by vm.reloads.collectAsState()
     val tasks by vm.tasks.collectAsState()
@@ -152,7 +165,7 @@ fun ColumnScope.TeamStart(vm: TasksViewModel, camp: Camp, onOpenTask: (String) -
                     if (own.size > START_TASKS) TextActionButton(stringResource(R.string.start_all_mine, own.size), onOpenTasks)
                 }
             }
-            NewsSection(data.news, state.value, onOpenTask)
+            NewsSection(data.news, state.value, onOpenTask, onOpenTarget)
         }
     }
 }
@@ -274,7 +287,7 @@ private fun TodaySection(today: CampToday, camp: Camp) {
 
 /** «Neu für dich»: die letzten Benachrichtigungen als Sätze. Sie tragen keinen Text; die Sätze entstehen aus Art und Ziel. */
 @Composable
-private fun NewsSection(news: List<Notification>?, tasks: List<CampTask>, onOpenTask: (String) -> Unit) {
+private fun NewsSection(news: List<Notification>?, tasks: List<CampTask>, onOpenTask: (String) -> Unit, onOpenTarget: (CampTarget) -> Unit) {
     val entries = news.orEmpty().filterNot { it.read }.take(NEWS_ENTRIES)
     if (entries.isEmpty()) return
     StartSection(R.string.start_news) {
@@ -282,7 +295,8 @@ private fun NewsSection(news: List<Notification>?, tasks: List<CampTask>, onOpen
             val task = if (entry.objectType.startsWith("aufgabe")) tasks.firstOrNull { it.id == entry.objectId } else null
             val text = newsText(entry.kind, task?.title)
             val shape = MaterialTheme.shapes.medium
-            val opens = entry.kind == "aufgabe_zugeteilt" || entry.kind == "aufgabe_geaendert" || entry.kind == "frist"
+            val target = campTargetFor(entry.kind, entry.objectType, entry.objectId)
+            val opens = target != CampTarget.Start && (target !is CampTarget.Task || task != null)
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -291,7 +305,15 @@ private fun NewsSection(news: List<Notification>?, tasks: List<CampTask>, onOpen
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-                    .then(if (opens && task != null) Modifier.clickable(onClickLabel = stringResource(R.string.task_open), role = Role.Button) { onOpenTask(task.id) } else Modifier)
+                    .then(
+                        if (opens) {
+                            Modifier.clickable(onClickLabel = stringResource(if (task != null) R.string.task_open else R.string.notif_open), role = Role.Button) {
+                                if (target is CampTarget.Task) onOpenTask(target.id) else onOpenTarget(target)
+                            }
+                        } else {
+                            Modifier
+                        },
+                    )
                     .semantics(mergeDescendants = true) {}
                     .padding(horizontal = Spacing.s4, vertical = Spacing.s3),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -300,13 +322,14 @@ private fun NewsSection(news: List<Notification>?, tasks: List<CampTask>, onOpen
                 Text(newsTime(entry.createdAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        TextActionButton(stringResource(R.string.notif_all), { onOpenTarget(CampTarget.Notifications) })
     }
 }
 
 private const val NEWS_ENTRIES = 3
 
 @Composable
-private fun newsText(kind: String, title: String?): String = when (kind) {
+internal fun newsText(kind: String, title: String?): String = when (kind) {
     "aufgabe_zugeteilt" -> if (title != null) stringResource(R.string.news_assigned, title) else stringResource(R.string.news_assigned_generic)
     "aufgabe_geaendert" -> if (title != null) stringResource(R.string.news_changed, title) else stringResource(R.string.news_changed_generic)
     "frist" -> if (title != null) stringResource(R.string.news_due, title) else stringResource(R.string.news_due_generic)
@@ -321,7 +344,7 @@ private fun newsText(kind: String, title: String?): String = when (kind) {
 
 /** «Heute, 20:14», «Gestern, 20:14» oder «15. März, 20:14» in der Zeit des Lagers. */
 @Composable
-private fun newsTime(iso: String): String {
+internal fun newsTime(iso: String): String {
     val zone = ZoneId.of("Europe/Zurich")
     val moment = runCatching { Instant.parse(iso).atZone(zone) }.getOrNull() ?: return iso
     val time = "%02d:%02d".format(moment.hour, moment.minute)

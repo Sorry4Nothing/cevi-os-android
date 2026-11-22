@@ -30,6 +30,8 @@ data class MeetingRights(
     /** Eigene Meldungen und Antworten lesen: auch im geschlossenen Lager (nur lesend). */
     val readOwnInbox: Boolean,
     val mentionToTask: Boolean,
+    /** Eine eigene Erwähnung als erledigt markieren (jede Rolle, solange das Lager offen ist). */
+    val markMention: Boolean,
 ) {
     companion object {
         fun of(role: CampRole, readOnly: Boolean): MeetingRights {
@@ -47,6 +49,7 @@ data class MeetingRights(
                 sendInbox = writes && (leads || role == CampRole.TEAM),
                 readOwnInbox = leads || role == CampRole.TEAM,
                 mentionToTask = writes && role != CampRole.READ_ONLY,
+                markMention = writes,
             )
         }
     }
@@ -62,6 +65,9 @@ object MeetingRules {
         meetings.filter { (parseDay(it.date) ?: LocalDate.MAX) < today }.sortedWith(byDateTime().reversed())
 
     private fun byDateTime(): Comparator<Meeting> = compareBy({ parseDay(it.date) ?: LocalDate.MAX }, { it.time.orEmpty() })
+
+    /** Der Höck mit dem spätesten Datum (bei gleichem Tag der späteste), Vorlage für «Wie der letzte». */
+    fun last(meetings: List<Meeting>): Meeting? = meetings.maxWithOrNull(byDateTime())
 
     /** Die Traktanden in der Reihenfolge, die der Server meldet (`reihenfolge`, dann ID als Gleichstand). */
     fun sorted(items: List<AgendaItem>): List<AgendaItem> = items.sortedWith(compareBy({ it.order }, { it.id }))
@@ -179,3 +185,16 @@ fun directConflict(
 
 /** Die neue Version aus dem Stand, den der Server beim Konflikt mitgeliefert hat. */
 fun conflictVersion(conflict: VersionConflict): Long? = (conflict.current["version"] as? JsonPrimitive)?.content?.toLongOrNull()
+
+private val TIME_PATTERN = Regex("""^([01]\d|2[0-3]):[0-5]\d$""")
+
+/** Eine Uhrzeit als `HH:MM` (24 Stunden), wie sie der Server für einen Höck verlangt; leer ist erlaubt (der Höck ist dann ein Tag). */
+fun isValidTime(text: String): Boolean = text.isBlank() || TIME_PATTERN.matches(text.trim())
+
+/** Ob ein Link zu einer Datei erlaubt ist: https, ohne Leerzeichen, mit Punkt im Host. Der Server prüft ihn streng noch einmal. */
+fun isValidFileLink(link: String): Boolean {
+    val text = link.trim()
+    if (!text.startsWith("https://") || text.any { it.isWhitespace() } || text.length > 2048) return false
+    val host = text.removePrefix("https://").substringBefore('/').substringBefore('?')
+    return host.contains('.') && !host.contains('@') && !host.contains(':')
+}

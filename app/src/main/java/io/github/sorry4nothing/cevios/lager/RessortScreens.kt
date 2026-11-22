@@ -124,6 +124,8 @@ fun RessortScreen(
     rights: TaskRights,
     onBack: () -> Unit,
     onOpenTask: (String) -> Unit,
+    /** Die Meldungen aus dem Eingang, die diesem Ressort zugeordnet sind; `null`, wenn die Rolle den Eingang nicht lesen darf. */
+    feedback: List<InboxEntry>? = null,
 ) {
     val bundle by vm.ressortBundle.collectAsState()
     val tasks by vm.tasks.collectAsState()
@@ -198,6 +200,21 @@ fun RessortScreen(
                     }
                     ressort.tips?.takeIf { it.isNotBlank() }?.let { tips ->
                         SectionBlock(R.string.ressort_tips) { Text(tips, style = MaterialTheme.typography.bodyLarge) }
+                    }
+                    feedback?.let { entries ->
+                        SectionBlock(R.string.ressort_feedback) {
+                            if (entries.isEmpty()) {
+                                Text(stringResource(R.string.ressort_feedback_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            entries.forEach { entry ->
+                                // Bei einer anonymen Meldung steht nur «anonym» und der Tag, nie ein Name.
+                                val who = if (entry.anonymous) stringResource(R.string.inbox_anonymous) else entry.from?.display?.takeIf { it.isNotBlank() } ?: stringResource(R.string.inbox_unknown_sender)
+                                InfoCard(description = stringResource(R.string.inbox_meta, who, formatDay(entry.createdOn)) + ", " + entry.text) {
+                                    Text(stringResource(R.string.inbox_meta, who, formatDay(entry.createdOn)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(entry.text, style = MaterialTheme.typography.bodyLarge)
+                                }
+                            }
+                        }
                     }
                     if (own.isNotEmpty()) {
                         SectionBlock(R.string.ressort_tasks) {

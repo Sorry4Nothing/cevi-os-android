@@ -27,3 +27,26 @@ class AndroidTaskTexts(private val context: Context) : TaskTexts {
         "wiederholung" to context.getString(R.string.field_repeat),
     )
 }
+
+/** Die Feldnamen des Konfliktbildschirms für Sitzungen und Kommunikation. */
+class AndroidCommsTexts(private val context: Context) : CommsTexts {
+    override fun fieldLabels(): Map<String, String> = mapOf(
+        "titel" to context.getString(R.string.field_title),
+        "text" to context.getString(R.string.field_text),
+        "entscheid" to context.getString(R.string.field_decision),
+        "status" to context.getString(R.string.field_status),
+        "datum" to context.getString(R.string.field_date),
+        "zeit" to context.getString(R.string.field_time),
+        "ort" to context.getString(R.string.field_place),
+        "gaeste" to context.getString(R.string.field_guests),
+        "art" to context.getString(R.string.field_kind),
+        "wichtig" to context.getString(R.string.field_important),
+        "angeheftet" to context.getString(R.string.field_pinned),
+        "sichtbarAb" to context.getString(R.string.field_visible_from),
+        "sichtbarBis" to context.getString(R.string.field_visible_until),
+        "antwort" to context.getString(R.string.field_reply),
+        "geschlossen" to context.getString(R.string.field_closed),
+        "verantwortlichePersonIds" to context.getString(R.string.field_responsible),
+        "empfaenger" to context.getString(R.string.field_recipients),
+    )
+}

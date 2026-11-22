@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Bundle
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.security.AppLock
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -54,7 +55,16 @@ abstract class WidgetProvider(private val kind: WidgetKind) : AppWidgetProvider(
 
     private suspend fun update(context: Context, manager: AppWidgetManager, id: Int, loader: WidgetLoader, locked: Boolean) = coroutineScope {
         val previous = WidgetMemory.read(id)
-        val job = async { loader.load(kind) }
+        // Ein Datum oder Feld, das der Server falsch liefert, lässt das Widget «Fehler» zeigen, statt die App im Hintergrund abzustürzen.
+        val job = async {
+            try {
+                loader.load(kind)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                LoadOutcome.Failed
+            }
+        }
         var outcome = withTimeoutOrNull(PLACEHOLDER_AFTER_MS) { job.await() }
         if (outcome == null) {
             if (previous == null) show(context, manager, id, WidgetScreen.Placeholder)

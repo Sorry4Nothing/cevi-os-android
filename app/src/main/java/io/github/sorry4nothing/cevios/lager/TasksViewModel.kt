@@ -465,7 +465,8 @@ class TasksViewModel(
         val id = campId ?: return
         viewModelScope.launch(Background()) {
             val (details, history) = coroutineScope {
-                val d = async { api.details(id, taskId) }
+                // Das Team darf die Details nicht lesen (404): Es fragt gar nicht erst und sieht keine Checkliste.
+                val d = async { if (rights.readAll) api.details(id, taskId) else ApiResult.Ok(TaskDetails()) }
                 val h = async { if (rights.readHistory) api.history(id, taskId) else null }
                 d.await() to h.await()
             }

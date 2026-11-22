@@ -210,8 +210,8 @@ fun TaskDetailScreen(
                 }
             }
 
-            // Checkliste
-            when (details) {
+            // Checkliste (das Team darf sie nicht lesen)
+            if (rights.readAll) when (details) {
                 null -> CardSkeleton(stringResource(R.string.task_loading), count = 1)
                 is ApiResult.Failure -> ErrorState(details.error, vm::retryDetail, Modifier.heightIn(max = 320.dp))
                 is ApiResult.Ok -> {

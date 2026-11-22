@@ -55,6 +55,17 @@ class PlanningApiTest {
     private fun bodyOf(request: mockwebserver3.RecordedRequest): JsonObject = kotlinx.serialization.json.Json.parseToJsonElement(request.body!!.utf8()).jsonObject
 
     @Test
+    fun membersReadsTheDisplayNamesForThePickers() {
+        server.enqueue(json(200, """{"mitglieder":[{"personId":"$a","name":"Biber","rolle":"leitung","ressorts":["KÜ","PR"]},{"personId":"$b","name":"Ben M.","rolle":"team","ressorts":[]}]}"""))
+        val list = (runBlocking { api.members(camp) } as ApiResult.Ok).value.members
+        assertEquals("GET /api/v1/lager/$camp/mitglieder HTTP/1.1", server.takeRequest().requestLine)
+        assertEquals(listOf("Biber", "Ben M."), list.map { it.name })
+        assertEquals(listOf("KÜ", "PR"), list.first().ressorts)
+        server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"x"}"""))
+        assertEquals(ApiError.FORBIDDEN, (runBlocking { api.members(camp) } as ApiResult.Failure).error)
+    }
+
+    @Test
     fun participantsReadsAllPagesAndKeepsTheCeviNameOnlyWhenPresent() {
         server.enqueue(json(200, """{"teilnehmer":[{"id":"$a","version":2,"vorname":"Anna","nachname":"Beispiel","stufe":"Wölfe","abgewaehlt":false,"ceviName":"Biber"}],"naechster":"$b"}"""))
         server.enqueue(json(200, """{"teilnehmer":[{"id":"$b","version":1,"vorname":"Ben","nachname":"Muster","stufe":null,"abgewaehlt":true}],"naechster":null}"""))

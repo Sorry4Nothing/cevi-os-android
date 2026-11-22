@@ -116,6 +116,15 @@ class TasksViewModel(
     private val rawTasks = MutableStateFlow<ApiResult<List<CampTask>>?>(null)
     private val rawRessorts = MutableStateFlow<ApiResult<List<Ressort>>?>(null)
 
+    private val _members = MutableStateFlow<List<TaskPerson>?>(null)
+
+    /** Die Mitglieder des Lagers für die Personenauswahl (von der Einteilung geladen); `null`, solange sie fehlen. */
+    val members: StateFlow<List<TaskPerson>?> = _members.asStateFlow()
+
+    fun setMembers(list: List<TaskPerson>?) {
+        _members.value = list
+    }
+
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie, sobald das Lager geladen ist. */
     var rights: TaskRights = TaskRights.of(NO_PERMISSIONS)
 

@@ -148,6 +148,9 @@ object TaskRules {
         return statuses.map { status -> status to (groups[status].orEmpty().sortedWith(byOrder)) }
     }
 
+    /** Wer zur Auswahl steht: die Mitglieder vom Server, solange sie fehlen (kein Recht, Fehler) alle, die in den Aufgaben stehen. */
+    fun pickable(tasks: List<CampTask>, me: TaskPerson?, members: List<TaskPerson>?): List<TaskPerson> = members ?: people(tasks, me)
+
     /** Wer in «Neues für dich» und bei «Ich übernehme» vorkommt: alle Personen, die in den Aufgaben stehen. */
     fun people(tasks: List<CampTask>, me: TaskPerson?): List<TaskPerson> {
         val all = LinkedHashMap<String, TaskPerson>()

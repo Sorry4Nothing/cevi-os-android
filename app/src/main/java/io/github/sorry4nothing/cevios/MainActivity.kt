@@ -684,6 +684,11 @@ private fun MainContent(
                 memberList.forEach { put(it.id, it.display) }
             }
         }
+        // Die Mitglieder des Lagers für die Personenauswahl; ohne das Recht `einteilung.lesen` fragt die App nicht.
+        val mayListMembers = campPermissions.may("einteilung.lesen")
+        LaunchedEffect(openedCamp?.id, mayListMembers) { if (mayListMembers) planning.loadMembers() }
+        val campMembers by planning.members.collectAsState()
+        LaunchedEffect(campMembers) { tasks.setMembers(campMembers?.map { TaskPerson(it.id, it.name) }) }
         // Konten, die andere Module schon kennen, ergänzen die Auswahl in der Einteilung (es gibt keine Route mit allen Mitgliedern).
         LaunchedEffect(taskList, memberList) {
             planning.setExtraPeople(

@@ -21,6 +21,21 @@ data class Participant(
     val fullName: String get() = "$firstName $lastName"
 }
 
+/**
+ * Ein Mitglied des Lagers für Auswahllisten (`GET /api/v1/lager/{id}/mitglieder`): `name` ist der Anzeigename des Lagers
+ * (Cevi-Name, sonst Vorname). Keine Telefonnummer, keine E-Mail; nur anzeigen, nie loggen.
+ */
+@Serializable
+data class CampMember(
+    @SerialName("personId") val personId: String,
+    val name: String,
+    @SerialName("rolle") val role: String = "",
+    @SerialName("ressorts") val ressorts: List<String> = emptyList(),
+)
+
+@Serializable
+data class CampMemberList(@SerialName("mitglieder") val members: List<CampMember> = emptyList())
+
 @Serializable
 data class ParticipantPage(@SerialName("teilnehmer") val participants: List<Participant>, @SerialName("naechster") val next: String? = null)
 

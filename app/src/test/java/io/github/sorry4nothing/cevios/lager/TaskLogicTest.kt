@@ -225,4 +225,12 @@ class TaskLogicTest {
         assertTrue(items.none { it.titleError })
         assertEquals(20, TasksViewModel.offlineItems((1..30).joinToString("\n") { "Aufgabe $it" }).size)
     }
+
+    @Test
+    fun theMembersOfTheServerReplaceThePeopleFoundInTheTasks() {
+        val inTasks = listOf(task("t1", assignee = TaskPerson("p1", "Anna")))
+        val members = listOf(TaskPerson("p2", "Ben"), TaskPerson("p3", "Cleo"))
+        assertEquals(listOf("p2", "p3"), TaskRules.pickable(inTasks, null, members).map { it.id })
+        assertEquals(listOf("p1"), TaskRules.pickable(inTasks, null, null).map { it.id })
+    }
 }

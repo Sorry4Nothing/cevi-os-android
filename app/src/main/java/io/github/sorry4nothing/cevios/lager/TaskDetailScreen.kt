@@ -96,7 +96,8 @@ fun TaskDetailScreen(
     val detail by vm.detail.collectAsState()
     val error by vm.error.collectAsState()
     val undo by vm.undo.collectAsState()
-    val people by remember(state) { mutableStateOf(TaskRules.people((state as? ApiResult.Ok)?.value.orEmpty(), vm.self)) }
+    val members by vm.members.collectAsState()
+    val people = remember(state, members) { TaskRules.pickable((state as? ApiResult.Ok)?.value.orEmpty(), vm.self, members) }
     val today = remember { todayInCamp() }
     var edit by remember { mutableStateOf<DetailEdit?>(null) }
     val back = HeaderButton(R.drawable.ic_back, stringResource(R.string.task_back)) { onBack() }

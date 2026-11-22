@@ -2,6 +2,7 @@ package io.github.sorry4nothing.cevios.lager
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.net.Background
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,8 +24,12 @@ data class PostDraft(
     val text: String = "",
     val important: Boolean = false,
     val pinned: Boolean = false,
-    /** Empfänger: leer heisst «alle». Rollen sind `leitung`, `team`, `lesen`. */
+    /** Empfänger: leer (auch ohne Ressorts, Gruppen und Personen) heisst «alle». Rollen sind `leitung`, `team`, `lesen`. */
     val roles: Set<String> = emptySet(),
+    val ressortIds: Set<String> = emptySet(),
+    val groupIds: Set<String> = emptySet(),
+    /** Einzelne Personen als Empfänger setzt die App nicht; sie bleiben beim Ändern erhalten. */
+    val peopleIds: Set<String> = emptySet(),
     val visibleFrom: String? = null,
     val visibleUntil: String? = null,
     val pollOptions: List<String> = emptyList(),
@@ -32,6 +37,29 @@ data class PostDraft(
     /** Dateien als Verknüpfung: Anzeigename und Link (https). */
     val files: List<Pair<String, String>> = emptyList(),
 )
+
+/** Wie die Empfänger eines Beitrags im Editor heissen: Ressorts und Programmgruppen des Lagers (die Oberfläche setzt sie). */
+data class RecipientChoices(val ressorts: List<Pair<String, String>> = emptyList(), val groups: List<Pair<String, String>> = emptyList()) {
+    fun ressortName(id: String): String? = ressorts.firstOrNull { it.first == id }?.second
+    fun groupName(id: String): String? = groups.firstOrNull { it.first == id }?.second
+}
+
+/** Ob sich die Empfänger gegenüber dem gespeicherten Beitrag geändert haben. «Für alle» hat keine Rollen, Ressorts, Gruppen oder Personen. */
+fun recipientsChanged(old: PostRecipients, draft: PostDraft): Boolean {
+    if (old.everyone) return draft.roles.isNotEmpty() || draft.ressortIds.isNotEmpty() || draft.groupIds.isNotEmpty() || draft.peopleIds.isNotEmpty()
+    return draft.roles != old.roles.toSet() || draft.ressortIds != old.ressortIds.toSet() || draft.groupIds != old.groupIds.toSet() || draft.peopleIds != old.people.toSet()
+}
+
+/** Der Empfänger-Teil der Anfrage; `null`, wenn der Beitrag für alle gilt. */
+fun recipientsBody(draft: PostDraft): JsonObject? {
+    if (draft.roles.isEmpty() && draft.ressortIds.isEmpty() && draft.groupIds.isEmpty() && draft.peopleIds.isEmpty()) return null
+    return buildJsonObject {
+        put("rollen", JsonArray(draft.roles.map(::JsonPrimitive)))
+        put("personen", JsonArray(draft.peopleIds.map(::JsonPrimitive)))
+        put("ressortIds", JsonArray(draft.ressortIds.map(::JsonPrimitive)))
+        put("gruppeIds", JsonArray(draft.groupIds.map(::JsonPrimitive)))
+    }
+}
 
 /** Hinweis nach dem Senden einer Meldung: bei einer anonymen steht der Rückfragecode hier, genau einmal. */
 class SentInbox(val anonymous: Boolean, val code: String?)
@@ -55,6 +83,18 @@ class CommsViewModel(
 
     private val _posts = MutableStateFlow<ApiResult<List<Post>>?>(null)
     val posts: StateFlow<ApiResult<List<Post>>?> = _posts.asStateFlow()
+
+    private val _choices = MutableStateFlow(RecipientChoices())
+
+    /** Ressorts und Gruppen für die Empfängerwahl und für die Namen auf den Karten. */
+    val choices: StateFlow<RecipientChoices> = _choices.asStateFlow()
+
+    fun setChoices(choices: RecipientChoices) {
+        _choices.value = choices
+    }
+
+    /** Beiträge, die ich schon gemeldet habe oder bei denen die Meldung nicht geht (nicht lesbar): Sie werden nicht nochmals gemeldet. */
+    private val reportedSeen = mutableSetOf<String>()
 
     private val _inbox = MutableStateFlow<ApiResult<List<InboxEntry>>?>(null)
     val inbox: StateFlow<ApiResult<List<InboxEntry>>?> = _inbox.asStateFlow()
@@ -96,6 +136,8 @@ class CommsViewModel(
 
     private fun reset() {
         _posts.value = null
+        _choices.value = RecipientChoices()
+        reportedSeen.clear()
         _inbox.value = null
         _own.value = null
         _sent.value = null
@@ -131,6 +173,38 @@ class CommsViewModel(
             val result = api.posts(id, all)
             if (campId != id) return@launch
             if (result is ApiResult.Ok || !silent || _posts.value == null) _posts.value = result
+        }
+    }
+
+    /**
+     * Meldet die sichtbaren Beiträge, die ich noch nicht gesehen habe, einmal je Beitrag (gebündelt, höchstens 50). Ein Beitrag
+     * ausserhalb des Zeitfensters oder nicht für mich bestimmt (die Bearbeitenden sehen auch diese) lässt die Sammelmeldung mit 404
+     * scheitern: Dann geht jeder einzeln, und was nicht geht, bleibt still. Ein Netzfehler versucht es beim nächsten Laden wieder.
+     */
+    fun reportSeen(posts: List<Post>, now: java.time.Instant = java.time.Instant.now()) {
+        val id = campId ?: return
+        if (!rights.readPinboard) return
+        val fresh = posts.filter { !it.seen.own && postState(it, now) == PostWindow.VISIBLE && it.id !in reportedSeen }.map { it.id }.take(SEEN_BATCH)
+        if (fresh.isEmpty()) return
+        reportedSeen += fresh
+        viewModelScope.launch(Background()) {
+            when (val result = api.markSeen(id, fresh)) {
+                is ApiResult.Ok -> markSeenLocally(fresh)
+                is ApiResult.Failure -> when {
+                    result.error == ApiError.NETWORK -> reportedSeen -= fresh.toSet()
+                    fresh.size > 1 && result.error == ApiError.NOT_FOUND -> fresh.forEach { post ->
+                        if (api.markOneSeen(id, post) is ApiResult.Ok) markSeenLocally(listOf(post))
+                    }
+                    else -> Unit
+                }
+            }
+        }
+    }
+
+    private fun markSeenLocally(ids: List<String>) {
+        _posts.update { current ->
+            val ok = current as? ApiResult.Ok ?: return@update current
+            ApiResult.Ok(ok.value.map { if (it.id in ids && !it.seen.own) it.copy(seen = it.seen.copy(count = it.seen.count + 1, own = true)) else it })
         }
     }
 
@@ -203,12 +277,7 @@ class CommsViewModel(
         put("angeheftet", draft.pinned)
         draft.visibleFrom?.let { from -> dayStartInstant(from)?.let { put("sichtbarAb", it) } }
         draft.visibleUntil?.let { until -> dayEndInstant(until)?.let { put("sichtbarBis", it) } }
-        if (draft.roles.isNotEmpty()) {
-            put("empfaenger", buildJsonObject {
-                put("rollen", JsonArray(draft.roles.map(::JsonPrimitive)))
-                put("personen", JsonArray(emptyList()))
-            })
-        }
+        recipientsBody(draft)?.let { put("empfaenger", it) }
         if (fileIds.isNotEmpty()) put("dateiIds", JsonArray(fileIds.map(::JsonPrimitive)))
     }
 
@@ -456,3 +525,5 @@ class CommsViewModel(
 
 private fun ReactionState.without(reaction: Reaction): ReactionState =
     copy(counts = counts + (reaction.wire to ((counts[reaction.wire] ?: 1) - 1).coerceAtLeast(0)), own = null)
+
+private const val SEEN_BATCH = 50

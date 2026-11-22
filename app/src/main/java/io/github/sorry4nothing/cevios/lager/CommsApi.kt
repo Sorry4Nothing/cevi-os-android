@@ -32,6 +32,12 @@ class CommsApi(private val api: ApiClient) {
         return ApiResult.Ok(result)
     }
 
+    /** Meldet Beiträge als gesehen (höchstens 50, idempotent). 404, wenn die Person einen davon nicht lesen darf: dann ist nichts gemeldet. */
+    suspend fun markSeen(campId: String, postIds: List<String>): ApiResult<Unit> =
+        api.putAction("/api/v1/lager/$campId/pinnwand/gesehen", buildJsonObject { put("beitragIds", JsonArray(postIds.map(::JsonPrimitive))) })
+
+    suspend fun markOneSeen(campId: String, postId: String): ApiResult<Unit> = api.putWithoutBody("/api/v1/lager/$campId/pinnwand/$postId/gesehen")
+
     suspend fun createPost(campId: String, body: JsonObject): ApiResult<Post> = api.post("/api/v1/lager/$campId/pinnwand", body)
 
     suspend fun changePost(campId: String, postId: String, body: JsonObject): ApiResult<Post> =

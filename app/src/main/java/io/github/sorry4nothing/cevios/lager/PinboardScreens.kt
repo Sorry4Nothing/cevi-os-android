@@ -127,6 +127,7 @@ fun PinboardScreen(
             null -> CardSkeleton(stringResource(R.string.pinboard_loading))
             is ApiResult.Failure -> ErrorState(result.error, { vm.loadPosts() })
             is ApiResult.Ok -> {
+                LaunchedEffect(result.value) { vm.reportSeen(result.value) }
                 if (result.value.isEmpty()) {
                     StatePage(R.drawable.ic_pin, stringResource(R.string.pinboard_empty_title), stringResource(R.string.pinboard_empty_text)) {
                         if (rights.editPinboard) PrimaryButton(stringResource(R.string.pinboard_new), onNewPost, icon = R.drawable.ic_plus)
@@ -168,9 +169,11 @@ private fun PostCard(post: Post, rights: MeetingRights, now: Instant, vm: CommsV
     val open = rememberLinkOpener()
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
+    var seenBy by remember { mutableStateOf(false) }
     val window = postState(post, now)
     val copiedText = stringResource(R.string.post_copied)
-    val audience = audienceText(post)
+    val choices by vm.choices.collectAsState()
+    val audience = audienceText(post, choices)
     val until = instantToDay(post.visibleUntil)?.let { stringResource(R.string.post_visible_until, formatDay(it)) }
     val meta = listOfNotNull(audience, until).joinToString(", ")
     val author = post.author?.display?.takeIf { it.isNotBlank() }
@@ -188,16 +191,26 @@ private fun PostCard(post: Post, rights: MeetingRights, now: Instant, vm: CommsV
         if (post.text.isNotBlank()) Text(post.text, style = MaterialTheme.typography.bodyLarge)
         Text(meta, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         author?.let { Text(stringResource(R.string.post_by, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        // Die Zahl sehen die, die die Pinnwand bearbeiten (die Namen auch, über das Menü der Karte).
+        if (rights.editPinboard) Text(pluralStringResource(R.plurals.post_seen, post.seen.count, post.seen.count), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         post.files.forEach { file -> FileRow(file) { open(file.link) } }
         ReactionRow(post, rights.interact, vm)
         TextActionButton(stringResource(R.string.post_copy), { copyToClipboard(context, copyText(post)); vm.showNotice(copiedText) })
         post.poll?.let { poll -> PollBlock(post, poll, rights, vm) }
+    }
+    if (seenBy) {
+        CeviDialog(
+            title = stringResource(R.string.post_seen_by),
+            onDismiss = { seenBy = false },
+            confirmButton = { PrimaryButton(stringResource(R.string.close), { seenBy = false }) },
+        ) { DialogText(post.seen.people.orEmpty().joinToString(", ") { it.display }) }
     }
     if (menu) {
         ActionSheet(
             post.title,
             buildList {
                 add(stringResource(R.string.post_edit) to onEdit)
+                post.seen.people?.takeIf { it.isNotEmpty() }?.let { add(stringResource(R.string.post_seen_by) to { seenBy = true }) }
                 add(stringResource(if (post.pinned) R.string.post_unpin else R.string.post_pin) to { vm.setPinned(post, !post.pinned, post.title) })
                 post.poll?.let { poll ->
                     add(stringResource(if (poll.closed) R.string.poll_reopen else R.string.poll_close) to { vm.closePoll(post, !poll.closed, post.title) })
@@ -210,14 +223,18 @@ private fun PostCard(post: Post, rights: MeetingRights, now: Instant, vm: CommsV
 }
 
 @Composable
-private fun audienceText(post: Post): String {
+private fun audienceText(post: Post, choices: RecipientChoices): String {
     val r = post.recipients
-    return if (r.everyone || (r.roles.isEmpty() && r.people.isEmpty())) {
-        stringResource(R.string.post_to_all)
-    } else {
-        val roles = r.roles.map { stringResource(roleText(it)) }
-        stringResource(R.string.post_to, (roles + if (r.people.isNotEmpty()) listOf(pluralStringResource(R.plurals.post_persons, r.people.size, r.people.size)) else emptyList()).joinToString(", "))
-    }
+    val ressorts = r.ressortIds.mapNotNull(choices::ressortName)
+    val groups = r.groupIds.mapNotNull(choices::groupName)
+    // Namen, die die App nicht kennt (kein Recht, Ressorts oder Gruppen zu lesen), zählt sie nur.
+    val parts = r.roles.map { stringResource(roleText(it)) } +
+        ressorts.map { stringResource(R.string.recipient_ressort, it) } +
+        (r.ressortIds.size - ressorts.size).takeIf { it > 0 }?.let { listOf(pluralStringResource(R.plurals.post_ressorts, it, it)) }.orEmpty() +
+        groups.map { stringResource(R.string.recipient_group, it) } +
+        (r.groupIds.size - groups.size).takeIf { it > 0 }?.let { listOf(pluralStringResource(R.plurals.post_groups, it, it)) }.orEmpty() +
+        r.people.size.takeIf { it > 0 }?.let { listOf(pluralStringResource(R.plurals.post_persons, it, it)) }.orEmpty()
+    return if (r.everyone || parts.isEmpty()) stringResource(R.string.post_to_all) else stringResource(R.string.post_to, parts.joinToString(", "))
 }
 
 private fun roleText(role: String): Int = when (role) {
@@ -375,11 +392,13 @@ fun PostEditorScreen(
                 PostDraft(
                     title = it.title, text = it.text, important = it.important, pinned = it.pinned,
                     roles = if (it.recipients.everyone) emptySet() else it.recipients.roles.toSet(),
+                    ressortIds = it.recipients.ressortIds.toSet(), groupIds = it.recipients.groupIds.toSet(), peopleIds = it.recipients.people.toSet(),
                     visibleFrom = instantToDay(it.visibleFrom), visibleUntil = instantToDay(it.visibleUntil),
                 )
             } ?: PostDraft(),
         )
     }
+    val choices by vm.choices.collectAsState()
     var showErrors by remember { mutableStateOf(false) }
     var datePicking by remember { mutableStateOf<String?>(null) }
     var addingFile by remember { mutableStateOf(false) }
@@ -405,11 +424,28 @@ fun PostEditorScreen(
             LabeledTextField(stringResource(R.string.post_field_text), draft.text, { draft = draft.copy(text = it) }, 10000, Modifier.fillMaxWidth(), minLines = 4)
             Text(stringResource(R.string.post_field_recipients), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                PickPill(stringResource(R.string.recipient_all), draft.roles.isEmpty(), { draft = draft.copy(roles = emptySet()) }, role = Role.Checkbox)
+                PickPill(
+                    stringResource(R.string.recipient_all), draft.roles.isEmpty() && draft.ressortIds.isEmpty() && draft.groupIds.isEmpty() && draft.peopleIds.isEmpty(),
+                    { draft = draft.copy(roles = emptySet(), ressortIds = emptySet(), groupIds = emptySet(), peopleIds = emptySet()) }, role = Role.Checkbox,
+                )
                 listOf("leitung", "team", "lesen").forEach { role ->
                     PickPill(
                         stringResource(roleText(role)), role in draft.roles,
                         { draft = draft.copy(roles = if (role in draft.roles) draft.roles - role else draft.roles + role) },
+                        role = Role.Checkbox,
+                    )
+                }
+                choices.ressorts.forEach { (id, name) ->
+                    PickPill(
+                        stringResource(R.string.recipient_ressort, name), id in draft.ressortIds,
+                        { draft = draft.copy(ressortIds = if (id in draft.ressortIds) draft.ressortIds - id else draft.ressortIds + id) },
+                        role = Role.Checkbox,
+                    )
+                }
+                choices.groups.forEach { (id, name) ->
+                    PickPill(
+                        stringResource(R.string.recipient_group, name), id in draft.groupIds,
+                        { draft = draft.copy(groupIds = if (id in draft.groupIds) draft.groupIds - id else draft.groupIds + id) },
                         role = Role.Checkbox,
                     )
                 }
@@ -492,9 +528,9 @@ private fun postFields(old: Post, draft: PostDraft): Map<String, JsonElement> = 
     if (draft.pinned != old.pinned) put("angeheftet", JsonPrimitive(draft.pinned))
     if (draft.visibleFrom != instantToDay(old.visibleFrom)) put("sichtbarAb", draft.visibleFrom?.let { dayStartInstant(it) }?.let(::JsonPrimitive) ?: JsonNull)
     if (draft.visibleUntil != instantToDay(old.visibleUntil)) put("sichtbarBis", draft.visibleUntil?.let { dayEndInstant(it) }?.let(::JsonPrimitive) ?: JsonNull)
-    val oldRoles = if (old.recipients.everyone) emptySet() else old.recipients.roles.toSet()
-    if (draft.roles != oldRoles) {
-        put("empfaenger", JsonObject(mapOf("rollen" to JsonArray(draft.roles.map(::JsonPrimitive)), "personen" to JsonArray(emptyList()))))
+    // Ohne Empfänger gilt der Beitrag für alle: Dann gehen leere Listen hinaus (die Route liest sie so).
+    if (recipientsChanged(old.recipients, draft)) {
+        put("empfaenger", recipientsBody(draft) ?: JsonObject(mapOf("rollen" to JsonArray(emptyList()), "personen" to JsonArray(emptyList()), "ressortIds" to JsonArray(emptyList()), "gruppeIds" to JsonArray(emptyList()))))
     }
 }
 

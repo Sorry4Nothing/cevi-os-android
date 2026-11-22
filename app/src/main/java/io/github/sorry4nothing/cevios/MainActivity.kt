@@ -38,6 +38,7 @@ import io.github.sorry4nothing.cevios.lager.MentionsScreen
 import io.github.sorry4nothing.cevios.lager.MinutesScreen
 import io.github.sorry4nothing.cevios.lager.PinboardScreen
 import io.github.sorry4nothing.cevios.lager.PostEditorScreen
+import io.github.sorry4nothing.cevios.lager.RecipientChoices
 import io.github.sorry4nothing.cevios.lager.TaskRules
 import io.github.sorry4nothing.cevios.lager.campTargetFor
 import io.github.sorry4nothing.cevios.lager.todayInCamp
@@ -667,6 +668,18 @@ private fun MainContent(
         val liveRights = LiveRights.of(campPermissions)
         val archiveRights = ArchiveRights.of(campPermissions)
         SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
+        // Wer Mitteilungen schreibt, wählt auch Ressorts und Gruppen als Empfänger; ohne Recht bleiben die Listen leer.
+        val recipientRessorts = (tasks.ressorts.collectAsState().value as? ApiResult.Ok)?.value
+        val recipientGroups = (planning.groups.collectAsState().value as? ApiResult.Ok)?.value?.groups
+        LaunchedEffect(campId, meetingRights.editPinboard) {
+            if (campId != null && meetingRights.editPinboard) {
+                if (rights.readRessorts) tasks.loadRessortsIfNeeded()
+                planning.loadGroups(silent = true)
+            }
+        }
+        LaunchedEffect(recipientRessorts, recipientGroups) {
+            comms.setChoices(RecipientChoices(recipientRessorts.orEmpty().map { it.id to it.name }, recipientGroups.orEmpty().map { it.id to it.name }))
+        }
         // Wer die Konfliktlösung offen hat: ein Konflikt aus den Sitzungen oder der Kommunikation (ohne Warteschlange).
         val meetingConflict by meetings.writer.conflict.collectAsState()
         val commsConflict by comms.writer.conflict.collectAsState()

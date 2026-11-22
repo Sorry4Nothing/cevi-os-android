@@ -209,6 +209,21 @@
     <string name="post_delete_title">«%1$s» löschen?</string>
     <string name="post_delete_text">Die Mitteilung verschwindet für alle.</string>
     <string name="recipient_all">Alle</string>
+    <string name="recipient_ressort">%1$s</string>
+    <string name="recipient_group">Gruppe %1$s</string>
+    <plurals name="post_ressorts">
+        <item quantity="one">%d Ressort</item>
+        <item quantity="other">%d Ressorts</item>
+    </plurals>
+    <plurals name="post_groups">
+        <item quantity="one">%d Gruppe</item>
+        <item quantity="other">%d Gruppen</item>
+    </plurals>
+    <plurals name="post_seen">
+        <item quantity="one">%d Person hat es gesehen</item>
+        <item quantity="other">%d Personen haben es gesehen</item>
+    </plurals>
+    <string name="post_seen_by">Wer hat es gesehen</string>
     <string name="recipient_leadership">Leitung</string>
     <string name="recipient_team">Team</string>
     <string name="recipient_read">Lesende</string>

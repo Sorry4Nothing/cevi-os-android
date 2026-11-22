@@ -243,12 +243,13 @@ class PlanningApiTest {
     }
 
     @Test
-    fun scheduleReadsDaysAndSectionsAndIgnoresMilestones() {
-        server.enqueue(json(200, """{"meilensteine":[{"id":"$a"}],"lagertage":[{"id":"$a","version":1,"datum":"2027-07-17","label":null}],"tagesabschnitte":[{"id":"$b","version":1,"name":"Vormittag","zeit":"08:00","reihenfolge":1}]}"""))
+    fun scheduleReadsDaysSectionsAndMilestones() {
+        server.enqueue(json(200, """{"meilensteine":[{"id":"$a","version":1,"titel":"Lagerhaus fest","datum":"2027-03-03","art":null}],"lagertage":[{"id":"$a","version":1,"datum":"2027-07-17","label":null}],"tagesabschnitte":[{"id":"$b","version":1,"name":"Vormittag","zeit":"08:00","reihenfolge":1}]}"""))
         val schedule = (runBlocking { api.schedule(camp) } as ApiResult.Ok).value
         assertEquals("GET /api/v1/lager/$camp/zeitplan HTTP/1.1", server.takeRequest().requestLine)
         assertEquals("2027-07-17", schedule.days.single().date)
         assertEquals("Vormittag", schedule.sections.single().name)
+        assertEquals("Lagerhaus fest", schedule.milestones.single().title)
     }
 
     @Test

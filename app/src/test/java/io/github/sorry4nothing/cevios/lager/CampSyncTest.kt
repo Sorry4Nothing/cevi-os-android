@@ -84,6 +84,20 @@ class CampSyncTest {
     }
 
     @Test
+    fun aFailedSecondPageKeepsTheSequenceSoNothingIsLost() {
+        server.enqueue(json(200, """{"seq":10,"objekttypen":["aufgabe"]}"""))
+        server.enqueue(json(200, """{"eintraege":[${entry(11, "aufgabe")}],"bis":11,"weitere":true}"""))
+        server.enqueue(json(500, """{"code":"FEHLER","message":"x"}"""))
+        server.enqueue(json(200, """{"eintraege":[${entry(11, "aufgabe")}],"bis":11,"weitere":false}"""))
+        runBlocking { sync.baseline() }
+        assertTrue(runBlocking { sync.pull() } is PullResult.Failed)
+        assertEquals(10L, sync.seq)
+        val done = runBlocking { sync.pull() } as PullResult.Done
+        assertEquals(setOf("aufgabe"), done.change!!.types)
+        assertEquals(11L, sync.seq)
+    }
+
+    @Test
     fun anEmptyPageIsNoChangeButMovesOn() {
         server.enqueue(json(200, """{"seq":10,"objekttypen":[]}"""))
         server.enqueue(json(200, """{"eintraege":[],"bis":15,"weitere":false}"""))

@@ -123,8 +123,11 @@ class CampSync(private val api: CampApi, private val campId: String) {
                     // Ohne Fortschritt der Folgenummer endet die Schleife, auch wenn der Server «weitere» meldet.
                     val advanced = page.value.until > current
                     current = page.value.until
-                    seq = current
-                    if (!page.value.more || !advanced) return PullResult.Done(if (count == 0) null else CampChange(current, types, count, deleted = deleted, changed = changed))
+                    // Die Folgenummer rückt erst vor, wenn alle Seiten da sind: Scheitert die zweite, fragt der nächste Versuch die erste nochmals ab.
+                    if (!page.value.more || !advanced) {
+                        seq = current
+                        return PullResult.Done(if (count == 0) null else CampChange(current, types, count, deleted = deleted, changed = changed))
+                    }
                 }
             }
         }

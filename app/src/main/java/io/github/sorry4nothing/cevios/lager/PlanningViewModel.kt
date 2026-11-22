@@ -157,12 +157,16 @@ class PlanningViewModel(
         _notice.value = null
     }
 
-    private fun <T> launchLoad(target: MutableStateFlow<ApiResult<T>?>, silent: Boolean, fetch: suspend (String) -> ApiResult<T>, after: () -> Unit = {}) {
+    /** `current` fragt, ob die Antwort noch zur Anfrage passt (zum Beispiel der Filter der Abzählliste); sonst fällt sie weg. */
+    private fun <T> launchLoad(
+        target: MutableStateFlow<ApiResult<T>?>, silent: Boolean, fetch: suspend (String) -> ApiResult<T>,
+        after: () -> Unit = {}, current: () -> Boolean = { true },
+    ) {
         val id = campId ?: return
         viewModelScope.launch(Background()) {
             if (!silent) target.value = null
             val result = fetch(id)
-            if (campId != id) return@launch
+            if (campId != id || !current()) return@launch
             if (result is ApiResult.Ok || !silent || target.value == null) target.value = result
             after()
         }
@@ -174,15 +178,13 @@ class PlanningViewModel(
         writer.dismissError()
         _busy.value = true
         viewModelScope.launch {
-            when (val result = call(id)) {
-                is ApiResult.Ok -> {
-                    _busy.value = false
-                    onOk(result.value)
-                }
-                is ApiResult.Failure -> {
-                    _busy.value = false
-                    writer.fail(result, retry)
-                }
+            val result = call(id)
+            _busy.value = false
+            // Das Lager ist unterdessen zu oder gewechselt: Weder Fehler noch Folgeaktion gehören noch zu dieser Ansicht.
+            if (campId != id) return@launch
+            when (result) {
+                is ApiResult.Ok -> onOk(result.value)
+                is ApiResult.Failure -> writer.fail(result, retry)
             }
         }
     }
@@ -268,14 +270,21 @@ class PlanningViewModel(
     fun removeFromRoom(roomId: String, member: RoomMember): Unit =
         send({ removeFromRoom(roomId, member) }, { api.removeFromRoom(it, roomId, ids(member, true), ids(member, false)) }) { loadRooms(silent = true) }
 
-    /** Verschiebt eine Person in ein anderes Zimmer: erst heraus, dann hinein (der Server lässt niemanden in zwei Zimmern liegen). */
-    fun moveToRoom(fromId: String, toId: String, member: RoomMember): Unit =
-        send({ moveToRoom(fromId, toId, member) }, {
-            when (val out = api.removeFromRoom(it, fromId, ids(member, true), ids(member, false))) {
-                is ApiResult.Failure -> out
-                is ApiResult.Ok -> api.assignToRoom(it, toId, ids(member, true), ids(member, false))
-            }
+    /**
+     * Verschiebt eine Person in ein anderes Zimmer: erst heraus, dann hinein (der Server lässt niemanden in zwei Zimmern liegen).
+     * Scheitert das Hinein, wiederholt «Nochmals versuchen» nur noch das Hinein; die Liste lädt neu und zeigt, wo die Person liegt.
+     */
+    fun moveToRoom(fromId: String, toId: String, member: RoomMember, removed: Boolean = false) {
+        var gone = removed
+        send({ moveToRoom(fromId, toId, member, gone) }, { id ->
+            moveInTwoSteps(
+                gone,
+                { api.removeFromRoom(id, fromId, ids(member, true), ids(member, false)) },
+                { api.assignToRoom(id, toId, ids(member, true), ids(member, false)) },
+                { gone = true },
+            ).also { if (it is ApiResult.Failure && gone) loadRooms(silent = true) }
         }) { loadRooms(silent = true) }
+    }
 
     private fun ids(member: RoomMember, participants: Boolean): List<String> = if (member.isParticipant == participants) listOf(member.id) else emptyList()
 
@@ -317,14 +326,21 @@ class PlanningViewModel(
     fun removePassenger(trip: Trip, passenger: TripPerson): Unit =
         remove(passenger.version, { id, v -> api.removePassenger(id, trip.id, passenger.copy(version = v)) }, { loadTrips() }) { loadTrips(silent = true) }
 
-    /** Verschiebt eine mitfahrende Person in eine andere Fahrt derselben Richtung (erst heraus, dann hinein). */
-    fun movePassenger(from: Trip, passenger: TripPerson, to: Trip): Unit =
-        send({ movePassenger(from, passenger, to) }, { id ->
-            when (val out = api.removePassenger(id, from.id, passenger)) {
-                is ApiResult.Failure -> out
-                is ApiResult.Ok -> api.addPassenger(id, to.id, TripCandidate(passenger.personId, passenger.teilnehmerId, passenger.name, passenger.stage))
-            }
+    /**
+     * Verschiebt eine mitfahrende Person in eine andere Fahrt derselben Richtung (erst heraus, dann hinein). Scheitert das Hinein,
+     * wiederholt «Nochmals versuchen» nur noch das Hinein (die alte Zeile gibt es nicht mehr); die Liste lädt neu.
+     */
+    fun movePassenger(from: Trip, passenger: TripPerson, to: Trip, removed: Boolean = false) {
+        var gone = removed
+        send({ movePassenger(from, passenger, to, gone) }, { id ->
+            moveInTwoSteps(
+                gone,
+                { api.removePassenger(id, from.id, passenger) },
+                { api.addPassenger(id, to.id, TripCandidate(passenger.personId, passenger.teilnehmerId, passenger.name, passenger.stage)) },
+                { gone = true },
+            ).also { if (it is ApiResult.Failure && gone) loadTrips(silent = true) }
         }) { loadTrips(silent = true) }
+    }
 
     // ---- Gruppen ----
 
@@ -435,7 +451,7 @@ class PlanningViewModel(
 
     fun loadCount(silent: Boolean = false) {
         val f = _filter.value
-        launchLoad(_count, silent, { api.count(it, f.team, f.stage, f.groupId) })
+        launchLoad(_count, silent, { api.count(it, f.team, f.stage, f.groupId) }, current = { _filter.value == f })
     }
 
     fun setFilter(filter: CountFilter) {

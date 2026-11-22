@@ -1,5 +1,6 @@
 package io.github.sorry4nothing.cevios.lager
 
+import io.github.sorry4nothing.cevios.net.ApiResult
 import java.time.LocalDate
 import java.util.Locale
 
@@ -135,6 +136,25 @@ object PlanRules {
 
 /** Wählt in einer Liste von Schlüsseln aus oder ab (Mehrfachauswahl in den Blättern). */
 fun <T> Set<T>.toggled(item: T): Set<T> = if (item in this) this - item else this + item
+
+/**
+ * Verschiebt eine Person in zwei Schritten: erst heraus, dann hinein (der Server lässt niemanden an zwei Orten sitzen, Hinzufügen
+ * zuerst geht darum nicht). Scheitert das Hinein, ist die Person schon heraus: `onRemoved` meldet es, und ein neuer Versuch
+ * (`removed = true`) macht nur noch den zweiten Schritt. So bleibt der Zustand nach einem Fehler wiederholbar.
+ */
+suspend fun <T> moveInTwoSteps(
+    removed: Boolean,
+    remove: suspend () -> ApiResult<*>,
+    add: suspend () -> ApiResult<T>,
+    onRemoved: () -> Unit,
+): ApiResult<T> {
+    if (!removed) {
+        val out = remove()
+        if (out is ApiResult.Failure) return out
+        onRemoved()
+    }
+    return add()
+}
 
 /** Wie «Anna Beispiel» in Kurzform für Avatare: Vorname, sonst Name. */
 fun shortName(display: String): String = display.substringBefore(" (").trim()

@@ -210,14 +210,14 @@ private fun roleLine(profile: Profile): String {
             add(profile.children.mapNotNull { it.firstName.takeIf(String::isNotBlank) }.joinToString(", "))
         }
     }
-    return parts.filter { it.isNotEmpty() }.joinToString(" · ")
+    return parts.filter { it.isNotEmpty() }.joinToString(", ")
 }
 
 @Composable
 private fun SectionTitle(@StringRes text: Int) {
     Text(
-        stringResource(text).uppercase(),
-        style = Eyebrow,
+        stringResource(text),
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 6.dp, top = Spacing.s3, bottom = 2.dp).semantics { heading() },
     )

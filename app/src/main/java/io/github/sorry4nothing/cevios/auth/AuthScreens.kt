@@ -141,10 +141,10 @@ private fun LogoPage(
     }
 }
 
-/** Zeile über dem Titel: Name der Abteilung in Akzentfarbe. */
+/** Zeile unter dem grossen Titel: Name der Abteilung. */
 @Composable
-private fun DepartmentEyebrow() {
-    Text(stringResource(R.string.department).uppercase(), style = Eyebrow, color = MaterialTheme.cevi.accent)
+private fun DepartmentLine() {
+    Text(stringResource(R.string.department), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 /** Startbildschirm, solange die App den Server fragt, ob eine Sitzung besteht. */
@@ -152,12 +152,12 @@ private fun DepartmentEyebrow() {
 fun StartScreen() {
     LogoPage(
         top = {
-            DepartmentEyebrow()
             Text(
                 stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displayMedium,
                 modifier = Modifier.semantics { heading() },
             )
+            DepartmentLine()
             Text(
                 stringResource(R.string.start_loading),
                 style = MaterialTheme.typography.bodyMedium,
@@ -183,12 +183,12 @@ fun LoginScreen(form: FormState, onSignIn: (String, String) -> Unit) {
     val submit = { if (ready && !form.running) onSignIn(username, password) }
     LogoPage(
         top = {
-            DepartmentEyebrow()
             Text(
                 stringResource(R.string.login_title),
                 style = MaterialTheme.typography.displayMedium,
                 modifier = Modifier.semantics { heading() },
             )
+            DepartmentLine()
         },
         bottom = {
             Column(
@@ -392,12 +392,12 @@ fun LockedScreen(form: FormState, onUnlock: () -> Unit, onUsePassword: () -> Uni
     LaunchedEffect(Unit) { onUnlock() }
     LogoPage(
         top = {
-            DepartmentEyebrow()
             Text(
                 stringResource(R.string.lock_title),
                 style = MaterialTheme.typography.displayMedium,
                 modifier = Modifier.semantics { heading() },
             )
+            DepartmentLine()
             Text(
                 stringResource(R.string.lock_text),
                 style = MaterialTheme.typography.bodyMedium,
@@ -448,7 +448,6 @@ fun WelcomeScreen(
                     Text(stringResource(R.string.password_saved), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.cevi.onSuccessContainer)
                 }
             }
-            DepartmentEyebrow()
             val focus = remember { FocusRequester() }
             LaunchedEffect(Unit) { focus.requestFocus() }
             Text(
@@ -456,6 +455,7 @@ fun WelcomeScreen(
                 style = MaterialTheme.typography.displayMedium,
                 modifier = Modifier.focusRequester(focus).focusTarget().semantics { heading() },
             )
+            DepartmentLine()
             Column(Modifier.padding(top = Spacing.s3), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 WelcomePoint(R.drawable.ic_calendar, R.string.welcome_programs, R.string.welcome_programs_text)
                 WelcomePoint(R.drawable.ic_check, R.string.welcome_rsvp, R.string.welcome_rsvp_text)

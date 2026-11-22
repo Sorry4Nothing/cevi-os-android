@@ -38,7 +38,19 @@ class SseParser {
 private data class EventData(val bis: Long? = null)
 
 /** Was nach dem Abfragen des Feeds neu ist: die Objekttypen und die Zahl der Einträge; bei `reload` laden die Module ihre Listen neu. */
-data class CampChange(val seq: Long, val types: Set<String>, val count: Int, val reload: Boolean = false) {
+data class CampChange(
+    val seq: Long,
+    val types: Set<String>,
+    val count: Int,
+    val reload: Boolean = false,
+    /** Zeilen, die der Feed als gelöscht meldet, je Objekttyp (`art` = `geloescht`). */
+    val deleted: Map<String, Set<String>> = emptyMap(),
+    /** Zeilen, die der Feed als geändert meldet (`art` = `geaendert`): zum Beispiel ein geleerter Verweis auf eine gelöschte Zeile. */
+    val changed: Map<String, Set<String>> = emptyMap(),
+) {
+    /** Die IDs aller gelöschten Zeilen; eine ID gehört nie zu zwei Typen, die Module streichen sie aus ihren Listen. */
+    val deletedIds: Set<String> get() = deleted.values.flatten().toSet()
+
     companion object {
         /** Kein Objekttyp des Servers: Die Warteschlange hat Änderungen gesendet, die Module laden ihre Listen neu. */
         const val QUEUE_SENT = "_gesendet"
@@ -85,6 +97,8 @@ class CampSync(private val api: CampApi, private val campId: String) {
             is ApiResult.Failure -> PullResult.Failed(state.error, state.retryAfterSeconds)
         }
         val types = linkedSetOf<String>()
+        val deleted = mutableMapOf<String, MutableSet<String>>()
+        val changed = mutableMapOf<String, MutableSet<String>>()
         var count = 0
         while (true) {
             when (val page = api.feed(campId, current)) {
@@ -98,13 +112,19 @@ class CampSync(private val api: CampApi, private val campId: String) {
                         PullResult.Failed(page.error, page.retryAfterSeconds)
                     }
                 is ApiResult.Ok -> {
-                    page.value.entries.forEach { types += it.type }
+                    page.value.entries.forEach { entry ->
+                        types += entry.type
+                        when (entry.kind) {
+                            FEED_DELETED -> deleted.getOrPut(entry.type) { linkedSetOf() } += entry.id
+                            FEED_CHANGED -> changed.getOrPut(entry.type) { linkedSetOf() } += entry.id
+                        }
+                    }
                     count += page.value.entries.size
                     // Ohne Fortschritt der Folgenummer endet die Schleife, auch wenn der Server «weitere» meldet.
                     val advanced = page.value.until > current
                     current = page.value.until
                     seq = current
-                    if (!page.value.more || !advanced) return PullResult.Done(if (count == 0) null else CampChange(current, types, count))
+                    if (!page.value.more || !advanced) return PullResult.Done(if (count == 0) null else CampChange(current, types, count, deleted = deleted, changed = changed))
                 }
             }
         }
@@ -134,3 +154,7 @@ class CampSync(private val api: CampApi, private val campId: String) {
         }
     }
 }
+
+/** Die Arten eines Feed-Eintrags, die die Module auswerten (`neu` laden sie über ihre Liste). */
+internal const val FEED_DELETED = "geloescht"
+internal const val FEED_CHANGED = "geaendert"

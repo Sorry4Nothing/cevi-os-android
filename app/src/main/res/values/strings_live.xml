@@ -7,7 +7,6 @@
 
     <string name="error_attendance_locked">Dieses Feld ist schon bestätigt oder die Frist ist abgelaufen. Stelle eine Anfrage.</string>
     <string name="error_attendance_open">Dieses Feld kannst du direkt ändern. Speichere es.</string>
-    <string name="error_attendance_waiting">Für dieses Feld wartet schon eine Anfrage.</string>
     <string name="error_day_exists">Für diesen Tag gibt es schon eine Seite. Lade die Ansicht neu.</string>
 
     <!-- Heute (L4) -->

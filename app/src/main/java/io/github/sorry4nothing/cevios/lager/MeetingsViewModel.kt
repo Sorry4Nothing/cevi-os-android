@@ -111,6 +111,16 @@ class MeetingsViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone ->
+            _meetings.update { it.withoutIds(gone) { meeting -> meeting.id } }
+            _minutes.update { it.withoutIds(gone) { minutes -> minutes.id } }
+            _decisions.update { it.withoutIds(gone) { decision -> decision.id } }
+            _mentions.update { it.withoutIds(gone) { mention -> mention.id } }
+            _state.update { s ->
+                val meeting = (s?.meeting as? ApiResult.Ok)?.value ?: return@update s
+                if (meeting.agenda.none { it.id in gone }) s else s.copy(meeting = ApiResult.Ok(meeting.copy(agenda = meeting.agenda.filterNot { it.id in gone })))
+            }
+        }
         fun touches(prefix: String) = change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { it.startsWith(prefix) }
         if (touches("hoeck") || touches("traktandum")) {
             if (_meetings.value != null) loadMeetings(silent = true)
@@ -138,7 +148,7 @@ class MeetingsViewModel(
             if (!silent) _meetings.value = null
             val result = api.meetings(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _meetings.value == null) _meetings.value = result
+            if (replacesState(result, silent, _meetings.value != null)) _meetings.value = result
         }
     }
 
@@ -160,7 +170,7 @@ class MeetingsViewModel(
             if (campId != id) return@launch
             _state.update { current ->
                 if (current?.id != meetingId) current
-                else if (result is ApiResult.Ok || !silent || current.meeting == null) current.copy(meeting = result, nextItems = next) else current
+                else if (replacesState(result, silent, current.meeting != null)) current.copy(meeting = result, nextItems = next) else current
             }
         }
     }
@@ -332,10 +342,14 @@ class MeetingsViewModel(
 
     /** Gleicht die Erwähnungen ab, wenn der Inhalt jetzt oder vorher Marken hatte (entfallene Marken nimmt der Server zurück). */
     private suspend fun syncMentionsOf(after: AgendaItem, before: AgendaItem?) {
+        if (hasMentionMarks(after.title, after.text, after.decision, before?.title, before?.text, before?.decision)) syncMentions("traktandum", after.id)
+    }
+
+    /** Gleicht die Erwähnungen ab; eine ungültige Marke (Person nicht im Lager, zu viele) sagt die App, der Inhalt bleibt gespeichert. */
+    private suspend fun syncMentions(type: String, sourceId: String) {
         val id = campId ?: return
-        if (hasMentionMarks(after.title, after.text, after.decision, before?.title, before?.text, before?.decision)) {
-            api.syncMentions(id, "traktandum", after.id)
-        }
+        val result = api.syncMentions(id, type, sourceId)
+        if (result is ApiResult.Failure && result.code in MENTION_ERRORS) writer.fail(result) { viewModelScope.launch { syncMentions(type, sourceId) } }
     }
 
     // ---- Höck-Modus ----
@@ -359,7 +373,7 @@ class MeetingsViewModel(
                 val items = (result as? ApiResult.Ok)?.value?.meeting?.agenda?.let(MeetingRules::sorted).orEmpty()
                 // Die erste Anzeige beginnt beim ersten offenen Traktandum; danach bestimmt die Person, wo sie steht.
                 val index = if (current.indexSet) current.index.coerceIn(0, maxOf(items.size - 1, 0)) else MeetingRules.firstOpen(items)
-                if (result is ApiResult.Ok || !silent || current.mode == null) current.copy(mode = result, index = index, indexSet = current.indexSet || result is ApiResult.Ok)
+                if (replacesState(result, silent, current.mode != null)) current.copy(mode = result, index = index, indexSet = current.indexSet || result is ApiResult.Ok)
                 else current
             }
         }
@@ -408,7 +422,7 @@ class MeetingsViewModel(
             if (!silent) _minutes.value = null
             val result = api.minutes(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _minutes.value == null) _minutes.value = result
+            if (replacesState(result, silent, _minutes.value != null)) _minutes.value = result
         }
     }
 
@@ -418,7 +432,7 @@ class MeetingsViewModel(
             if (!silent) _decisions.value = null
             val result = api.decisions(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _decisions.value == null) _decisions.value = result
+            if (replacesState(result, silent, _decisions.value != null)) _decisions.value = result
         }
     }
 
@@ -472,7 +486,7 @@ class MeetingsViewModel(
             }
             when (val result = api.createDecision(id, body)) {
                 is ApiResult.Ok -> {
-                    if (hasMentionMarks(text)) api.syncMentions(id, "beschluss", result.value.id)
+                    if (hasMentionMarks(text)) syncMentions("beschluss", result.value.id)
                     loadDecisions(silent = true)
                     onDone()
                 }
@@ -489,7 +503,7 @@ class MeetingsViewModel(
             call = { v -> api.changeDecision(id, decision.id, JsonObject(mapOf("version" to JsonPrimitive(v)) + fields)) },
             onCurrent = { loadDecisions(silent = false) },
         ) { changed ->
-            viewModelScope.launch { if (hasMentionMarks(text, decision.text)) api.syncMentions(id, "beschluss", changed.id) }
+            viewModelScope.launch { if (hasMentionMarks(text, decision.text)) syncMentions("beschluss", changed.id) }
             loadDecisions(silent = true)
             onDone()
         }
@@ -508,7 +522,7 @@ class MeetingsViewModel(
             if (!silent) _mentions.value = null
             val result = api.mentions(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _mentions.value == null) _mentions.value = result
+            if (replacesState(result, silent, _mentions.value != null)) _mentions.value = result
         }
     }
 

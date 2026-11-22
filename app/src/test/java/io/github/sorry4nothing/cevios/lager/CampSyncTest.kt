@@ -67,6 +67,23 @@ class CampSyncTest {
     }
 
     @Test
+    fun pullCollectsDeletedAndChangedRowsPerType() {
+        val kid = "11111111-1111-4111-8111-111111111111"
+        val task = "22222222-2222-4222-8222-222222222222"
+        val created = """{"seq":15,"objekttyp":"aufgabe","id":"$id","art":"neu","version":1,"zeitpunkt":"2027-07-17T10:00:00Z"}"""
+        fun row(seq: Int, type: String, rowId: String, art: String) = """{"seq":$seq,"objekttyp":"$type","id":"$rowId","art":"$art","version":2,"zeitpunkt":"2027-07-17T10:00:00Z"}"""
+        server.enqueue(json(200, """{"seq":10,"objekttypen":["aufgabe","teilnehmer"]}"""))
+        server.enqueue(json(200, """{"eintraege":[${row(11, "teilnehmer", kid, "geloescht")},$created],"bis":15,"weitere":true}"""))
+        server.enqueue(json(200, """{"eintraege":[${row(16, "aufgabe", task, "geaendert")}],"bis":16,"weitere":false}"""))
+        runBlocking { sync.baseline() }
+        val change = (runBlocking { sync.pull() } as PullResult.Done).change!!
+        assertEquals(mapOf("teilnehmer" to setOf(kid)), change.deleted)
+        assertEquals(setOf(kid), change.deletedIds)
+        assertEquals(mapOf("aufgabe" to setOf(task)), change.changed)
+        assertEquals(3, change.count)
+    }
+
+    @Test
     fun anEmptyPageIsNoChangeButMovesOn() {
         server.enqueue(json(200, """{"seq":10,"objekttypen":[]}"""))
         server.enqueue(json(200, """{"eintraege":[],"bis":15,"weitere":false}"""))

@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -194,8 +196,27 @@ class TasksViewModel(
     private var tasksApplied = 0
     private val duplicateMerge = DuplicateMerge()
 
+    /** Gesendete Änderungen, deren Erwähnungen schon abgeglichen sind. */
+    private val mentionsSynced = mutableSetOf<String>()
+
     init {
         viewModelScope.launch { camp.changes.collect(::onChange) }
+        watchMentions()
+    }
+
+    /** Gleicht die Erwähnungen ab, sobald eine Änderung an Titel oder Notiz beim Server angekommen ist. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun watchMentions() {
+        viewModelScope.launch(Background()) {
+            openCamp.flatMapLatest { id -> if (id == null) emptyFlow() else camp.queueFor(id).state.map { id to it.changes } }.collect { (id, changes) ->
+                for (change in changes) {
+                    val taskId = mentionSyncTarget(change) ?: continue
+                    if (!mentionsSynced.add(change.clientOpId)) continue
+                    // Nur Leitende dürfen abgleichen; ein Fehler (kein Recht, ungültige Marke) lässt die gespeicherte Aufgabe, wie sie ist.
+                    if (rights.edit) api.syncMentions(id, taskId)
+                }
+            }
+        }
     }
 
     private val campId: String? get() = openCamp.value
@@ -247,7 +268,7 @@ class TasksViewModel(
             if (campId != id || seq < tasksApplied) return@launch
             tasksApplied = seq
             // Eine stille Aktualisierung lässt den alten Stand stehen, wenn sie scheitert.
-            if (result is ApiResult.Ok || !silent || rawTasks.value == null) rawTasks.value = result
+            if (replacesState(result, silent, rawTasks.value != null)) rawTasks.value = result
             if (result is ApiResult.Ok) {
                 _reloads.update { it + 1 }
                 // Alles, was die Person gesendet hat, steht jetzt in der Liste; die Anzeige braucht die Ebene darüber nicht mehr.
@@ -258,6 +279,11 @@ class TasksViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        // Gelöschte Aufgaben verschwinden sofort aus Liste und Auswahl; das Neuladen gleicht den Rest ab.
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone ->
+            rawTasks.update { it.withoutIds(gone) { task -> task.id } }
+            _selection.update { it?.minus(gone) }
+        }
         val tasksChanged = change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { it.startsWith("aufgabe") }
         if (tasksChanged) {
             loadTasks(silent = true)
@@ -686,7 +712,7 @@ class TasksViewModel(
             if (!silent) rawRessorts.value = null
             val result = api.ressorts(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || rawRessorts.value == null) rawRessorts.value = result
+            if (replacesState(result, silent, rawRessorts.value != null)) rawRessorts.value = result
         }
     }
 
@@ -736,7 +762,7 @@ class TasksViewModel(
                 }
             }
             if (bundleId != ressortId) return@launch
-            if (result is ApiResult.Ok || !silent || _bundle.value == null) _bundle.value = result
+            if (replacesState(result, silent, _bundle.value != null)) _bundle.value = result
         }
     }
 

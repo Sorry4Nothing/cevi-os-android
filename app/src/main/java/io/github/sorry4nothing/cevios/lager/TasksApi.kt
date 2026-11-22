@@ -29,6 +29,9 @@ class TasksApi(private val api: ApiClient) {
         return ApiResult.Ok(all)
     }
 
+    /** Gleicht die Erwähnungen einer Aufgabe ab, nachdem Titel oder Notiz gespeichert sind; ohne Marken ändert das nichts (idempotent). */
+    suspend fun syncMentions(campId: String, taskId: String): ApiResult<Unit> = api.putWithoutBody("/api/v1/lager/$campId/erwaehnungen/aufgabe/$taskId")
+
     suspend fun read(campId: String, taskId: String): ApiResult<CampTask> = api.get("/api/v1/lager/$campId/aufgaben/$taskId")
 
     suspend fun details(campId: String, taskId: String): ApiResult<TaskDetails> = api.get("/api/v1/lager/$campId/aufgaben/$taskId/details")

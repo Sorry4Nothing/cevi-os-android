@@ -150,6 +150,7 @@ class CommsViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone -> _posts.update { it.withoutIds(gone) { post -> post.id } } }
         if (change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { it.startsWith("pinnwand") || it.startsWith("umfrage") }) {
             if (_posts.value != null) loadPosts(silent = true)
         }
@@ -172,7 +173,7 @@ class CommsViewModel(
             if (!silent) _posts.value = null
             val result = api.posts(id, all)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _posts.value == null) _posts.value = result
+            if (replacesState(result, silent, _posts.value != null)) _posts.value = result
         }
     }
 
@@ -237,6 +238,7 @@ class CommsViewModel(
                     is ApiResult.Ok -> result.value
                     is ApiResult.Failure -> return@launch writer.fail(result) { createPost(draft, onDone) }
                 }
+                if (hasMentionMarks(draft.title, draft.text)) syncMentions(created.id)
                 val options = draft.pollOptions.map { it.trim() }.filter { it.isNotEmpty() }
                 if (options.size >= 2) {
                     when (val poll = api.createPoll(id, created.id, options, draft.pollMultiple)) {
@@ -289,8 +291,16 @@ class CommsViewModel(
             onCurrent = { loadPosts(silent = false) },
         ) {
             replacePost(it)
+            if (hasMentionMarks(it.title, it.text, post.title, post.text)) viewModelScope.launch { syncMentions(it.id) }
             onDone()
         }
+    }
+
+    /** Gleicht die Erwähnungen ab; eine ungültige Marke (Person nicht im Lager, zu viele) sagt die App, der Beitrag bleibt gespeichert. */
+    private suspend fun syncMentions(postId: String) {
+        val id = campId ?: return
+        val result = api.syncMentions(id, postId)
+        if (result is ApiResult.Failure && result.code in MENTION_ERRORS) writer.fail(result) { viewModelScope.launch { syncMentions(postId) } }
     }
 
     fun setPinned(post: Post, pinned: Boolean, summary: String) = changePost(post, mapOf("angeheftet" to JsonPrimitive(pinned)), summary) { loadPosts(silent = true) }
@@ -366,7 +376,7 @@ class CommsViewModel(
             if (!silent) _inbox.value = null
             val result = api.inbox(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _inbox.value == null) _inbox.value = result
+            if (replacesState(result, silent, _inbox.value != null)) _inbox.value = result
         }
     }
 
@@ -376,7 +386,7 @@ class CommsViewModel(
             if (!silent) _own.value = null
             val result = api.ownInbox(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _own.value == null) _own.value = result
+            if (replacesState(result, silent, _own.value != null)) _own.value = result
         }
     }
 
@@ -475,7 +485,7 @@ class CommsViewModel(
             if (!silent) _notifications.value = null
             val result = api.notifications(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _notifications.value == null) _notifications.value = result
+            if (replacesState(result, silent, _notifications.value != null)) _notifications.value = result
         }
     }
 
@@ -527,3 +537,6 @@ private fun ReactionState.without(reaction: Reaction): ReactionState =
     copy(counts = counts + (reaction.wire to ((counts[reaction.wire] ?: 1) - 1).coerceAtLeast(0)), own = null)
 
 private const val SEEN_BATCH = 50
+
+/** Die Codes, mit denen der Server eine Marke im Text ablehnt (`ERWAEHNUNG_UNGUELTIG`, `ZU_VIELE_MARKEN`). */
+internal val MENTION_ERRORS = setOf("ERWAEHNUNG_UNGUELTIG", "ZU_VIELE_MARKEN")

@@ -328,7 +328,7 @@
     <string name="error_excluded">Die Person ist abgewählt («nicht dabei») und kann nicht eingeteilt werden.</string>
     <string name="error_absent">Die Person ist in diesem Abschnitt als abwesend eingetragen.</string>
     <string name="error_double_booked">Die Person hat in diesem Abschnitt am selben Tag schon einen anderen Dienst.</string>
-    <string name="error_swap_open">Für diese Schicht läuft schon eine Anfrage.</string>
+    <string name="error_request_waiting">Dafür wartet schon eine Anfrage.</string>
     <string name="error_not_your_shift">Das ist nicht deine Schicht.</string>
     <string name="error_swap_decided">Die Anfrage ist schon entschieden.</string>
     <string name="error_shift_changed">Die Schichten stehen nicht mehr wie bei der Anfrage. Du kannst die Anfrage ablehnen.</string>

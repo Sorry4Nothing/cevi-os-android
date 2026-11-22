@@ -120,6 +120,11 @@ class ArchiveViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        // Ein gelöschter Dokumentlink oder Adressbuch-Kontakt verschwindet sofort aus der Liste.
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone ->
+            _documents.update { it.withoutIds(gone) { doc -> doc.id } }
+            _contacts.update { it.withoutIds(gone) { contact -> contact.id } }
+        }
         fun touches(vararg prefixes: String) = change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { t -> prefixes.any { t.startsWith(it) } }
         if (touches("meilenstein", "lagertag", "tagesabschnitt", "hoeck", "aufgabe") && _timeline.value != null) loadTimeline(silent = true)
         if (touches("dokument", "datei") && _documents.value != null) loadDocuments(silent = true)
@@ -136,7 +141,7 @@ class ArchiveViewModel(
             if (!silent) target.value = null
             val result = fetch(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || target.value == null) target.value = result
+            if (replacesState(result, silent, target.value != null)) target.value = result
         }
     }
 
@@ -182,7 +187,7 @@ class ArchiveViewModel(
                 }
             }
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _timeline.value == null) _timeline.value = result
+            if (replacesState(result, silent, _timeline.value != null)) _timeline.value = result
             if (rights.editSchedule && result is ApiResult.Ok) {
                 val proposal = (api.proposal(id) as? ApiResult.Ok)?.value?.takeUnless { it.isEmpty }
                 // Der Vorschlag gehört zum Lager der Anfrage: «Übernehmen» legt sonst Tage im falschen Lager an.

@@ -182,7 +182,7 @@ class LiveViewModel(
             if (!silent) target.value = null
             val result = fetch(id)
             if (campId != id || !current()) return@launch
-            if (result is ApiResult.Ok || !silent || target.value == null) target.value = result
+            if (replacesState(result, silent, target.value != null)) target.value = result
             after(result)
         }
     }

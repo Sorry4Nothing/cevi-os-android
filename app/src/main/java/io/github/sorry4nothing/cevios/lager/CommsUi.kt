@@ -113,7 +113,8 @@ fun writeErrorRes(error: ActionError): Int = when (error.code) {
     "ABGEWAEHLT" -> R.string.error_excluded
     "ABWESEND" -> R.string.error_absent
     "DOPPELBELEGT" -> R.string.error_double_booked
-    "ANFRAGE_OFFEN" -> R.string.error_swap_open
+    // Gilt für die Anfrage zum Diensttausch und zur Anwesenheit (derselbe Code, dieselbe Aussage).
+    "ANFRAGE_OFFEN" -> R.string.error_request_waiting
     "NICHT_DEINE_SCHICHT", "NICHT_DEINE_ANFRAGE" -> R.string.error_not_your_shift
     "BEREITS_ENTSCHIEDEN" -> R.string.error_swap_decided
     "SCHICHT_GEAENDERT" -> R.string.error_shift_changed
@@ -124,7 +125,6 @@ fun writeErrorRes(error: ActionError): Int = when (error.code) {
     "ERWAEHNUNG_UNGUELTIG", "ZU_VIELE_MARKEN" -> R.string.error_mention_invalid
     "ANFRAGE_NOETIG" -> R.string.error_attendance_locked
     "KEINE_ANFRAGE_NOETIG" -> R.string.error_attendance_open
-    "ANFRAGE_OFFEN" -> R.string.error_attendance_waiting
     "SEITE_VORHANDEN" -> R.string.error_day_exists
     "IN_VERWENDUNG" -> R.string.error_in_use
     "VORLAGE_UNGUELTIG" -> R.string.error_template_invalid

@@ -59,6 +59,16 @@ object TaskPayloads {
     fun fieldsOf(payload: JsonObject): Map<String, JsonElement> = payload.filterKeys { it != "id" && it != "version" }
 }
 
+/**
+ * Die Aufgabe, deren Erwähnungen nach dieser Änderung abzugleichen sind: eine gesendete Anlage oder Änderung, die Titel oder Notiz
+ * berührt (nur dort stehen Marken). Die ID nennt die Antwort des Servers bei der Anlage, sonst die Nutzlast.
+ */
+fun mentionSyncTarget(change: QueuedChange): String? {
+    if (change.state != ChangeState.SENT || (change.type != TaskOps.CREATE && change.type != TaskOps.CHANGE)) return null
+    if ("titel" !in change.payload && "notiz" !in change.payload) return null
+    return ((change.result?.get("id") ?: change.payload["id"]) as? JsonPrimitive)?.contentOrNull
+}
+
 /** Wohin eine Änderung an einer Aufgabe gegangen ist; `BLOCKED`: Die Anlage ist gerade unterwegs, die Änderung ist noch nirgends aufgenommen. */
 enum class ChangeRoute { ENQUEUED, REVISED, MERGED, BLOCKED }
 

@@ -162,6 +162,8 @@ class PlanningViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        // Gelöschte Teilnehmende (Kinder) verschwinden sofort aus der Liste; Zimmer, Fahrten und Gruppen laden darauf neu.
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone -> _participants.update { it.withoutIds(gone) { p -> p.id } } }
         if (change.reload && _members.value != null) loadMembers()
         fun touches(vararg prefixes: String) = change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { t -> prefixes.any { t.startsWith(it) } }
         if (touches("teilnehmer") && _participants.value != null) loadParticipants(silent = true)
@@ -187,7 +189,7 @@ class PlanningViewModel(
             if (!silent) target.value = null
             val result = fetch(id)
             if (campId != id || !current()) return@launch
-            if (result is ApiResult.Ok || !silent || target.value == null) target.value = result
+            if (replacesState(result, silent, target.value != null)) target.value = result
             after()
         }
     }

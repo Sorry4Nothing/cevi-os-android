@@ -26,7 +26,7 @@ enum class ApiError(@StringRes val text: Int) {
     /** 410 `FEED_NEU_LADEN`: Der Stand der App ist zu alt für den Änderungsfeed; sie lädt die Listen neu. */
     FEED_RELOAD(R.string.error_feed_reload),
 
-    /** 403 `ZWEITER_FAKTOR_FEHLT`: Die Lagerleitung braucht den zweiten Faktor; die App kann ihn nicht abfragen. */
+    /** 403 `ZWEITER_FAKTOR_FEHLT`: Nur noch für Rechte und Verwaltung im Web (#523); die App bietet das nicht an, zeigt aber «nur am Computer», falls ein Server es meldet. */
     SECOND_FACTOR_MISSING(R.string.error_second_factor),
 
     /** 503 `IN_WARTUNG`: Der Bereich ist nur lesbar, bis die Wartung endet. */

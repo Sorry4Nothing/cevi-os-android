@@ -308,8 +308,8 @@
     <string name="error_version_conflict">Das wurde inzwischen von jemand anderem geändert. Der aktuelle Stand ist neu geladen.</string>
     <string name="error_lager_closed">Dieses Lager ist abgeschlossen. Du kannst nichts mehr ändern.</string>
     <string name="error_feed_reload">Dein Stand im Lager ist zu alt. Die App lädt ihn neu.</string>
-    <string name="error_second_factor">Die Lagerleitung braucht einen zweiten Faktor. Die App kann ihn noch nicht abfragen. Melde dich dafür im Web an.</string>
-    <string name="state_second_factor_title">Zweiter Faktor fehlt</string>
+    <string name="error_second_factor">Diese Aktion geht nur am Computer.</string>
+    <string name="state_second_factor_title">Nur am Computer</string>
     <string name="error_maintenance">Das Lager-Modul ist gerade nicht erreichbar. Bitte versuche es später nochmals.</string>
 
     <!-- Lager: Mehr -->

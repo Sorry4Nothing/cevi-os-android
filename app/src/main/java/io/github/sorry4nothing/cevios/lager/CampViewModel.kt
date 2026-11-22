@@ -188,7 +188,7 @@ class CampViewModel(
                 val (error, retryAfter) = failure
                 when (error) {
                     // coroutineScope wartet auf seine Kinder: Ohne Abbruch liefe die Sendeschleife weiter und fragte ein verlorenes Lager ab.
-                    ApiError.NOT_FOUND, ApiError.FORBIDDEN, ApiError.SECOND_FACTOR_MISSING -> {
+                    ApiError.NOT_FOUND, ApiError.FORBIDDEN -> {
                         _lostAccess.value = campId
                         resend.cancel()
                         return@coroutineScope

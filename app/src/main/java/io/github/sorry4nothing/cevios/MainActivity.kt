@@ -1,7 +1,23 @@
 package io.github.sorry4nothing.cevios
 
 import io.github.sorry4nothing.cevios.ui.screenTransition
+import io.github.sorry4nothing.cevios.lager.AndroidTaskTexts
 import io.github.sorry4nothing.cevios.lager.CampApi
+import io.github.sorry4nothing.cevios.lager.CampRole
+import io.github.sorry4nothing.cevios.lager.LeadershipStart
+import io.github.sorry4nothing.cevios.lager.RessortListScreen
+import io.github.sorry4nothing.cevios.lager.RessortScreen
+import io.github.sorry4nothing.cevios.lager.QuickCaptureSheet
+import io.github.sorry4nothing.cevios.lager.StartFab
+import io.github.sorry4nothing.cevios.lager.TaskDetailScreen
+import io.github.sorry4nothing.cevios.lager.TaskPerson
+import io.github.sorry4nothing.cevios.lager.TaskRights
+import io.github.sorry4nothing.cevios.lager.TaskView
+import io.github.sorry4nothing.cevios.lager.TasksApi
+import io.github.sorry4nothing.cevios.lager.TasksScreen
+import io.github.sorry4nothing.cevios.lager.TasksViewModel
+import io.github.sorry4nothing.cevios.lager.TeamStart
+import io.github.sorry4nothing.cevios.lager.CampInfo
 import io.github.sorry4nothing.cevios.lager.CampListScreen
 import io.github.sorry4nothing.cevios.lager.CampStartScreen
 import io.github.sorry4nothing.cevios.lager.CampViewModel
@@ -53,6 +69,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -259,7 +276,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                     val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
                     CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
                         MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), current.profile,
+                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), current.profile,
                             passwordSaved, form, imageForm, auth,
                             pushTarget, onPushTargetHandled,
                             onOpenPrivacy = openPrivacy,
@@ -298,6 +315,9 @@ private sealed interface Screen {
     data class Program(val programId: String) : Screen { override val depth = 1 }
     data class Chat(val chatId: String) : Screen { override val depth = 1 }
     data object Queue : Screen { override val depth = 1 }
+    data class Task(val taskId: String) : Screen { override val depth = 1 }
+    data object Ressorts : Screen { override val depth = 1 }
+    data class RessortPage(val ressortId: String) : Screen { override val depth = 2 }
     data class Conflict(val changeId: String) : Screen { override val depth = 2 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
     data class Assign(val programId: String) : Screen { override val depth = 2 }
@@ -309,6 +329,7 @@ private fun MainContent(
     chatApi: ChatApi,
     pushApi: PushApi,
     campApi: CampApi,
+    tasksApi: TasksApi,
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
@@ -330,6 +351,7 @@ private fun MainContent(
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
     val camp = viewModel { CampViewModel(campApi) }
+    val tasks = viewModel { TasksViewModel(tasksApi, camp, TaskPerson(account.id, account.name, account.ceviName), AndroidTaskTexts(appContext)) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
@@ -340,6 +362,9 @@ private fun MainContent(
     var moreOpen by rememberSaveable { mutableStateOf(false) }
     var queueOpen by rememberSaveable { mutableStateOf(false) }
     var conflictId by rememberSaveable { mutableStateOf<String?>(null) }
+    var openedTask by rememberSaveable { mutableStateOf<String?>(null) }
+    var ressortsOpen by rememberSaveable { mutableStateOf(false) }
+    var openedRessort by rememberSaveable { mutableStateOf<String?>(null) }
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
@@ -368,11 +393,20 @@ private fun MainContent(
             // Das Lager des Objekts löst der Server auf; die Module öffnen später das Objekt selbst (Schnitte A1 bis A5).
             is PushTarget.Camp -> {
                 openedChat = null; openedProgram = null
-                camp.resolvePush(target.type, target.id) { found -> campArea = true; campId = found.campId; destination = Destination.START; queueOpen = false; conflictId = null }
+                camp.resolvePush(target.type, target.id) { found ->
+                    campArea = true; campId = found.campId; queueOpen = false; conflictId = null
+                    ressortsOpen = false; openedRessort = null
+                    // Eine Aufgabe öffnet sich selbst; für andere Ziele folgen die Schnitte A2 bis A5.
+                    val isTask = found.objectType.startsWith("aufgabe")
+                    destination = if (isTask) Destination.TASKS else Destination.START
+                    openedTask = if (isTask) found.objectId else null
+                }
             }
         }
         onPushTargetHandled()
     }
+    LaunchedEffect(openedTask) { openedTask?.let(tasks::openTask) ?: tasks.closeTask() }
+    LaunchedEffect(openedRessort) { openedRessort?.let(tasks::openRessort) ?: tasks.closeRessort() }
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
     LaunchedEffect(assigning) { if (assigning) programs.loadAgeGroups() }
@@ -393,10 +427,13 @@ private fun MainContent(
     // Das offene Lager lädt sein Detail und bleibt im Vordergrund aktuell (Ereignisstrom, Feed, Warteschlange).
     LaunchedEffect(campId) {
         val id = campId
+        openedTask = null; ressortsOpen = false; openedRessort = null
         if (id == null) {
             camp.close()
+            tasks.close()
         } else {
             camp.open(id)
+            tasks.open(id)
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { camp.follow(id) }
         }
     }
@@ -435,6 +472,8 @@ private fun MainContent(
         val campDetail = camp.detail.collectAsState().value.let { if (lostAccess != null && lostAccess == campId) ApiResult.Failure(ApiError.FORBIDDEN) else it }
         val conflict = conflictId?.let { id -> queueState.changes.firstOrNull { it.clientOpId == id && it.state == ChangeState.CONFLICT } }
         val openedCamp = (campDetail as? ApiResult.Ok)?.value?.takeIf { it.id == campId }
+        val rights = TaskRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        SideEffect { tasks.rights = rights }
         val modeSwitch = if (camps.isEmpty()) null else {
             val programs = stringResource(R.string.mode_area_programs)
             val lager = stringResource(R.string.mode_area_camp)
@@ -448,6 +487,9 @@ private fun MainContent(
             cropping != null -> Screen.CropImage(cropping)
             conflict != null -> Screen.Conflict(conflict.clientOpId)
             queueOpen && campArea && campId != null -> Screen.Queue
+            campArea && campId != null && openedRessort != null -> Screen.RessortPage(openedRessort!!)
+            campArea && campId != null && openedTask != null -> Screen.Task(openedTask!!)
+            campArea && campId != null && ressortsOpen -> Screen.Ressorts
             programId != null && assigning && assignedProgram != null -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
@@ -585,6 +627,26 @@ private fun MainContent(
                         onBack = leave,
                     )
                 }
+                is Screen.Task -> {
+                    val leave = { openedTask = null }
+                    BackHandler(onBack = leave)
+                    TaskDetailScreen(
+                        tasks, screen.taskId, openedCamp, rights, queueState, online,
+                        onBack = leave,
+                        onOpenQueue = { openedTask = null; queueOpen = true },
+                        onOpenRessort = { openedRessort = it },
+                    )
+                }
+                Screen.Ressorts -> {
+                    val leave = { ressortsOpen = false }
+                    BackHandler(onBack = leave)
+                    RessortListScreen(tasks, onBack = leave, onOpen = { openedRessort = it })
+                }
+                is Screen.RessortPage -> {
+                    val leave = { openedRessort = null }
+                    BackHandler(onBack = leave)
+                    RessortScreen(tasks, screen.ressortId, rights, onBack = leave, onOpenTask = { openedTask = it; openedRessort = null })
+                }
                 Screen.Notifications -> {
                     val leave = { notificationsOpen = false; push.clearError() }
                     BackHandler(onBack = leave)
@@ -616,7 +678,7 @@ private fun MainContent(
                 Screen.Home -> CompositionLocalProvider(LocalModeSwitch provides modeSwitch) { MainScaffold(
                     // Ohne gewähltes Lager (Lagerwahl) steht im Dock nichts als aktiv.
                     active = if (campArea && campId == null && destination == Destination.START) null else destination,
-                    onDestination = { if (it == Destination.MORE) moreOpen = true else if (it != Destination.START || campId != null) destination = it },
+                    onDestination = { if (it == Destination.MORE) moreOpen = true else if ((it != Destination.START && it != Destination.TASKS) || campId != null) destination = it },
                     unread = chatUnread,
                     destinations = if (campArea) Destination.CAMP else Destination.PROGRAM,
                 ) {
@@ -652,7 +714,13 @@ private fun MainContent(
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,
                             )
-                        } else if (tab == Destination.START) {
+                        } else if (tab == Destination.TASKS && campId != null) {
+                            TasksScreen(
+                                tasks, openedCamp, rights, queueState, online,
+                                onOpenQueue = { queueOpen = true },
+                                onOpenTask = { openedTask = it },
+                            )
+                        } else if (tab == Destination.START || tab == Destination.TASKS) {
                             val id = campId
                             if (id == null) {
                                 CampListScreen(
@@ -668,6 +736,14 @@ private fun MainContent(
                                     onRetry = { camp.open(id) },
                                     onToCamps = { campId = null },
                                     onOpenQueue = { queueOpen = true },
+                                    fab = { StartFab(tasks, rights) },
+                                    body = { c ->
+                                        if (rights.seeLeadershipStart) {
+                                            LeadershipStart(tasks, c, onOpenTask = { openedTask = it }, onOpenTasks = { destination = Destination.TASKS })
+                                        } else {
+                                            TeamStart(tasks, c, onOpenTask = { openedTask = it }, onOpenTasks = { destination = Destination.TASKS })
+                                        }
+                                    },
                                 )
                             }
                         } else {
@@ -687,6 +763,7 @@ private fun MainContent(
                 } }
             }
         }
+        if (tasks.quickOpen.collectAsState().value && rights.edit) QuickCaptureSheet(tasks)
         if (modeMenuOpen) {
             ModeMenu(
                 inCamp = if (campArea) campId ?: "" else null,
@@ -703,7 +780,12 @@ private fun MainContent(
                 MoreEntry(R.string.more_profile, R.drawable.ic_profile) { moreOpen = false; campArea = false; campId = null; destination = Destination.PROFILE },
                 MoreEntry(R.string.queue_title, R.drawable.ic_clock) { moreOpen = false; if (campId != null) queueOpen = true },
             ).filter { it.text != R.string.queue_title || campId != null }
-            MoreSheet(listOf(R.string.more_section_you to you), onDismiss = { moreOpen = false })
+            val plan = if (campId != null && rights.readRessorts) {
+                listOf(MoreEntry(R.string.more_ressorts, R.drawable.ic_group) { moreOpen = false; ressortsOpen = true })
+            } else {
+                emptyList()
+            }
+            MoreSheet(listOfNotNull(if (plan.isEmpty()) null else R.string.more_section_plan to plan, R.string.more_section_you to you), onDismiss = { moreOpen = false })
         }
     }
 }

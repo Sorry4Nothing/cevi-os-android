@@ -89,7 +89,7 @@ class OfflineQueueTest {
         assertEquals(1, queue.state.value.needsDecision.size)
         val rows = conflictRows(change)
         assertEquals(1, rows.size)
-        assertEquals(ConflictRow("Titel", "Meine Fassung", "Andere Fassung", differs = true), rows.single())
+        assertEquals(ConflictRow("Titel", "Meine Fassung", "Andere Fassung", differs = true, key = "titel"), rows.single())
     }
 
     @Test

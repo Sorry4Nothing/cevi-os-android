@@ -76,6 +76,8 @@ fun Header(
     groups: List<GroupChip> = emptyList(),
     back: HeaderButton? = null,
     action: HeaderButton? = null,
+    /** Eine zweite Aktion links neben `action` (zum Beispiel «Merken» vor «Weitere Aktionen»). */
+    extraAction: HeaderButton? = null,
     mode: ModeSwitch? = if (back == null) LocalModeSwitch.current else null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge,
     focusOnTitle: Boolean = false,
@@ -85,11 +87,12 @@ fun Header(
         verticalArrangement = Arrangement.spacedBy(Spacing.s2),
     ) {
         // Ohne Knopf fällt die Zeile weg: Auf den Startscreens steht der Titel direkt oben.
-        if (back != null || action != null || mode != null) {
+        if (back != null || action != null || extraAction != null || mode != null) {
             Row(Modifier.fillMaxWidth().height(Sizes.touchTarget), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 back?.let { RoundButton(it) }
                 mode?.let { ModePill(it, Modifier.weight(1f, fill = false)) }
                 Spacer(Modifier.weight(1f))
+                extraAction?.let { RoundButton(it) }
                 action?.let { RoundButton(it) }
             }
         }

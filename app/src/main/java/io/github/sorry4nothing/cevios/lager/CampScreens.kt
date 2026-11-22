@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -167,8 +168,9 @@ private fun CampCard(camp: Camp, onOpen: (String) -> Unit) {
 }
 
 /**
- * Start eines Lagers. Der Entwurf zeigt hier Countdown, Aufgaben und Hoeck (Schnitt A1); dieses Gerüst zeigt, was das Lager selbst
- * hergibt: Titel, Zeitraum, Ort und die eigene Rolle, dazu den Hinweis auf ein abgeschlossenes Lager und die Warteschlange.
+ * Der Rahmen des Starts eines Lagers: Kopf, Banner (Warteschlange, abgeschlossenes Lager) und je nach Rolle der Inhalt (`body`;
+ * Schnitt A1: Start der Lagerleitung, Start des Teams). Ohne `body` zeigt er, was das Lager selbst hergibt: Zeitraum, Ort, Rolle.
+ * `fab` ist die eine Hauptaktion, die über dem Inhalt schwebt.
  */
 @Composable
 fun CampStartScreen(
@@ -178,54 +180,69 @@ fun CampStartScreen(
     onRetry: () -> Unit,
     onToCamps: () -> Unit,
     onOpenQueue: () -> Unit,
+    @StringRes title: Int = R.string.tab_start,
+    fab: (@Composable () -> Unit)? = null,
+    body: @Composable ColumnScope.(Camp) -> Unit = { camp -> CampInfo(camp) },
 ) {
     Column(Modifier.fillMaxSize()) {
         when (detail) {
             null -> {
-                Header(title = stringResource(R.string.tab_start), focusOnTitle = true)
+                Header(title = stringResource(title), focusOnTitle = true)
                 CardSkeleton(stringResource(R.string.camp_loading), count = 2)
             }
             is ApiResult.Failure -> {
                 // Das Lager gibt es für die Person nicht, auch wenn es existiert: Der Server verrät es nicht (404).
                 val error = if (detail.error == ApiError.NOT_FOUND) ApiError.FORBIDDEN else detail.error
-                Header(title = stringResource(R.string.tab_start), focusOnTitle = true)
+                Header(title = stringResource(title), focusOnTitle = true)
                 ErrorState(error, onRetry, onToPrograms = onToCamps, noAccessText = R.string.state_camp_access_text, homeLabel = R.string.to_camps)
             }
             is ApiResult.Ok -> {
                 val camp = detail.value
-                Header(title = stringResource(R.string.tab_start), subtitle = camp.title, focusOnTitle = true)
-                Column(
-                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.s3, vertical = Spacing.s2),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.s3),
-                ) {
-                    QueueBanner(queue, online, onOpenQueue)
-                    if (camp.readOnly) {
-                        NoticeBanner(
-                            NoticeKind.INFO,
-                            stringResource(R.string.camp_closed_title) + ". " + stringResource(R.string.camp_closed_text),
-                            Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                        )
-                    }
+                Header(title = stringResource(title), subtitle = camp.title, focusOnTitle = true)
+                Box(Modifier.weight(1f)) {
                     Column(
                         Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow, MaterialTheme.shapes.medium)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
-                            .padding(Spacing.s4),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = Spacing.s3, vertical = Spacing.s2)
+                            .padding(bottom = if (fab != null) 88.dp else 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s3),
                     ) {
-                        Text(campDates(camp.from, camp.until), style = MaterialTheme.typography.titleMedium)
-                        camp.place?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        Text(
-                            stringResource(R.string.camp_role, stringResource(roleText(camp.role))),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        QueueBanner(queue, online, onOpenQueue)
+                        if (camp.readOnly) {
+                            NoticeBanner(
+                                NoticeKind.INFO,
+                                stringResource(R.string.camp_closed_title) + ". " + stringResource(R.string.camp_closed_text),
+                                Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            )
+                        }
+                        body(camp)
                     }
-                    Text(stringResource(R.string.camp_start_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    fab?.let { Box(Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.s3)) { it() } }
                 }
             }
         }
+    }
+}
+
+/** Zeitraum, Ort und Rolle des Lagers in einer Karte (die Fassung des Gerüsts, solange der Inhalt der Rolle fehlt). */
+@Composable
+fun CampInfo(camp: Camp) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerLow, MaterialTheme.shapes.medium)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
+            .padding(Spacing.s4),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+    ) {
+        Text(campDates(camp.from, camp.until), style = MaterialTheme.typography.titleMedium)
+        camp.place?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Text(
+            stringResource(R.string.camp_role, stringResource(roleText(camp.role))),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

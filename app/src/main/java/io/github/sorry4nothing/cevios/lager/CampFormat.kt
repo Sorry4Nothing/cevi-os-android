@@ -28,7 +28,7 @@ fun campDates(from: String, until: String): String {
 }
 
 /** Eine Zeile des Konfliktdialogs: Feld in Worten, deine und die aktuelle Fassung; `differs` markiert den Unterschied. */
-data class ConflictRow(val label: String, val mine: String?, val current: String?, val differs: Boolean)
+data class ConflictRow(val label: String, val mine: String?, val current: String?, val differs: Boolean, val key: String = "")
 
 /** Felder, die nie als Zeile erscheinen: Sie steuern den Abgleich, die Person sieht sie nicht. */
 private val HIDDEN_FIELDS = setOf("id", "version")
@@ -49,6 +49,6 @@ fun conflictRows(change: QueuedChange): List<ConflictRow> {
     return keys.map { key ->
         val mine = change.payload[key].display()
         val current = change.current?.get(key).display()
-        ConflictRow(change.fieldLabels[key] ?: key, mine, current, differs = key in change.differing || mine != current)
+        ConflictRow(change.fieldLabels[key] ?: key, mine, current, differs = key in change.differing || mine != current, key = key)
     }
 }

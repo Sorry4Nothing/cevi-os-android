@@ -228,7 +228,7 @@ private fun Version(@StringRes title: Int, rows: List<ConflictRow>, mine: Boolea
     ) {
         Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
         rows.forEach { row ->
-            val value = (if (mine) row.mine else row.current) ?: empty
+            val value = (if (mine) row.mine else row.current)?.let { conflictValue(row.key, it) } ?: empty
             // Der Unterschied steht als Farbe und als Wort: Der Screenreader hört «anders».
             val spoken = "${row.label}: $value" + if (row.differs) ", $differs" else ""
             Column(Modifier.semantics(mergeDescendants = true) { contentDescription = spoken }) {
@@ -247,4 +247,13 @@ private fun Version(@StringRes title: Int, rows: List<ConflictRow>, mine: Boolea
             }
         }
     }
+}
+
+/** Werte, die die API als Wort der Maschine schickt, in Worten der Person: Status, Ja und Nein, Daten. */
+@Composable
+private fun conflictValue(key: String, raw: String): String = when (key) {
+    "status" -> stringResource(statusText(TaskStatus.from(raw)))
+    "stern", "laufend" -> stringResource(if (raw == "true") R.string.button_yes else R.string.button_no)
+    "frist", "spaeterAb" -> formatDayLong(raw)
+    else -> raw
 }

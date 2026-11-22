@@ -92,7 +92,7 @@
     <string name="programs_loading">Programme werden geladen</string>
     <string name="program_loading">Programm wird geladen</string>
     <string name="programs_empty_title">Keine Termine für dich</string>
-    <string name="programs_empty_text">Es gibt gerade keine Termine für deine Gruppen. Sobald die Leitung neue Termine einträgt, siehst du sie hier.</string>
+    <string name="programs_empty_text">Termine erscheinen hier, sobald sie einer deiner Gruppen zugeordnet sind.</string>
     <string name="time_list_all_day">Ganztägig</string>
     <string name="time_list_until">Ganztägig bis %1$s</string>
     <string name="back_to_programs">Zurück zu Programme</string>

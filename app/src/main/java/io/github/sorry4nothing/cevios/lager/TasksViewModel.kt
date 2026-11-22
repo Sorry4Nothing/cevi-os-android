@@ -117,7 +117,7 @@ class TasksViewModel(
     private val rawRessorts = MutableStateFlow<ApiResult<List<Ressort>>?>(null)
 
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie, sobald das Lager geladen ist. */
-    var rights: TaskRights = TaskRights.of(CampRole.READ_ONLY, true)
+    var rights: TaskRights = TaskRights.of(NO_PERMISSIONS)
 
     /** Die Aufgaben, wie sie die Person sehen soll: Stand des Servers mit den wartenden Änderungen darüber. */
     @OptIn(ExperimentalCoroutinesApi::class)

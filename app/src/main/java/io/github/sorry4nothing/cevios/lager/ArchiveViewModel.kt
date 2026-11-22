@@ -53,7 +53,7 @@ class ArchiveViewModel(
     val writer = DirectWriter(viewModelScope) { texts.fieldLabels() }
 
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie. */
-    var rights: ArchiveRights = ArchiveRights.of(CampRole.READ_ONLY, true)
+    var rights: ArchiveRights = ArchiveRights.of(NO_PERMISSIONS)
 
     private val _timeline = MutableStateFlow<ApiResult<TimelineData>?>(null)
     val timeline: StateFlow<ApiResult<TimelineData>?> = _timeline.asStateFlow()

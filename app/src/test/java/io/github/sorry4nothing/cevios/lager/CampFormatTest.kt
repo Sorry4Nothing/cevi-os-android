@@ -23,10 +23,13 @@ class CampFormatTest {
     }
 
     @Test
-    fun permissionsFollowRoleAndWriteProtection() {
-        assertEquals(true, CampPermissions(CampRole.TEAM, readOnly = false).canWrite)
-        assertEquals(false, CampPermissions(CampRole.READ_ONLY, readOnly = false).canWrite)
-        assertEquals(false, CampPermissions(CampRole.LEADERSHIP, readOnly = true).canWrite)
+    fun permissionsFollowTheGrantedRightsAndWriteProtection() {
+        val team = CampPermissions(CampRole.TEAM, readOnly = false, granted = setOf("aufgaben.eigene", "pinnwand.lesen"))
+        assertEquals(true, team.mayWrite("aufgaben.eigene"))
+        assertEquals(true, team.may("pinnwand.lesen"))
+        assertEquals(false, team.mayWrite("pinnwand.bearbeiten"))
+        assertEquals(false, CampPermissions(CampRole.LEADERSHIP, readOnly = true, granted = setOf("aufgaben.eigene")).mayWrite("aufgaben.eigene"))
+        assertEquals(false, NO_PERMISSIONS.may("aufgaben.eigene"))
         assertEquals(true, CampPermissions(CampRole.TEAM, false).canRead("aufgabe"))
         assertEquals(false, CampPermissions(CampRole.TEAM, false, setOf("ressort")).canRead("aufgabe"))
         assertEquals(true, CampPermissions(CampRole.TEAM, false, setOf("aufgabe")).canRead("aufgabe"))

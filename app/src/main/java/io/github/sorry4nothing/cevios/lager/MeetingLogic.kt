@@ -11,9 +11,8 @@ import java.time.ZoneId
 import java.util.UUID
 
 /**
- * Was die Rolle bei Sitzungen und Kommunikation darf. Der Server prüft bei jeder Anfrage; die App blendet nur aus, was die Rolle
- * nie darf (Standardrechte, `GET /api/v1/lager/{id}/rechte` nennt die einzelnen Rechte nur der Lagerleitung). Ist das Lager
- * geschlossen, bleibt nichts zum Ändern.
+ * Was die Person bei Sitzungen und Kommunikation darf, nach den Rechten aus dem Lagerdetail. Der Server prüft bei jeder Anfrage.
+ * Ist das Lager geschlossen, bleibt nichts zum Ändern.
  */
 data class MeetingRights(
     /** Alle Höcks, Protokolle und Beschlüsse lesen. Das Team sieht nur Höcks der Art `team` mit Datum, Zeit, Titel und Ort. */
@@ -34,24 +33,20 @@ data class MeetingRights(
     val markMention: Boolean,
 ) {
     companion object {
-        fun of(role: CampRole, readOnly: Boolean): MeetingRights {
-            val leads = role == CampRole.LEADERSHIP || role == CampRole.LEADER
-            val writes = !readOnly
-            return MeetingRights(
-                readAll = role != CampRole.TEAM,
-                editMeetings = writes && leads,
-                editMinutes = writes && leads,
-                readPinboard = true,
-                editPinboard = writes && leads,
-                interact = writes && (leads || role == CampRole.TEAM),
-                readInbox = role == CampRole.LEADERSHIP,
-                answerInbox = writes && role == CampRole.LEADERSHIP,
-                sendInbox = writes && (leads || role == CampRole.TEAM),
-                readOwnInbox = leads || role == CampRole.TEAM,
-                mentionToTask = writes && role != CampRole.READ_ONLY,
-                markMention = writes,
-            )
-        }
+        fun of(p: CampPermissions) = MeetingRights(
+            readAll = p.may("hoecks.lesen_alle"),
+            editMeetings = p.mayWrite("hoecks.bearbeiten"),
+            editMinutes = p.mayWrite("protokolle.bearbeiten"),
+            readPinboard = p.may("pinnwand.lesen"),
+            editPinboard = p.mayWrite("pinnwand.bearbeiten"),
+            interact = p.mayWrite("interaktion.schreiben"),
+            readInbox = p.may("eingang.lesen"),
+            answerInbox = p.mayWrite("eingang.antworten"),
+            sendInbox = p.mayWrite("eingang.senden"),
+            readOwnInbox = p.may("eingang.senden"),
+            mentionToTask = p.mayWrite("aufgaben.bearbeiten", "aufgaben.eigene"),
+            markMention = !p.readOnly,
+        )
     }
 }
 

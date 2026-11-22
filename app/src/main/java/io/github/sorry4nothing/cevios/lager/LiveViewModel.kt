@@ -44,7 +44,7 @@ class LiveViewModel(
     val writer = DirectWriter(viewModelScope) { texts.fieldLabels() }
 
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie. */
-    var rights: LiveRights = LiveRights.of(CampRole.READ_ONLY, true)
+    var rights: LiveRights = LiveRights.of(NO_PERMISSIONS)
 
     private val _schedule = MutableStateFlow<ApiResult<Schedule>?>(null)
     val schedule: StateFlow<ApiResult<Schedule>?> = _schedule.asStateFlow()

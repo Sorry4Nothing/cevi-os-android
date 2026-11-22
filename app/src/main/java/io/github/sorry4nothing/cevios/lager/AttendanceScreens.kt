@@ -79,8 +79,8 @@ fun AttendanceScreen(frame: LiveFrame) {
     val busy by vm.busy.collectAsState()
     var deadlineDialog by remember { mutableStateOf(false) }
     var requestNote by remember { mutableStateOf(false) }
-    // Die Rolle «Lesen» hat keine eigene Zeile; der Server antwortet dort 403.
-    val loadsOwn = frame.camp?.role != CampRole.READ_ONLY
+    // Wer das Recht `anwesenheit.eigene` nicht hat (Rolle «Lesen»), hat keine eigene Zeile; der Server antwortet dort 403.
+    val loadsOwn = frame.camp?.permissions()?.may("anwesenheit.eigene") == true
     LaunchedEffect(frame.camp?.id) {
         vm.loadSchedule(silent = vm.schedule.value is ApiResult.Ok)
         if (loadsOwn) vm.loadOwn(silent = vm.own.value is ApiResult.Ok)

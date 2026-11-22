@@ -44,7 +44,8 @@ import io.github.sorry4nothing.cevios.lager.todayInCamp
 import io.github.sorry4nothing.cevios.lager.clearSharedFiles
 import io.github.sorry4nothing.cevios.lager.shareCalendarFile
 import io.github.sorry4nothing.cevios.lager.CampApi
-import io.github.sorry4nothing.cevios.lager.CampRole
+import io.github.sorry4nothing.cevios.lager.NO_PERMISSIONS
+import io.github.sorry4nothing.cevios.lager.permissions
 import io.github.sorry4nothing.cevios.lager.LeadershipStart
 import io.github.sorry4nothing.cevios.lager.RessortListScreen
 import io.github.sorry4nothing.cevios.lager.RessortScreen
@@ -657,11 +658,12 @@ private fun MainContent(
         val campDetail = camp.detail.collectAsState().value.let { if (lostAccess != null && lostAccess == campId) ApiResult.Failure(ApiError.FORBIDDEN) else it }
         val conflict = conflictId?.let { id -> queueState.changes.firstOrNull { it.clientOpId == id && it.state == ChangeState.CONFLICT } }
         val openedCamp = (campDetail as? ApiResult.Ok)?.value?.takeIf { it.id == campId }
-        val rights = TaskRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val meetingRights = MeetingRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val planRights = PlanRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val liveRights = LiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val archiveRights = ArchiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        val campPermissions = openedCamp?.permissions() ?: NO_PERMISSIONS
+        val rights = TaskRights.of(campPermissions)
+        val meetingRights = MeetingRights.of(campPermissions)
+        val planRights = PlanRights.of(campPermissions)
+        val liveRights = LiveRights.of(campPermissions)
+        val archiveRights = ArchiveRights.of(campPermissions)
         SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
         // Wer die Konfliktlösung offen hat: ein Konflikt aus den Sitzungen oder der Kommunikation (ohne Warteschlange).
         val meetingConflict by meetings.writer.conflict.collectAsState()
@@ -1244,7 +1246,7 @@ private fun MainContent(
             val inCamp = if (campId != null) {
                 listOfNotNull(
                     MoreEntry(R.string.today_title, R.drawable.ic_home) { moreOpen = false; liveArea = LiveArea.TODAY },
-                    if (openedCamp?.role != CampRole.READ_ONLY || liveRights.readAttendance) MoreEntry(R.string.att_title, R.drawable.ic_check) { moreOpen = false; liveArea = LiveArea.ATTENDANCE } else null,
+                    if (liveRights.seesAttendance) MoreEntry(R.string.att_title, R.drawable.ic_check) { moreOpen = false; liveArea = LiveArea.ATTENDANCE } else null,
                     if (liveRights.readShopping) MoreEntry(R.string.shop_title, R.drawable.ic_list_check) { moreOpen = false; liveArea = LiveArea.SHOPPING } else null,
                     MoreEntry(R.string.pack_title, R.drawable.ic_bring_along) { moreOpen = false; liveArea = LiveArea.PACKING },
                     MoreEntry(R.string.emerg_title, R.drawable.ic_phone) { moreOpen = false; liveArea = LiveArea.EMERGENCY },

@@ -154,9 +154,9 @@ class TaskLogicTest {
 
     @Test
     fun rightsFollowTheRole() {
-        val leadership = TaskRights.of(CampRole.LEADERSHIP, readOnly = false)
-        val team = TaskRights.of(CampRole.TEAM, readOnly = false)
-        val reading = TaskRights.of(CampRole.READ_ONLY, readOnly = false)
+        val leadership = TaskRights.of(defaultPermissions(CampRole.LEADERSHIP, false))
+        val team = TaskRights.of(defaultPermissions(CampRole.TEAM, false))
+        val reading = TaskRights.of(defaultPermissions(CampRole.READ_ONLY, false))
         assertTrue(leadership.edit && leadership.seeLeadershipStart && leadership.editRessorts)
         // Das Team setzt nur den Status; es sieht weder Ressorts noch Verlauf noch den Start der Leitung.
         assertTrue(team.setStatus)
@@ -164,7 +164,7 @@ class TaskLogicTest {
         assertFalse(reading.edit || reading.setStatus)
         assertTrue(reading.readAll)
         // Ein abgeschlossenes Lager lässt nichts mehr ändern.
-        assertFalse(TaskRights.of(CampRole.LEADERSHIP, readOnly = true).let { it.edit || it.setStatus || it.editRessorts })
+        assertFalse(TaskRights.of(defaultPermissions(CampRole.LEADERSHIP, true)).let { it.edit || it.setStatus || it.editRessorts })
     }
 
     // ---- wartende Änderungen über dem Stand des Servers ----

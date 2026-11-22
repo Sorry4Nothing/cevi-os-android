@@ -51,7 +51,7 @@ class CommsViewModel(
     val writer = DirectWriter(viewModelScope) { texts.fieldLabels() }
 
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie, sobald das Lager geladen ist. */
-    var rights: MeetingRights = MeetingRights.of(CampRole.READ_ONLY, true)
+    var rights: MeetingRights = MeetingRights.of(NO_PERMISSIONS)
 
     private val _posts = MutableStateFlow<ApiResult<List<Post>>?>(null)
     val posts: StateFlow<ApiResult<List<Post>>?> = _posts.asStateFlow()

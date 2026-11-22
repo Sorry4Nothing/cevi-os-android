@@ -31,18 +31,18 @@ class MeetingLogicTest {
 
     @Test
     fun rightsFollowTheRoleAndTheClosedCamp() {
-        val leadership = MeetingRights.of(CampRole.LEADERSHIP, false)
+        val leadership = MeetingRights.of(defaultPermissions(CampRole.LEADERSHIP, false))
         assertTrue(leadership.editMeetings && leadership.readInbox && leadership.answerInbox && leadership.editPinboard)
-        val leader = MeetingRights.of(CampRole.LEADER, false)
+        val leader = MeetingRights.of(defaultPermissions(CampRole.LEADER, false))
         assertTrue(leader.editMeetings && leader.readAll)
         assertFalse(leader.readInbox)
-        val team = MeetingRights.of(CampRole.TEAM, false)
+        val team = MeetingRights.of(defaultPermissions(CampRole.TEAM, false))
         assertFalse(team.readAll || team.editMeetings || team.editPinboard)
         assertTrue(team.interact && team.sendInbox && team.readPinboard)
-        val reader = MeetingRights.of(CampRole.READ_ONLY, false)
+        val reader = MeetingRights.of(defaultPermissions(CampRole.READ_ONLY, false))
         assertFalse(reader.interact || reader.sendInbox || reader.mentionToTask)
         assertTrue(reader.readAll)
-        val closed = MeetingRights.of(CampRole.LEADERSHIP, true)
+        val closed = MeetingRights.of(defaultPermissions(CampRole.LEADERSHIP, true))
         assertFalse(closed.editMeetings || closed.editPinboard || closed.interact || closed.sendInbox || closed.answerInbox)
         assertTrue(closed.readInbox)
         assertTrue(closed.readOwnInbox)

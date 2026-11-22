@@ -40,7 +40,7 @@ class PlanningViewModel(
     val writer = DirectWriter(viewModelScope) { texts.fieldLabels() }
 
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie. */
-    var rights: PlanRights = PlanRights.of(CampRole.READ_ONLY, true)
+    var rights: PlanRights = PlanRights.of(NO_PERMISSIONS)
 
     private val _participants = MutableStateFlow<ApiResult<List<Participant>>?>(null)
     val participants: StateFlow<ApiResult<List<Participant>>?> = _participants.asStateFlow()

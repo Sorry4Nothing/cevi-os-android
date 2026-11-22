@@ -17,8 +17,6 @@ import kotlinx.serialization.json.put
  * auf genau den genannten Wert; eine Wiederholung ändert nichts.
  */
 class PlanningApi(private val api: ApiClient) {
-    private fun base(campId: String) = "/api/v1/lager/$campId"
-
     /** Liest alle Seiten einer Liste (Cursor `nach`); `page` baut den Pfad zu einer Seite, `next` und `items` lesen die Antwort. */
     private suspend fun <P, T> all(page: suspend (String?) -> ApiResult<P>, next: (P) -> String?, items: (P) -> List<T>): ApiResult<List<T>> {
         val all = mutableListOf<T>()
@@ -40,80 +38,80 @@ class PlanningApi(private val api: ApiClient) {
     // ---- Teilnehmende ----
 
     suspend fun participants(campId: String): ApiResult<List<Participant>> =
-        all({ api.get<ParticipantPage>("${base(campId)}/teilnehmer?limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.participants })
+        all({ api.get<ParticipantPage>("/api/v1/lager/$campId/teilnehmer?limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.participants })
 
-    suspend fun createParticipant(campId: String, body: JsonObject): ApiResult<Participant> = api.post("${base(campId)}/teilnehmer", body)
+    suspend fun createParticipant(campId: String, body: JsonObject): ApiResult<Participant> = api.post("/api/v1/lager/$campId/teilnehmer", body)
 
-    suspend fun changeParticipant(campId: String, id: String, body: JsonObject): ApiResult<Participant> = api.patchJson("${base(campId)}/teilnehmer/$id", body)
+    suspend fun changeParticipant(campId: String, id: String, body: JsonObject): ApiResult<Participant> = api.patchJson("/api/v1/lager/$campId/teilnehmer/$id", body)
 
     suspend fun deleteParticipant(campId: String, participant: Participant): ApiResult<Unit> =
-        api.delete("${base(campId)}/teilnehmer/${participant.id}?version=${participant.version}")
+        api.delete("/api/v1/lager/$campId/teilnehmer/${participant.id}?version=${participant.version}")
 
     /** Liest eingefügten Text (eine Person je Zeile); mit `apply` false nur als Vorschau, es wird nichts geschrieben. */
     suspend fun importParticipants(campId: String, text: String, apply: Boolean): ApiResult<ImportResult> =
-        api.post("${base(campId)}/teilnehmer/import", buildJsonObject { put("text", text); put("uebernehmen", apply) })
+        api.post("/api/v1/lager/$campId/teilnehmer/import", buildJsonObject { put("text", text); put("uebernehmen", apply) })
 
     /** Wählt Teilnehmende ab («nicht dabei») oder wieder zu; Abgewählte stehen weder in Gruppen noch in der Abzählliste. */
     suspend fun setExcluded(campId: String, ids: List<String>, excluded: Boolean): ApiResult<ChangedCount> =
-        api.putJson("${base(campId)}/gruppen/abgewaehlt", buildJsonObject { put("abgewaehlt", excluded); put("teilnehmerIds", strings(ids)) })
+        api.putJson("/api/v1/lager/$campId/gruppen/abgewaehlt", buildJsonObject { put("abgewaehlt", excluded); put("teilnehmerIds", strings(ids)) })
 
     // ---- Zimmer und Zelte ----
 
-    suspend fun rooms(campId: String): ApiResult<RoomList> = api.get("${base(campId)}/zimmer")
+    suspend fun rooms(campId: String): ApiResult<RoomList> = api.get("/api/v1/lager/$campId/zimmer")
 
     suspend fun openPeople(campId: String, team: Boolean): ApiResult<List<OpenPerson>> =
-        all({ api.get<OpenPage>("${base(campId)}/zimmer/offen?art=${if (team) "team" else "teilnehmer"}&limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.entries })
+        all({ api.get<OpenPage>("/api/v1/lager/$campId/zimmer/offen?art=${if (team) "team" else "teilnehmer"}&limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.entries })
 
-    suspend fun createRoom(campId: String, body: JsonObject): ApiResult<Room> = api.post("${base(campId)}/zimmer", body)
+    suspend fun createRoom(campId: String, body: JsonObject): ApiResult<Room> = api.post("/api/v1/lager/$campId/zimmer", body)
 
-    suspend fun changeRoom(campId: String, id: String, body: JsonObject): ApiResult<Room> = api.patchJson("${base(campId)}/zimmer/$id", body)
+    suspend fun changeRoom(campId: String, id: String, body: JsonObject): ApiResult<Room> = api.patchJson("/api/v1/lager/$campId/zimmer/$id", body)
 
-    suspend fun deleteRoom(campId: String, room: Room): ApiResult<Unit> = api.delete("${base(campId)}/zimmer/${room.id}?version=${room.version}")
+    suspend fun deleteRoom(campId: String, room: Room): ApiResult<Unit> = api.delete("/api/v1/lager/$campId/zimmer/${room.id}?version=${room.version}")
 
     suspend fun assignToRoom(campId: String, roomId: String, participantIds: List<String>, personIds: List<String>): ApiResult<RoomFill> =
-        api.post("${base(campId)}/zimmer/$roomId/zuordnung", people(participantIds, personIds))
+        api.post("/api/v1/lager/$campId/zimmer/$roomId/zuordnung", people(participantIds, personIds))
 
     suspend fun removeFromRoom(campId: String, roomId: String, participantIds: List<String>, personIds: List<String>): ApiResult<RoomFill> =
-        api.post("${base(campId)}/zimmer/$roomId/zuordnung/entfernen", people(participantIds, personIds))
+        api.post("/api/v1/lager/$campId/zimmer/$roomId/zuordnung/entfernen", people(participantIds, personIds))
 
     // ---- Fahrten ----
 
     suspend fun trips(campId: String): ApiResult<List<Trip>> =
-        all({ api.get<TripPage>("${base(campId)}/fahrten?limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.trips })
+        all({ api.get<TripPage>("/api/v1/lager/$campId/fahrten?limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.trips })
 
     /** Personen ohne Fahrt in einer Richtung (nicht für das Team: 403). Die Gesamtzahl steht in der ersten Seite. */
     suspend fun withoutTrip(campId: String, direction: TripDirection): ApiResult<List<TripCandidate>> =
-        all({ api.get<TripCandidatePage>("${base(campId)}/fahrten/ohne?richtung=${direction.wire}&limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.people })
+        all({ api.get<TripCandidatePage>("/api/v1/lager/$campId/fahrten/ohne?richtung=${direction.wire}&limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.people })
 
-    suspend fun createTrip(campId: String, body: JsonObject): ApiResult<Trip> = api.post("${base(campId)}/fahrten", body)
+    suspend fun createTrip(campId: String, body: JsonObject): ApiResult<Trip> = api.post("/api/v1/lager/$campId/fahrten", body)
 
-    suspend fun changeTrip(campId: String, id: String, body: JsonObject): ApiResult<Trip> = api.patchJson("${base(campId)}/fahrten/$id", body)
+    suspend fun changeTrip(campId: String, id: String, body: JsonObject): ApiResult<Trip> = api.patchJson("/api/v1/lager/$campId/fahrten/$id", body)
 
-    suspend fun deleteTrip(campId: String, trip: Trip): ApiResult<Unit> = api.delete("${base(campId)}/fahrten/${trip.id}?version=${trip.version}")
+    suspend fun deleteTrip(campId: String, trip: Trip): ApiResult<Unit> = api.delete("/api/v1/lager/$campId/fahrten/${trip.id}?version=${trip.version}")
 
     suspend fun addPassenger(campId: String, tripId: String, candidate: TripCandidate): ApiResult<TripPassengerAdded> =
         api.post(
-            "${base(campId)}/fahrten/$tripId/mitfahrer",
+            "/api/v1/lager/$campId/fahrten/$tripId/mitfahrer",
             buildJsonObject { candidate.personId?.let { put("personId", it) } ?: candidate.teilnehmerId?.let { put("teilnehmerId", it) } },
         )
 
     suspend fun removePassenger(campId: String, tripId: String, passenger: TripPerson): ApiResult<Unit> =
-        api.delete("${base(campId)}/fahrten/$tripId/mitfahrer/${passenger.id}?version=${passenger.version}")
+        api.delete("/api/v1/lager/$campId/fahrten/$tripId/mitfahrer/${passenger.id}?version=${passenger.version}")
 
     // ---- Gruppen ----
 
-    suspend fun groups(campId: String): ApiResult<GroupList> = api.get("${base(campId)}/gruppen")
+    suspend fun groups(campId: String): ApiResult<GroupList> = api.get("/api/v1/lager/$campId/gruppen")
 
-    suspend fun createGroup(campId: String, name: String): ApiResult<GroupRow> = api.post("${base(campId)}/gruppen", buildJsonObject { put("name", name) })
+    suspend fun createGroup(campId: String, name: String): ApiResult<GroupRow> = api.post("/api/v1/lager/$campId/gruppen", buildJsonObject { put("name", name) })
 
-    suspend fun changeGroup(campId: String, id: String, body: JsonObject): ApiResult<GroupRow> = api.patchJson("${base(campId)}/gruppen/$id", body)
+    suspend fun changeGroup(campId: String, id: String, body: JsonObject): ApiResult<GroupRow> = api.patchJson("/api/v1/lager/$campId/gruppen/$id", body)
 
-    suspend fun deleteGroup(campId: String, group: Group): ApiResult<Unit> = api.delete("${base(campId)}/gruppen/${group.id}?version=${group.version}")
+    suspend fun deleteGroup(campId: String, group: Group): ApiResult<Unit> = api.delete("/api/v1/lager/$campId/gruppen/${group.id}?version=${group.version}")
 
     /** Setzt Teilnehmende und Mitglieder in eine Gruppe (wer in einer anderen steht, wird verschoben); `groupId` null nimmt sie heraus. */
     suspend fun assignToGroup(campId: String, groupId: String?, participantIds: List<String>, personIds: List<String>, leader: Boolean): ApiResult<ChangedCount> =
         api.putJson(
-            "${base(campId)}/gruppen/zuordnung",
+            "/api/v1/lager/$campId/gruppen/zuordnung",
             buildJsonObject {
                 put("gruppeId", groupId?.let(::JsonPrimitive) ?: JsonNull)
                 if (participantIds.isNotEmpty()) put("teilnehmerIds", strings(participantIds))
@@ -126,31 +124,31 @@ class PlanningApi(private val api: ApiClient) {
 
     /** Mischt die Teilnehmenden nach Stufe auf `count` Gruppen; ohne `apply` nur die Vorschau. Mit `seed` ist das Ergebnis wiederholbar. */
     suspend fun mixGroups(campId: String, count: Int, apply: Boolean, seed: Long?): ApiResult<MixResult> =
-        api.post("${base(campId)}/gruppen/mischen", buildJsonObject { put("anzahl", count); put("uebernehmen", apply); seed?.let { put("seed", it) } })
+        api.post("/api/v1/lager/$campId/gruppen/mischen", buildJsonObject { put("anzahl", count); put("uebernehmen", apply); seed?.let { put("seed", it) } })
 
     // ---- Schichtplan ----
 
-    suspend fun shiftPlan(campId: String): ApiResult<ShiftPlan> = api.get("${base(campId)}/schichtplan")
+    suspend fun shiftPlan(campId: String): ApiResult<ShiftPlan> = api.get("/api/v1/lager/$campId/schichtplan")
 
     /** Lagertage und Tagesabschnitte; sie gehören zum Zeitplan, der Schichtplan braucht nur diese beiden Listen. */
-    suspend fun schedule(campId: String): ApiResult<Schedule> = api.get("${base(campId)}/zeitplan")
+    suspend fun schedule(campId: String): ApiResult<Schedule> = api.get("/api/v1/lager/$campId/zeitplan")
 
-    suspend fun createDuty(campId: String, body: JsonObject): ApiResult<Duty> = api.post("${base(campId)}/schichtplan/dienste", body)
+    suspend fun createDuty(campId: String, body: JsonObject): ApiResult<Duty> = api.post("/api/v1/lager/$campId/schichtplan/dienste", body)
 
-    suspend fun changeDuty(campId: String, id: String, body: JsonObject): ApiResult<Duty> = api.patchJson("${base(campId)}/schichtplan/dienste/$id", body)
+    suspend fun changeDuty(campId: String, id: String, body: JsonObject): ApiResult<Duty> = api.patchJson("/api/v1/lager/$campId/schichtplan/dienste/$id", body)
 
-    suspend fun deleteDuty(campId: String, duty: Duty): ApiResult<Unit> = api.delete("${base(campId)}/schichtplan/dienste/${duty.id}?version=${duty.version}")
+    suspend fun deleteDuty(campId: String, duty: Duty): ApiResult<Unit> = api.delete("/api/v1/lager/$campId/schichtplan/dienste/${duty.id}?version=${duty.version}")
 
     /** Setzt die ganze Besetzung eines Dienstes an einem Tag auf genau diese Personen; leere Listen leeren den Dienst. */
     suspend fun staffDuty(campId: String, dayId: String, dutyId: String, personIds: List<String>, participantIds: List<String>): ApiResult<ChangedCount> =
         api.putJson(
-            "${base(campId)}/schichtplan/schichten",
+            "/api/v1/lager/$campId/schichtplan/schichten",
             buildJsonObject { put("lagertagId", dayId); put("dienstId", dutyId); put("personIds", strings(personIds)); put("teilnehmerIds", strings(participantIds)) },
         )
 
     suspend fun suggestShifts(campId: String, apply: Boolean, seed: Long?, withParticipants: Boolean, onlyPresent: Boolean): ApiResult<ShiftSuggestion> =
         api.post(
-            "${base(campId)}/schichtplan/vorschlag",
+            "/api/v1/lager/$campId/schichtplan/vorschlag",
             buildJsonObject {
                 put("uebernehmen", apply)
                 seed?.let { put("seed", it) }
@@ -163,18 +161,18 @@ class PlanningApi(private val api: ApiClient) {
 
     /** Alle Anfragen des Lagers, älteste zuerst (nur mit dem Recht zu entscheiden). */
     suspend fun swaps(campId: String): ApiResult<List<Swap>> =
-        all({ api.get<SwapPage>("${base(campId)}/diensttausch?limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.swaps })
+        all({ api.get<SwapPage>("/api/v1/lager/$campId/diensttausch?limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.swaps })
 
     /** Die letzten Anfragen der eigenen Person, neueste zuerst. */
     suspend fun ownSwaps(campId: String): ApiResult<List<Swap>> =
-        when (val result = api.get<SwapList>("${base(campId)}/diensttausch/eigene")) {
+        when (val result = api.get<SwapList>("/api/v1/lager/$campId/diensttausch/eigene")) {
             is ApiResult.Ok -> ApiResult.Ok(result.value.swaps)
             is ApiResult.Failure -> result
         }
 
     suspend fun requestSwap(campId: String, shiftId: String, withShiftId: String?, withPersonId: String?, note: String?): ApiResult<Swap> =
         api.post(
-            "${base(campId)}/diensttausch",
+            "/api/v1/lager/$campId/diensttausch",
             buildJsonObject {
                 put("schichtId", shiftId)
                 withShiftId?.let { put("mitSchichtId", it) }
@@ -185,7 +183,7 @@ class PlanningApi(private val api: ApiClient) {
 
     suspend fun decideSwap(campId: String, swap: Swap, version: Long, accept: Boolean, takeOverBy: String?): ApiResult<Swap> =
         api.post(
-            "${base(campId)}/diensttausch/${swap.id}/entscheid",
+            "/api/v1/lager/$campId/diensttausch/${swap.id}/entscheid",
             buildJsonObject {
                 put("entscheid", if (accept) "angenommen" else "abgelehnt")
                 put("version", version)
@@ -194,7 +192,7 @@ class PlanningApi(private val api: ApiClient) {
         )
 
     suspend fun withdrawSwap(campId: String, swap: Swap, version: Long): ApiResult<Swap> =
-        api.post("${base(campId)}/diensttausch/${swap.id}/zurueckziehen", buildJsonObject { put("version", version) })
+        api.post("/api/v1/lager/$campId/diensttausch/${swap.id}/zurueckziehen", buildJsonObject { put("version", version) })
 
     // ---- Abzählliste ----
 
@@ -210,7 +208,7 @@ class PlanningApi(private val api: ApiClient) {
                 groupId?.let { append("&gruppe=").append(it) }
                 after?.let { append("&nach=").append(it) }
             }
-            when (val page = api.get<CountPage>("${base(campId)}/abzaehlen?$query")) {
+            when (val page = api.get<CountPage>("/api/v1/lager/$campId/abzaehlen?$query")) {
                 is ApiResult.Failure -> return page
                 is ApiResult.Ok -> {
                     all += page.value.entries
@@ -224,7 +222,7 @@ class PlanningApi(private val api: ApiClient) {
 
     suspend fun setChecked(campId: String, participantIds: List<String>, personIds: List<String>, checked: Boolean): ApiResult<CountChanged> =
         api.putJson(
-            "${base(campId)}/abzaehlen",
+            "/api/v1/lager/$campId/abzaehlen",
             buildJsonObject {
                 put("geprueft", checked)
                 if (participantIds.isNotEmpty()) put("teilnehmerIds", strings(participantIds))
@@ -232,7 +230,7 @@ class PlanningApi(private val api: ApiClient) {
             },
         )
 
-    suspend fun resetCount(campId: String): ApiResult<CountReset> = api.post("${base(campId)}/abzaehlen/zuruecksetzen", buildJsonObject { put("bestaetigt", true) })
+    suspend fun resetCount(campId: String): ApiResult<CountReset> = api.post("/api/v1/lager/$campId/abzaehlen/zuruecksetzen", buildJsonObject { put("bestaetigt", true) })
 
     private fun people(participantIds: List<String>, personIds: List<String>) = buildJsonObject {
         if (participantIds.isNotEmpty()) put("teilnehmerIds", strings(participantIds))

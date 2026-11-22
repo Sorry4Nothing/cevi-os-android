@@ -312,6 +312,8 @@ fun ChatConversationScreen(
                 Header(
                     title = title,
                     subtitle = chat?.ageGroup?.name,
+                    // Nur der Gruppenchat der Stufe trägt das Logo, wie in der Liste; der Einzelchat ist einer mit der Stufenleitung.
+                    subtitleStageId = chat?.takeIf { it.isGroup }?.ageGroup?.id,
                     back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
                     titleStyle = MaterialTheme.typography.headlineMedium,
                     focusOnTitle = true,

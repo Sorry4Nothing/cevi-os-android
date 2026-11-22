@@ -47,6 +47,7 @@ import io.github.sorry4nothing.cevios.contacts.ContactCard
 import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.ui.ChipKind
+import io.github.sorry4nothing.cevios.ui.GroupChip
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.Header
 import io.github.sorry4nothing.cevios.ui.HeaderButton
@@ -137,10 +138,12 @@ private fun DateColumn(day: Day, withLine: Boolean) {
     }
 }
 
-/** Die Gruppen des Programms für Chips; ohne Stufe gilt es für alle. */
 @Composable
-private fun groupNames(program: Program): List<String> =
-    if (program.allAgeGroups) listOf(stringResource(R.string.stage_all)) else program.ageGroups.map { it.name }
+private fun groupChips(program: Program): List<GroupChip> = groupChips(program, stringResource(R.string.stage_all))
+
+/** Die Gruppen des Programms für Chips: eine Stufe je Chip mit ihrer ID für das Logo; ohne Stufe gilt es für alle (ein Chip ohne ID). */
+internal fun groupChips(program: Program, allLabel: String): List<GroupChip> =
+    if (program.allAgeGroups) listOf(GroupChip(allLabel)) else program.ageGroups.map { GroupChip(it.name, it.id) }
 
 /** Uhrzeit mit Symbol, Titel, Ort; darunter die Gruppen und der Stand der eigenen Zusagen als Chips (Zahl, nie Namen). */
 @OptIn(ExperimentalLayoutApi::class)
@@ -164,7 +167,7 @@ private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
         Text(program.title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 24.sp))
         program.location?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = muted) }
         FlowRow(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-            groupNames(program).forEach { StatusChip(ChipKind.AGE_GROUP, it) }
+            groupChips(program).forEach { StatusChip(ChipKind.AGE_GROUP, it.name, stageId = it.stageId) }
             // Bei einem abgesagten Programm steht «Abgesagt» da, Zusagen sind dann ohne Bedeutung.
             if (!program.cancelled) AnswerChips(program)
             if (program.cancelled) StatusChip(ChipKind.NO, stringResource(R.string.status_cancelled))
@@ -269,7 +272,7 @@ private fun ProgramContent(
         Header(
             title = program.title,
             subtitle = date,
-            groups = groupNames(program),
+            groups = groupChips(program),
             back = back,
             titleStyle = MaterialTheme.typography.headlineMedium,
             focusOnTitle = true,

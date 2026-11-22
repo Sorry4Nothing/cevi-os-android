@@ -50,8 +50,10 @@ fun Header(
     modifier: Modifier = Modifier,
     /** Kontext als Satzteil unter dem Titel (Datum, Programm); keine Überzeile über dem Titel. */
     subtitle: String? = null,
+    /** Stufe, deren Logo vor dem Untertitel steht (dekorativ, der Name steht im Untertitel). */
+    subtitleStageId: String? = null,
     /** Gruppen (Stufe, Team) als Chips unter dem Untertitel. */
-    groups: List<String> = emptyList(),
+    groups: List<GroupChip> = emptyList(),
     back: HeaderButton? = null,
     action: HeaderButton? = null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge,
@@ -81,14 +83,19 @@ fun Header(
                         .then(if (focusOnTitle) Modifier.focusRequester(focus).focusTarget() else Modifier)
                         .semantics { heading() },
                 )
-                subtitle?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                subtitle?.let {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
+                        subtitleStageId?.let { id -> StageLogo(id, size = 24.dp) }
+                        Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false))
+                    }
+                }
             }
             if (groups.isNotEmpty()) {
                 FlowRow(
                     Modifier.padding(horizontal = Spacing.s2),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
                     verticalArrangement = Arrangement.spacedBy(Spacing.s2),
-                ) { groups.forEach { StatusChip(ChipKind.AGE_GROUP, it) } }
+                ) { groups.forEach { StatusChip(ChipKind.AGE_GROUP, it.name, stageId = it.stageId) } }
             }
         }
     }

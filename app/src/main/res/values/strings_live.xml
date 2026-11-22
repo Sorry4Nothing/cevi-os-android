@@ -160,7 +160,7 @@
     <string name="pack_own_section">Eigene Punkte</string>
     <string name="pack_remove">Aus meiner Liste nehmen</string>
     <string name="pack_restore">Zurückholen</string>
-    <string name="pack_show_removed">%1$d entfernte Punkte anzeigen</string>
+    <string name="pack_show_removed">Entfernte Punkte anzeigen (%1$d)</string>
     <string name="pack_hide_removed">Entfernte Punkte ausblenden (%1$d)</string>
     <string name="pack_removed_title">Entfernte Punkte</string>
     <string name="pack_actions_named">Aktionen für %1$s</string>

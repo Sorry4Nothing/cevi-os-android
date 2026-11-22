@@ -51,7 +51,7 @@ fun BusyOverlay(busy: Boolean) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f))
+            .background(MaterialTheme.colorScheme.scrim)
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) awaitPointerEvent().changes.forEach { it.consume() }

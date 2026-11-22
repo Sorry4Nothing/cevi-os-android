@@ -168,7 +168,7 @@ internal fun TabPill(text: String, selected: Boolean, onClick: () -> Unit) {
             .focusRing(Pill)
             .clip(Pill)
             .then(
-                if (selected) Modifier.background(scheme.onSecondaryContainer)
+                if (selected) Modifier.background(MaterialTheme.cevi.accent)
                 else Modifier.border(1.dp, scheme.outline, Pill),
             )
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
@@ -179,7 +179,7 @@ internal fun TabPill(text: String, selected: Boolean, onClick: () -> Unit) {
             text,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
-            color = if (selected) scheme.secondaryContainer else scheme.onSurfaceVariant,
+            color = if (selected) MaterialTheme.cevi.onAccent else scheme.onSurfaceVariant,
         )
     }
 }

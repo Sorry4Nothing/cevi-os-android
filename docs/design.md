@@ -1,20 +1,20 @@
 # Design
 
-Stil «Nachthimmel»: ruhiges, blau getöntes Dunkel, Cevi-Blau für Orientierung, Cevi-Rot für die eine Hauptaktion pro Screen, grosse fette Titel, runde Formen, Karten mit feinem Rand statt Schatten.
+Farbwelt der Cevi-Website: Tag auf kühlem Blaugrau (Hauptrichtung), Nacht neutral dunkel, Cevi-Blau für Orientierung, Cevi-Rot für die eine Hauptaktion pro Screen, grosse fette Titel, runde Formen, Karten mit feinem Rand statt Schatten.
 
 ## Vorlage (verbindlich)
 
 | Was | Wo |
 | --- | --- |
-| Design System «Cevi App»: Farben, Schrift, Abstände, Bausteine, Brandbook | Entwurf des Auftraggebers |
-| Bildschirme «Cevi App Screens»: Login bis Zustände, Nacht (`B…`, `S…`) und Tag (`L…`, `T…`) | Entwurf des Auftraggebers |
+| Design System «Cevi OS Android 2» (Farbwelt Cevi-Website): Farben, Schrift, Abstände, Bausteine | Entwurf des Auftraggebers |
+| Bildschirme «Cevi Lager Android»: Anmelden bis Zustände, Termine, Lager, Widgets, je in Tag und Nacht | Entwurf des Auftraggebers |
 
 Beide Entwürfe gehören dem Projekt und sind nicht öffentlich: Zum Lesen braucht es Zugang. Die Werte, die der Code braucht, stehen deshalb auch hier und in den Kommentaren der Theme-Dateien. Weicht der Code vom Entwurf ab, ist das ein Fehler im Code, ausser der Entwurf wurde geändert: Dann zuerst den Entwurf anpassen, dann den Code, und dieses Dokument nachführen.
 
 ## Regeln aus dem Brandbook
 
 - **Sprache:** nur Deutsch, Schweizer Schreibweise (ss, «so»), «du», kurze Sätze, Buttons sind Verben, keine Emojis.
-- **Farbe:** zwei Themen, **Nacht** (Hauptrichtung) und **Tag**, nach Systemeinstellung, kein Dynamic Color. `secondary` (Blau) zeigt, wo man ist; `primary` (Rot) nur für die eine Hauptaktion und Zähler; `accent` für Links und Überzeilen. **Kein Zustand nur über Farbe**: immer Icon und Wort.
+- **Farbe:** zwei Themen, **Tag** (Hauptrichtung) und **Nacht**, nach Systemeinstellung, kein Dynamic Color, kein Violett. `accent` mit `onAccent` zeigt, wo man ist (aktiver Dock-Reiter, gewählte Pille, Schalter und Häkchen an) und färbt Links; `secondary` (Cevi-Blau) ist die Fläche für eigene Chat-Blasen und Avatare; `primary` (Rot) nur für die eine Hauptaktion und Zähler. **Kein Zustand nur über Farbe**: immer Icon und Wort.
 - **Schrift:** Archivo, mitgeliefert, alles in `sp`.
 - **Mass:** jedes bedienbare Element mindestens 48 dp, Haupt-Buttons 56 dp, Felder 52 dp.
 - **Barrierefreiheit:** TalkBack liest Karten als ganzen Satz, Titel sind Überschriften, Fokus nach Navigation auf den Titel, Statusänderungen als Live-Region, langes Drücken hat immer eine sichtbare Alternative.
@@ -24,7 +24,7 @@ Beide Entwürfe gehören dem Projekt und sind nicht öffentlich: Zum Lesen brauc
 
 | Design | Compose | Stand |
 | --- | --- | --- |
-| Farben `tokens.json` (Nacht, Tag) | `ui/theme/Colors.kt`: `ColorScheme` und `CeviColors` (`MaterialTheme.cevi`) | umgesetzt |
+| Farben `tokens.json` (Tag, Nacht) | `ui/theme/Colors.kt`: `ColorScheme` und `CeviColors` (`MaterialTheme.cevi`) | umgesetzt |
 | Schrift und Stile | `ui/theme/Typography.kt`, Schrift in `res/font/archivo.ttf` (Lizenz in `assets/licenses`) | umgesetzt |
 | Abstände, Grössen, Ecken | `ui/theme/Dimensions.kt` (`Spacing`, `Sizes`, `CeviShapes`, `Pill`) | umgesetzt |
 | Theme | `ui/theme/Theme.kt`: `CeviTheme` | umgesetzt |
@@ -94,9 +94,6 @@ Die API wird entsprechend erweitert (Entscheid 2026-10-30). Bis dahin nichts erf
 Zwischen dem Design System (`tokens.json`, Brandbook) und den einzelnen Bildschirmen gibt es kleine Abweichungen. **Es gelten immer die Werte des Design Systems**, die Bildschirme zeigen nur Aufbau und Anordnung (Entscheid 2026-10-30). Bekannte Abweichungen in den Bildschirmen, die der Code nicht übernimmt:
 
 - Titelgrösse: Token `headline` 32/38 gilt, nicht 30/36 aus den Bildschirmen.
-- `outline`: Token `#8A8A90` (Nacht) gilt, nicht `#74746F`.
-- Farben ohne Token (`#C2C3EC`, `#B4B6F5`, `#2C7C91`): nicht übernommen, es gelten die Tokens `accent`, `secondary-container` usw.
-- MitleseHinweis im Tag-Theme: Token `secondary-container` `#ECECF8` gilt, nicht `#DFDFF3`.
 
 ## Ausrichtung
 

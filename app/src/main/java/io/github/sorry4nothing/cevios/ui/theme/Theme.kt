@@ -6,11 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 
 /**
- * Das Aussehen «Nachthimmel» aus dem Design:
- * - Design System «Cevi App» (Farben, Schrift, Bausteine)
- * - Bildschirme «Cevi App Screens» (Nacht und Tag, alle Zustände)
+ * Das Aussehen aus dem Design:
+ * - Design System «Cevi OS Android 2» (Farbwelt Cevi-Website: Farben, Schrift, Bausteine)
+ * - Bildschirme «Cevi Lager Android» (Tag und Nacht, alle Zustände)
  *
- * Zwei Themen, [CeviNight] (Dunkelmodus, Hauptrichtung) und [CeviDay] (Hellmodus). Die App folgt dem System, es gibt
+ * Zwei Themen, [CeviDay] (Hellmodus, Hauptrichtung) und [CeviNight] (Dunkelmodus). Die App folgt dem System, es gibt
  * kein Dynamic Color. Die Zuordnung Baustein → Compose steht in `docs/design.md`.
  */
 @Composable

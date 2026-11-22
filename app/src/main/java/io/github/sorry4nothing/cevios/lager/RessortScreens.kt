@@ -299,5 +299,5 @@ private fun NoteCard(note: RessortNote) {
 
 private const val NOTE_FOLD = 160
 
-/** Ruhige Ressorts erscheinen blasser; der Text «Ruhig» steht dabei, die Farbe allein sagt es nicht. */
-private const val QUIET_ALPHA = 0.72f
+/** Ruhige Ressorts erscheinen blasser; der Text «Ruhig» steht dabei, die Farbe allein sagt es nicht. Bei 0,85 bleibt `onSurfaceVariant` im Tag-Thema über 4,5:1 (bei 0,72 nur 4,1:1). */
+private const val QUIET_ALPHA = 0.85f

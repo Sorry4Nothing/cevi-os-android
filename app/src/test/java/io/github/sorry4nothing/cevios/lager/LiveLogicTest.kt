@@ -27,22 +27,22 @@ class LiveLogicTest {
 
     @Test
     fun rightsFollowTheStandardRoles() {
-        val leadership = LiveRights.of(CampRole.LEADERSHIP, readOnly = false)
+        val leadership = LiveRights.of(defaultPermissions(CampRole.LEADERSHIP, false))
         assertTrue(leadership.decideAttendance && leadership.editInfos && leadership.editShopping && leadership.editDayPages)
-        val leader = LiveRights.of(CampRole.LEADER, readOnly = false)
+        val leader = LiveRights.of(defaultPermissions(CampRole.LEADER, false))
         assertTrue(leader.ownAttendance && leader.readAttendance && leader.editShopping && leader.editDayPages)
         assertFalse(leader.decideAttendance || leader.editInfos)
-        val team = LiveRights.of(CampRole.TEAM, readOnly = false)
+        val team = LiveRights.of(defaultPermissions(CampRole.TEAM, false))
         assertTrue(team.ownAttendance && team.tickPacking && team.todos)
         assertFalse(team.readShopping || team.readDayPages || team.readAttendance || team.editShopping)
-        val reader = LiveRights.of(CampRole.READ_ONLY, readOnly = false)
+        val reader = LiveRights.of(defaultPermissions(CampRole.READ_ONLY, false))
         assertTrue(reader.readShopping && reader.readDayPages && reader.readAttendance && reader.todos)
         assertFalse(reader.ownAttendance || reader.tickPacking || reader.editShopping)
     }
 
     @Test
     fun aClosedCampLeavesNothingToChange() {
-        val closed = LiveRights.of(CampRole.LEADERSHIP, readOnly = true)
+        val closed = LiveRights.of(defaultPermissions(CampRole.LEADERSHIP, true))
         assertFalse(closed.ownAttendance || closed.decideAttendance || closed.editInfos || closed.editShopping || closed.tickPacking || closed.todos || closed.editDayPages)
         assertTrue(closed.readAttendance && closed.readShopping && closed.readDayPages)
     }

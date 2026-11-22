@@ -35,6 +35,9 @@ enum class ChipKind(@DrawableRes val icon: Int?) {
     REVIEW(R.drawable.ic_warning),
     AGE_GROUP(null),
 
+    /** Ein Übungslager (Entwurf L1: «Übung»); mit Zelt-Icon, damit es nie nur an der Farbe hängt. */
+    PRACTICE(R.drawable.ic_tent),
+
     /** Eine Änderung wartet aufs Senden. */
     WAITING(R.drawable.ic_clock),
 
@@ -60,7 +63,7 @@ fun StatusChip(kind: ChipKind, text: String, modifier: Modifier = Modifier, stag
         ChipKind.NO -> scheme.errorContainer to scheme.onErrorContainer
         ChipKind.PENDING -> Color.Transparent to scheme.onSurfaceVariant
         ChipKind.REVIEW, ChipKind.WAITING -> colors.warningContainer to colors.onWarningContainer
-        ChipKind.AGE_GROUP -> colors.ageGroupContainer to colors.onAgeGroupContainer
+        ChipKind.AGE_GROUP, ChipKind.PRACTICE -> colors.ageGroupContainer to colors.onAgeGroupContainer
     }
     Row(
         modifier

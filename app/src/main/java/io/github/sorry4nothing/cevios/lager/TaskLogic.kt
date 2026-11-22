@@ -16,7 +16,7 @@ enum class MineSort { DUE, ORDER, RESSORT }
 /** Abschnitte der Liste (Entwurf L5): überfällig, in den nächsten zwei Wochen, später, ohne Frist, erledigt. */
 enum class TaskSection { OVERDUE, SOON, LATER, NO_DUE, DONE }
 
-/** Was die Rolle mit Aufgaben und Ressorts darf. Der Server prüft bei jeder Anfrage; die App blendet nur aus, was die Rolle nie darf. */
+/** Was die Person mit Aufgaben und Ressorts darf, nach den Rechten aus dem Lagerdetail. Der Server prüft bei jeder Anfrage. */
 data class TaskRights(
     val edit: Boolean,
     val setStatus: Boolean,
@@ -28,22 +28,18 @@ data class TaskRights(
 ) {
     companion object {
         /**
-         * Die Standardrechte je Rolle (`GET /api/v1/lager/{id}/rechte` nennt sie nur der Lagerleitung; die Lagerleitung hat ohnehin
-         * alles). Aufgaben ändern: Lagerleitung und Leitung; nur den Status der eigenen Aufgaben: Team; lesen: alle ausser Team
+         * `aufgaben.bearbeiten` ändert alle Aufgaben und liest auch alle; `aufgaben.eigene` setzt nur den Status eigener Aufgaben
          * (das Team sieht nur seine eigenen). Ist das Lager geschlossen, bleibt nichts zum Ändern.
          */
-        fun of(role: CampRole, readOnly: Boolean): TaskRights {
-            val leads = role == CampRole.LEADERSHIP || role == CampRole.LEADER
-            return TaskRights(
-                edit = !readOnly && leads,
-                setStatus = !readOnly && (leads || role == CampRole.TEAM),
-                readAll = role != CampRole.TEAM,
-                readRessorts = role != CampRole.TEAM,
-                editRessorts = !readOnly && role == CampRole.LEADERSHIP,
-                readHistory = role != CampRole.TEAM,
-                seeLeadershipStart = leads,
-            )
-        }
+        fun of(p: CampPermissions) = TaskRights(
+            edit = p.mayWrite("aufgaben.bearbeiten"),
+            setStatus = p.mayWrite("aufgaben.bearbeiten", "aufgaben.eigene"),
+            readAll = p.may("aufgaben.lesen_alle", "aufgaben.bearbeiten"),
+            readRessorts = p.may("ressorts.lesen"),
+            editRessorts = p.mayWrite("ressorts.bearbeiten"),
+            readHistory = p.may("verlauf.lesen"),
+            seeLeadershipStart = p.seesLeadershipStart,
+        )
     }
 }
 
@@ -151,6 +147,9 @@ object TaskRules {
         val statuses = TaskStatus.CHOOSABLE + if (groups.containsKey(TaskStatus.NEXT_MEETING)) listOf(TaskStatus.NEXT_MEETING) else emptyList()
         return statuses.map { status -> status to (groups[status].orEmpty().sortedWith(byOrder)) }
     }
+
+    /** Wer zur Auswahl steht: die Mitglieder vom Server, solange sie fehlen (kein Recht, Fehler) alle, die in den Aufgaben stehen. */
+    fun pickable(tasks: List<CampTask>, me: TaskPerson?, members: List<TaskPerson>?): List<TaskPerson> = members ?: people(tasks, me)
 
     /** Wer in «Neues für dich» und bei «Ich übernehme» vorkommt: alle Personen, die in den Aufgaben stehen. */
     fun people(tasks: List<CampTask>, me: TaskPerson?): List<TaskPerson> {

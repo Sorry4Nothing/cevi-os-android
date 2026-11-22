@@ -9,6 +9,7 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -198,13 +199,20 @@ class TasksApiTest {
             json(
                 200,
                 """{"ressorts":[{"id":"r1","version":1,"kuerzel":"LO","name":"Logistik","leitungPersonId":"p1","stvPersonId":null,"notiz":"Tipp","parentId":null,"reihenfolge":0,
-                    "leitung":{"id":"p1","name":"Beispiel Person","ceviName":"Spatz"},"stv":null}],"naechster":null}""",
+                    "leitung":{"id":"p1","name":"Beispiel Person","ceviName":"Spatz"},"stv":null,"ruhig":true}],"naechster":null}""",
             ),
         )
         val ressort = (runBlocking { api.ressorts(camp) } as ApiResult.Ok).value.single()
+        assertTrue(ressort.quiet)
         assertEquals("GET /api/v1/lager/$camp/ressorts?limit=200 HTTP/1.1", server.takeRequest().requestLine)
         assertEquals("Beispiel Person (Spatz)", ressort.leader?.display)
         assertEquals("Tipp", ressort.tips)
+    }
+
+    @Test
+    fun ressortWithoutQuietFieldIsNotQuiet() {
+        server.enqueue(json(200, """{"id":"r1","version":1,"kuerzel":"LO","name":"Logistik","leitungPersonId":null,"stvPersonId":null,"notiz":null,"parentId":null,"reihenfolge":0}"""))
+        assertFalse((runBlocking { api.ressort(camp, "r1") } as ApiResult.Ok).value.quiet)
     }
 
     @Test

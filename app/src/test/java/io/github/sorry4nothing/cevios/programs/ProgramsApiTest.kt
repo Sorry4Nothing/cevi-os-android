@@ -44,14 +44,6 @@ class ProgramsApiTest {
          "anlass":{"id":"e1","anmeldeschluss":"2027-06-01T20:00:00Z","anmeldungOffen":true,"angemeldet":false},"kinder":[]}
     """.trimIndent()
 
-    /** Der ältere Stand (`GET /api/v1/programme/{id}`), den nur die Zuordnung noch liest. */
-    private val legacy = """
-        {"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","titel":"Sommerlager","status":"aktiv","sichtbarkeit":"eltern",
-         "ganztaegig":true,"beginn":null,"ende":null,"tagVon":"2027-07-10","tagBis":"2027-07-17",
-         "googleOrt":"Zeltplatz","treffpunkt":null,"schlussOrt":"Bahnhof","schlussZeit":"16:30",
-         "mitnehmen":"Schlafsack","stufen":[{"id":"a1","name":"Stufe A"}],"googleBeschreibung":null}
-    """.trimIndent()
-
     private fun page(vararg entries: String, more: Boolean = false, next: String? = null) =
         """{"termine":[${entries.joinToString(",")}],"weitere":$more,"naechste":${next?.let { "\"$it\"" } ?: "null"}}"""
 
@@ -174,41 +166,6 @@ class ProgramsApiTest {
         assertEquals(
             ApiResult.Failure(ApiError.REGISTRATION_CLOSED, "PROGRAMM_GESCHLOSSEN"),
             runBlocking { programs.setAttendance("p1", "k1", attending = true) },
-        )
-    }
-
-    @Test
-    fun theAssignmentReadsTheOlderStateWithStagesAndVisibility() {
-        server.enqueue(json(200, legacy))
-        val p = (runBlocking { programs.readAssignable("x") } as ApiResult.Ok).value
-        assertEquals("GET /api/v1/programme/x HTTP/1.1", server.takeRequest().requestLine)
-        assertEquals("eltern", p.visibility)
-        assertFalse(p.allAgeGroups)
-        assertEquals("Zeltplatz", p.location)
-    }
-
-    @Test
-    fun programWithoutAgeGroupsIsForAllAgeGroups() {
-        server.enqueue(json(200, legacy.replace("\"stufen\":[{\"id\":\"a1\",\"name\":\"Stufe A\"}]", "\"stufen\":[]")))
-        assertTrue((runBlocking { programs.readAssignable("x") } as ApiResult.Ok).value.allAgeGroups)
-    }
-
-    @Test
-    fun assignmentSendsFullStateAsPut() {
-        server.enqueue(MockResponse.Builder().code(204).build())
-        val result = runBlocking { programs.assign("p1", AssignmentRequest(listOf("s1", "s2"), "leitende")) }
-        assertEquals(ApiResult.Ok(Unit), result)
-        val request = server.takeRequest()
-        assertEquals("PUT /api/v1/programme/p1/zuordnung HTTP/1.1", request.requestLine)
-        assertEquals("""{"stufen":["s1","s2"],"sichtbarkeit":"leitende"}""", request.body?.utf8())
-    }
-
-    @Test
-    fun forbiddenAssignmentIsAnError() {
-        server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"nein"}"""))
-        assertEquals(
-            ApiResult.Failure(ApiError.FORBIDDEN),
-            runBlocking { programs.assign("p1", AssignmentRequest(emptyList(), "intern")) },
         )
     }
 

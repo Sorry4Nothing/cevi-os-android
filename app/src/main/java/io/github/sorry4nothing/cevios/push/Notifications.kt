@@ -23,6 +23,9 @@ object Notifications {
     /** Entscheide zu Terminvorschlägen (termin_entscheid). */
     const val TERMS_CHANNEL = "termine"
 
+    /** Entscheide zu Raumanfragen (raum_entscheid). Das Team bekommt auf demselben Kanal `raum_anfrage`. */
+    const val ROOMS_CHANNEL = "raeume"
+
     /** Die Kanäle des Lagers (Namen und Zuordnung der `typ`-Werte stehen im Vertrag bei `LagerPushTyp`), je Gruppe stummschaltbar. */
     const val CAMP_TASKS_CHANNEL = "lager_aufgaben"
     const val CAMP_MESSAGES_CHANNEL = "lager_mitteilungen"
@@ -41,6 +44,7 @@ object Notifications {
                 NotificationChannel(PROGRAMS_CHANNEL, context.getString(R.string.channel_programs), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(MESSAGES_CHANNEL, context.getString(R.string.channel_messages), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(TERMS_CHANNEL, context.getString(R.string.channel_termine), NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(ROOMS_CHANNEL, context.getString(R.string.channel_raeume), NotificationManager.IMPORTANCE_DEFAULT),
                 campChannel(CAMP_TASKS_CHANNEL, context.getString(R.string.channel_camp_tasks)),
                 campChannel(CAMP_MESSAGES_CHANNEL, context.getString(R.string.channel_camp_messages)),
                 campChannel(CAMP_PLANNING_CHANNEL, context.getString(R.string.channel_camp_planning)),
@@ -52,7 +56,7 @@ object Notifications {
         NotificationChannel(id, name, NotificationManager.IMPORTANCE_DEFAULT).apply { group = CAMP_GROUP }
 
     private val CHANNELS = setOf(
-        CHAT_CHANNEL, PROGRAMS_CHANNEL, MESSAGES_CHANNEL, TERMS_CHANNEL, CAMP_TASKS_CHANNEL, CAMP_MESSAGES_CHANNEL, CAMP_PLANNING_CHANNEL,
+        CHAT_CHANNEL, PROGRAMS_CHANNEL, MESSAGES_CHANNEL, TERMS_CHANNEL, ROOMS_CHANNEL, CAMP_TASKS_CHANNEL, CAMP_MESSAGES_CHANNEL, CAMP_PLANNING_CHANNEL,
     )
 
     /** Der Kanal aus dem Push, wenn die App ihn kennt, sonst «Mitteilungen». Der Inhalt kommt von aussen. */

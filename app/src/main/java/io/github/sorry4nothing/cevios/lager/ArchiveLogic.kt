@@ -4,8 +4,8 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 /**
- * Was die Rolle in «Ablage und Querschnitt» darf. Der Server prüft bei jeder Anfrage; die App blendet nur aus, was die Rolle nie
- * darf (Standardrechte). Im geschlossenen Lager bleibt nichts zum Ändern.
+ * Was die Person in «Ablage und Querschnitt» darf, nach den Rechten aus dem Lagerdetail. Der Server prüft bei jeder Anfrage.
+ * Im geschlossenen Lager bleibt nichts zum Ändern.
  */
 data class ArchiveRights(
     /** `dokumente.bearbeiten`: Dokumente anlegen und löschen. Standard: Lagerleitung und Leitung. */
@@ -18,16 +18,12 @@ data class ArchiveRights(
     val editSchedule: Boolean,
 ) {
     companion object {
-        fun of(role: CampRole, readOnly: Boolean): ArchiveRights {
-            val writes = !readOnly
-            val leadership = role == CampRole.LEADERSHIP
-            return ArchiveRights(
-                editDocuments = writes && (leadership || role == CampRole.LEADER),
-                readAddressBook = leadership,
-                editAddressBook = writes && leadership,
-                editSchedule = writes && leadership,
-            )
-        }
+        fun of(p: CampPermissions) = ArchiveRights(
+            editDocuments = p.mayWrite("dokumente.bearbeiten"),
+            readAddressBook = p.may("adressbuch.lesen"),
+            editAddressBook = p.mayWrite("adressbuch.bearbeiten"),
+            editSchedule = p.mayWrite("zeitplan.bearbeiten"),
+        )
     }
 }
 

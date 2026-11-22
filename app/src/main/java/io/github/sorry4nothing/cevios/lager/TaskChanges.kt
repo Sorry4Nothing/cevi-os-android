@@ -14,6 +14,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 
+/** Die Operation der Warteschlange für «Ruhiges Ressort» (Felder `id`, `version`, `ruhig`). */
+const val RESSORT_QUIET_OP = "ressort.ruhig"
+
 /** Die Operationen der Warteschlange für Aufgaben (Namen und Felder bestimmt der Server, `aenderungen`). */
 object TaskOps {
     const val CREATE = "aufgabe.anlegen"
@@ -54,6 +57,16 @@ object TaskPayloads {
 
     /** Die Felder `id` und `version` stehen in jeder Änderung; der Rest ist das, was sich ändert. */
     fun fieldsOf(payload: JsonObject): Map<String, JsonElement> = payload.filterKeys { it != "id" && it != "version" }
+}
+
+/**
+ * Die Aufgabe, deren Erwähnungen nach dieser Änderung abzugleichen sind: eine gesendete Anlage oder Änderung, die Titel oder Notiz
+ * berührt (nur dort stehen Marken). Die ID nennt die Antwort des Servers bei der Anlage, sonst die Nutzlast.
+ */
+fun mentionSyncTarget(change: QueuedChange): String? {
+    if (change.state != ChangeState.SENT || (change.type != TaskOps.CREATE && change.type != TaskOps.CHANGE)) return null
+    if ("titel" !in change.payload && "notiz" !in change.payload) return null
+    return ((change.result?.get("id") ?: change.payload["id"]) as? JsonPrimitive)?.contentOrNull
 }
 
 /** Wohin eine Änderung an einer Aufgabe gegangen ist; `BLOCKED`: Die Anlage ist gerade unterwegs, die Änderung ist noch nirgends aufgenommen. */

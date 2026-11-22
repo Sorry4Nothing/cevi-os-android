@@ -2,6 +2,7 @@ package io.github.sorry4nothing.cevios.lager
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -160,6 +162,7 @@ fun MinutesScreen(
                     items(items, key = { it.id }) { item ->
                         InfoCard {
                             Text(renderMentions(item.title, names, unknown), style = MaterialTheme.typography.titleMedium)
+                            item.minutes?.let { Text(pluralStringResource(R.plurals.agenda_minutes, it, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             item.text?.takeIf { it.isNotBlank() }?.let { Text(renderMentions(it, names, unknown), style = MaterialTheme.typography.bodyMedium) }
                             item.decision?.takeIf { it.isNotBlank() }?.let { Text(stringResource(R.string.agenda_decision, renderMentions(it, names, unknown)), style = MaterialTheme.typography.bodyMedium) }
                         }
@@ -275,6 +278,7 @@ fun MeetingModeScreen(
     names: Map<String, String>,
     onOpenQueue: () -> Unit,
     onOpenRessort: (String) -> Unit,
+    onOpenTask: (String) -> Unit,
     onEnd: () -> Unit,
 ) {
     val modeState by vm.mode.collectAsState()
@@ -317,7 +321,8 @@ fun MeetingModeScreen(
                         InfoCard {
                             Text(stringResource(R.string.mode_item_of, position, total), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(renderMentions(item.title, names, unknown), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-                            if (item.responsible.isNotEmpty()) Text(item.responsible.joinToString(", ") { it.display }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val who = item.responsible.map { it.display } + listOfNotNull(item.minutes?.let { pluralStringResource(R.plurals.agenda_minutes, it, it) })
+                            if (who.isNotEmpty()) Text(who.joinToString(", "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             item.text?.takeIf { it.isNotBlank() }?.let { Text(renderMentions(it, names, unknown), style = MaterialTheme.typography.bodyLarge) }
                             item.links.forEach { link -> TextActionButton(link.title, { open(link.url) }) }
                             item.decision?.takeIf { it.isNotBlank() }?.let { Text(stringResource(R.string.agenda_decision, renderMentions(it, names, unknown)), style = MaterialTheme.typography.bodyMedium) }
@@ -355,7 +360,7 @@ fun MeetingModeScreen(
                 result.value.ressortRound?.let { round ->
                     item { SectionTitle(stringResource(R.string.mode_ressort_round)) }
                     if (round.isEmpty()) item { Text(stringResource(R.string.mode_ressort_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    items(round, key = { it.id }) { ressort -> RessortRoundCard(ressort, onOpen = { onOpenRessort(ressort.id) }) }
+                    items(round, key = { it.id }) { ressort -> RessortRoundCard(ressort, onOpen = { onOpenRessort(ressort.id) }, onOpenTask = onOpenTask) }
                 }
             }
         }
@@ -412,7 +417,7 @@ private fun Modifier.androidBorder(checked: Boolean): Modifier {
 }
 
 @Composable
-private fun RessortRoundCard(ressort: RessortRound, onOpen: () -> Unit) {
+private fun RessortRoundCard(ressort: RessortRound, onOpen: () -> Unit, onOpenTask: (String) -> Unit) {
     val counts = ressort.tasks
     val line = counts?.let { stringResource(R.string.mode_ressort_counts, it.done, it.total) }
     val description = listOfNotNull(ressort.name, ressort.leader?.display?.ifBlank { null }, line, counts?.takeIf { it.overdue > 0 }?.let { pluralStringResource(R.plurals.task_overdue_count, it.overdue, it.overdue) }).joinToString(", ")
@@ -426,6 +431,35 @@ private fun RessortRoundCard(ressort: RessortRound, onOpen: () -> Unit) {
             Text(line.orEmpty(), style = MaterialTheme.typography.bodyMedium)
             if (counts.overdue > 0) StatusChip(ChipKind.NO, pluralStringResource(R.plurals.task_overdue_count, counts.overdue, counts.overdue))
         }
+    }
+    // Die Aufgaben stehen unter der Karte, weil die Karte selbst ein Knopf ist (Ressort öffnen).
+    ressort.openTasks?.forEach { task -> RoundTaskRow(task, onOpen = { onOpenTask(task.id) }) }
+}
+
+/** Eine offene Aufgabe in der Ressort-Runde: Titel, Status und wer sie trägt; ein Tipp öffnet die Aufgabe (dort ändern Status, Frist und Verantwortliche). */
+@Composable
+private fun RoundTaskRow(task: RoundTask, onOpen: () -> Unit) {
+    val shape = MaterialTheme.shapes.medium
+    val status = stringResource(statusText(task.status))
+    val who = task.responsible?.display?.takeIf { it.isNotBlank() }
+    val spoken = listOfNotNull(task.title, status, who).joinToString(", ")
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.touchTarget)
+            .focusRing(shape)
+            .clip(shape)
+            .clickable(onClickLabel = stringResource(R.string.mode_task_open), role = Role.Button, onClick = onOpen)
+            .semantics(mergeDescendants = true) { contentDescription = spoken }
+            .padding(horizontal = Spacing.s3),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(task.title, style = MaterialTheme.typography.bodyLarge)
+            who?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+        StatusChip(ChipKind.AGE_GROUP, status)
     }
 }
 

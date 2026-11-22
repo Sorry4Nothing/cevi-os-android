@@ -110,4 +110,62 @@
 
     <!-- Push-Ziel -->
     <string name="channel_termine">Termine</string>
+
+    <!-- Räume: Raum anfragen (K2) und Meine Raumanfragen (K3) -->
+    <string name="room_row">Meine Raumanfragen</string>
+    <string name="room_list_title">Meine Raumanfragen</string>
+    <string name="room_back_profile">Zurück zu Profil</string>
+    <string name="room_back_list">Zurück zu Meine Raumanfragen</string>
+    <string name="room_list_loading">Anfragen werden geladen</string>
+    <string name="room_list_empty_title">Keine Anfragen</string>
+    <string name="room_list_empty_text">Du hast noch keinen Raum angefragt.</string>
+    <string name="room_ask">Raum anfragen</string>
+    <string name="room_status_open">Offen</string>
+    <string name="room_status_confirmed">Bestätigt</string>
+    <string name="room_status_rejected">Abgelehnt</string>
+    <string name="room_reason">Begründung: %1$s</string>
+    <string name="room_cancelling">Wird zurückgezogen</string>
+    <string name="room_withdraw">Zurückziehen</string>
+    <string name="room_withdraw_label">Anfrage für «%1$s» zurückziehen</string>
+    <string name="room_cancel_booking">Buchung absagen</string>
+    <string name="room_cancel_booking_label">Buchung von «%1$s» absagen</string>
+    <string name="room_cancel_title">Buchung absagen?</string>
+    <string name="room_cancel_text">«%1$s» ist dann am %2$s nicht mehr für dich reserviert.</string>
+    <string name="room_notice_withdrawn">Deine Anfrage ist zurückgezogen.</string>
+    <string name="room_notice_cancelled">Die Buchung ist abgesagt.</string>
+    <string name="room_notice_failed">Das hat nicht geklappt. Versuche es nochmals.</string>
+    <string name="room_notice_not_possible">Das geht nicht mehr: Die Anfrage ist schon entschieden oder vorbei. Die Liste ist aktuell.</string>
+    <string name="room_info">Das zuständige Team bestätigt deine Anfrage.</string>
+    <string name="room_loading">Räume werden geladen</string>
+    <string name="room_empty_title">Keine Räume</string>
+    <string name="room_empty_text">Die Abteilungsleitung hat noch keine Räume erfasst.</string>
+    <string name="room_field_room">Raum</string>
+    <string name="room_confirmed_by_team">%1$s bestätigt</string>
+    <string name="room_confirmed_by_leadership">Abteilungsleitung bestätigt</string>
+    <string name="room_field_date">Datum</string>
+    <string name="room_field_from">Von</string>
+    <string name="room_field_to">Bis</string>
+    <string name="room_field_time_hint">Zeit, zum Beispiel 14:00</string>
+    <string name="room_field_purpose">Zweck</string>
+    <string name="room_field_purpose_hint">Eine Zeile. Bitte keine Angaben zur Gesundheit.</string>
+    <string name="room_send">Raum anfragen</string>
+    <string name="room_sending">Anfrage wird gesendet</string>
+    <string name="room_sent">Anfrage gesendet.</string>
+    <string name="room_undo">Rückgängig</string>
+    <string name="room_undone">Deine Anfrage ist zurückgezogen.</string>
+    <string name="room_check">Bitte prüfe die markierten Angaben.</string>
+    <string name="room_error_room">Wähle einen Raum.</string>
+    <string name="room_error_day">Wähle ein Datum.</string>
+    <string name="room_error_time">Gib die Zeit so ein: 14:00.</string>
+    <string name="room_error_order">Das Ende muss nach dem Beginn liegen.</string>
+    <string name="room_error_past">Die Zeit darf nicht in der Vergangenheit liegen.</string>
+    <string name="room_error_purpose">Gib einen Zweck ein.</string>
+    <string name="room_busy_banner">Der Raum ist zu dieser Zeit schon belegt.</string>
+    <string name="room_busy">Dieser Raum ist am %1$s zwischen %2$s und %3$s schon belegt. Wähle eine andere Zeit.</string>
+    <string name="room_failed">Das hat nicht geklappt. Deine Eingabe ist noch da. Versuche es nochmals.</string>
+    <string name="room_offline">Ohne Netz. Deine Eingabe ist noch da. Sende die Anfrage nochmals, sobald du wieder Netz hast.</string>
+    <string name="room_limit">Du hast schon 10 offene Anfragen. Warte auf den Entscheid oder ziehe eine zurück.</string>
+    <string name="room_too_long">Eine Anfrage dauert höchstens 14 Tage.</string>
+    <string name="room_gone">Diesen Raum gibt es nicht mehr. Wähle einen anderen.</string>
+    <string name="channel_raeume">Räume</string>
 </resources>

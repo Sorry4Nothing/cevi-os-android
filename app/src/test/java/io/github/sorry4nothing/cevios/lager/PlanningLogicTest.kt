@@ -26,22 +26,22 @@ class PlanningLogicTest {
 
     @Test
     fun rightsFollowTheDefaultRoles() {
-        val leadership = PlanRights.of(CampRole.LEADERSHIP, readOnly = false)
+        val leadership = PlanRights.of(defaultPermissions(CampRole.LEADERSHIP, false))
         assertTrue(leadership.editParticipants && leadership.edit && leadership.decideSwap && leadership.count && leadership.seeAll)
-        val leader = PlanRights.of(CampRole.LEADER, readOnly = false)
+        val leader = PlanRights.of(defaultPermissions(CampRole.LEADER, false))
         assertFalse(leader.editParticipants)
         assertTrue(leader.edit && leader.decideSwap && leader.requestSwap)
-        val team = PlanRights.of(CampRole.TEAM, readOnly = false)
+        val team = PlanRights.of(defaultPermissions(CampRole.TEAM, false))
         assertFalse(team.edit || team.decideSwap || team.seeAll)
         assertTrue(team.count && team.requestSwap)
-        val reading = PlanRights.of(CampRole.READ_ONLY, readOnly = false)
+        val reading = PlanRights.of(defaultPermissions(CampRole.READ_ONLY, false))
         assertFalse(reading.edit || reading.count || reading.requestSwap)
         assertTrue(reading.seeAll)
     }
 
     @Test
     fun aClosedCampOffersNothingToChange() {
-        val closed = PlanRights.of(CampRole.LEADERSHIP, readOnly = true)
+        val closed = PlanRights.of(defaultPermissions(CampRole.LEADERSHIP, true))
         assertFalse(closed.editParticipants || closed.edit || closed.count || closed.requestSwap || closed.decideSwap)
     }
 
@@ -128,6 +128,13 @@ class PlanningLogicTest {
         val swap = Swap("s", 1, "p", "x", null, null, null, "offen", null, null, "t")
         assertEquals("Pia", PlanRules.swapActor(swap, null, mapOf("p" to "Pia"), "jemand"))
         assertEquals("jemand", PlanRules.swapActor(swap, null, emptyMap(), "jemand"))
+    }
+
+    @Test
+    fun swapActorPrefersTheNameFromTheAnswer() {
+        val swap = Swap("s", 1, "p", "x", null, null, null, "offen", null, null, "t", vonName = "Biber")
+        assertEquals("Biber", PlanRules.swapActor(swap, null, mapOf("p" to "Pia"), "jemand"))
+        assertEquals("jemand", PlanRules.swapActor(swap.copy(vonName = null), null, emptyMap(), "jemand"))
     }
 
     @Test

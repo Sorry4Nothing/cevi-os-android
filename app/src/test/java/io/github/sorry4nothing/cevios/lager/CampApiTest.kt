@@ -64,7 +64,39 @@ class CampApiTest {
         val detail = (runBlocking { camps.read(id) } as ApiResult.Ok).value
         assertEquals("GET /api/v1/lager/$id HTTP/1.1", server.takeRequest().requestLine)
         assertTrue(detail.readOnly)
-        assertFalse(detail.permissions().canWrite)
+        assertFalse(detail.permissions().mayWrite("aufgaben.bearbeiten"))
+    }
+
+    @Test
+    fun detailCarriesTheGrantedRightsAndThePracticeFlag() {
+        server.enqueue(json(200, camp.replace("\"rolle\"", "\"uebung\":true,\"schreibgeschuetzt\":false,\"rechte\":[\"aufgaben.eigene\",\"pinnwand.lesen\"],\"rolle\"")))
+        val detail = (runBlocking { camps.read(id) } as ApiResult.Ok).value
+        assertTrue(detail.practice)
+        val permissions = detail.permissions()
+        assertTrue(permissions.mayWrite("aufgaben.eigene") && permissions.may("pinnwand.lesen"))
+        assertFalse(permissions.may("aufgaben.bearbeiten"))
+    }
+
+    @Test
+    fun theListNamesNoRightsAndNoPracticeCampByDefault() {
+        server.enqueue(json(200, """{"lager":[$camp]}"""))
+        val listed = (runBlocking { camps.list() } as ApiResult.Ok).value.camps.single()
+        assertFalse(listed.practice)
+        assertEquals(null, listed.grantedRights)
+        assertFalse(listed.permissions().may("aufgaben.eigene"))
+    }
+
+    @Test
+    fun newsReadsOnePointPerCampAndForThePrograms() {
+        server.enqueue(json(200, """{"lager":[{"lagerId":"$id","neu":true},{"lagerId":"x","neu":false}],"programme":{"neu":false}}"""))
+        val news = (runBlocking { camps.news() } as ApiResult.Ok).value
+        assertEquals("GET /api/v1/lager/neuigkeiten HTTP/1.1", server.takeRequest().requestLine)
+        assertTrue(news.anyCamp)
+        assertFalse(news.programs.fresh)
+        server.enqueue(json(200, """{"lager":[],"programme":{"neu":true}}"""))
+        val empty = (runBlocking { camps.news() } as ApiResult.Ok).value
+        assertFalse(empty.anyCamp)
+        assertTrue(empty.programs.fresh)
     }
 
     @Test
@@ -76,7 +108,7 @@ class CampApiTest {
     @Test
     fun unknownRoleGetsTheSmallest() {
         assertEquals(CampRole.READ_ONLY, CampRole.from("etwas-neues"))
-        assertFalse(Camp(id, "x", "2027-07-17", "2027-07-24", null, "aktiv", "etwas-neues").permissions().canWrite)
+        assertFalse(Camp(id, "x", "2027-07-17", "2027-07-24", null, "aktiv", "etwas-neues").permissions().mayWrite("aufgaben.eigene"))
     }
 
     @Test

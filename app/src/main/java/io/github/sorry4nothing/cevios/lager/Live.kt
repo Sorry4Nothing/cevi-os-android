@@ -2,6 +2,7 @@ package io.github.sorry4nothing.cevios.lager
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 // Modelle des Schnitts «Im Lager»: Anwesenheit, Tagesseiten, Einkauf, Packliste, Notfall, Infos, To-dos. Die Namen der Felder
 // bleiben über `@SerialName` die des Servers; Bezeichner im Code sind englisch.
@@ -266,6 +267,33 @@ data class PackList(
     @SerialName("punkte") val items: List<PackItem> = emptyList(),
     @SerialName("eigene") val own: List<OwnPackItem> = emptyList(),
 )
+
+// ---- Vorlagen ----
+
+/** Eine Vorlage der Abteilung zum Anwenden; der Inhalt bleibt auf dem Server (nur ID, Art, Name und Zahl der Einträge). */
+@Serializable
+data class CampTemplate(
+    val id: String,
+    @SerialName("art") val kindWire: String,
+    val name: String,
+    @SerialName("anzahl") val count: Int,
+) {
+    val isPacking: Boolean get() = kindWire == "packliste"
+    val isTasks: Boolean get() = kindWire == "aufgaben"
+}
+
+@Serializable
+data class TemplateList(@SerialName("vorlagen") val templates: List<CampTemplate> = emptyList())
+
+/** Was eine Vorlage angelegt hat; die App braucht nur die Zahl. */
+@Serializable
+data class TemplateApplied(
+    @SerialName("art") val kindWire: String = "",
+    @SerialName("aufgaben") val tasks: List<JsonObject> = emptyList(),
+    @SerialName("punkte") val items: List<JsonObject> = emptyList(),
+) {
+    val count: Int get() = tasks.size + items.size
+}
 
 // ---- Notfall und Infos ----
 

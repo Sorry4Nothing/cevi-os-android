@@ -19,6 +19,10 @@ data class ProgramAgeGroup(
     @SerialName("logoUrl") val logoUrl: String? = null,
 )
 
+/** Die Stufen der Abteilung (`GET /api/v1/stufen`); gelesen werden ID, Name und Logo. */
+@Serializable
+data class AgeGroupList(@SerialName("stufen") val ageGroups: List<ProgramAgeGroup>)
+
 /** Eigenes Kind in einer Stufe des Programms. `status` ist «ja», «nein» oder `null` für noch offen. */
 @Serializable
 data class ProgramChild(val id: String, @SerialName("vorname") val firstName: String, val status: String? = null)

@@ -23,12 +23,24 @@ class CampFormatTest {
     }
 
     @Test
-    fun permissionsFollowRoleAndWriteProtection() {
-        assertEquals(true, CampPermissions(CampRole.TEAM, readOnly = false).canWrite)
-        assertEquals(false, CampPermissions(CampRole.READ_ONLY, readOnly = false).canWrite)
-        assertEquals(false, CampPermissions(CampRole.LEADERSHIP, readOnly = true).canWrite)
+    fun permissionsFollowTheGrantedRightsAndWriteProtection() {
+        val team = CampPermissions(CampRole.TEAM, readOnly = false, granted = setOf("aufgaben.eigene", "pinnwand.lesen"))
+        assertEquals(true, team.mayWrite("aufgaben.eigene"))
+        assertEquals(true, team.may("pinnwand.lesen"))
+        assertEquals(false, team.mayWrite("pinnwand.bearbeiten"))
+        assertEquals(false, CampPermissions(CampRole.LEADERSHIP, readOnly = true, granted = setOf("aufgaben.eigene")).mayWrite("aufgaben.eigene"))
+        assertEquals(false, NO_PERMISSIONS.may("aufgaben.eigene"))
         assertEquals(true, CampPermissions(CampRole.TEAM, false).canRead("aufgabe"))
         assertEquals(false, CampPermissions(CampRole.TEAM, false, setOf("ressort")).canRead("aufgabe"))
         assertEquals(true, CampPermissions(CampRole.TEAM, false, setOf("aufgabe")).canRead("aufgabe"))
+    }
+
+    @Test
+    fun practiceCampsHaveTheirOwnSectionEvenWhenClosed() {
+        fun camp(id: String, status: String, practice: Boolean) = Camp(id, id, "2027-07-17", "2027-07-24", null, status, "team", practice = practice)
+        val sections = listOf(camp("a", "aktiv", false), camp("b", "abgeschlossen", false), camp("c", "aktiv", true), camp("d", "abgeschlossen", true)).inSections()
+        assertEquals(listOf("a"), sections.open.map { it.id })
+        assertEquals(listOf("b"), sections.closed.map { it.id })
+        assertEquals(listOf("c", "d"), sections.practice.map { it.id })
     }
 }

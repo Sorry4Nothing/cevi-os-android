@@ -59,6 +59,9 @@ class PlanningApi(private val api: ApiClient) {
 
     suspend fun rooms(campId: String): ApiResult<RoomList> = api.get("/api/v1/lager/$campId/zimmer")
 
+    /** Die Mitglieder für Auswahllisten; braucht `einteilung.lesen`. Das Team ohne `einteilung.bearbeiten` sieht nur die Sichtbaren. */
+    suspend fun members(campId: String): ApiResult<CampMemberList> = api.get("/api/v1/lager/$campId/mitglieder")
+
     suspend fun openPeople(campId: String, team: Boolean): ApiResult<List<OpenPerson>> =
         all({ api.get<OpenPage>("/api/v1/lager/$campId/zimmer/offen?art=${if (team) "team" else "teilnehmer"}&limit=$PAGE_SIZE${cursor(it)}") }, { it.next }, { it.entries })
 

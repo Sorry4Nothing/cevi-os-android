@@ -205,7 +205,7 @@ fun TasksScreen(
         )
         Bulk.PERSON -> ChoiceSheet(
             title = pluralStringResource(R.plurals.task_bulk_person_title, chosen.size, chosen.size),
-            choices = listOf(Choice(null, stringResource(R.string.task_nobody))) + TaskRules.people(allTasks, me).map { Choice(it.id, it.display) },
+            choices = listOf(Choice(null, stringResource(R.string.task_nobody))) + TaskRules.pickable(allTasks, me, vm.members.collectAsState().value).map { Choice(it.id, it.display) },
             initial = null,
             onApply = { id -> bulk = null; vm.setAssigneeAll(chosen, id) },
             onDismiss = { bulk = null },

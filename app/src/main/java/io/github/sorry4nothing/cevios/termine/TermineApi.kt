@@ -33,4 +33,16 @@ class TermineApi(private val api: ApiClient) {
 
     suspend fun unregisterChild(id: String, childId: String): ApiResult<Unit> =
         api.delete("/api/v1/anlaesse/$id/anmeldung?kindId=$childId")
+
+    /** Die aktiven Räume, nach Name. shortcut: eine Seite mit höchstens 100 Räumen, bei mehr braucht es `nach`. */
+    suspend fun rooms(): ApiResult<RoomPage> = api.get("/api/v1/raeume?limit=100")
+
+    suspend fun requestRoom(roomId: String, request: RoomRequestBody): ApiResult<RoomRequestCreated> =
+        api.post("/api/v1/raeume/$roomId/anfragen", request)
+
+    /** Die eigenen Anfragen in jedem Stand, neueste zuerst (eine Seite, höchstens 50). */
+    suspend fun myRoomRequests(): ApiResult<RoomRequestPage> = api.get("/api/v1/raeume/anfragen/meine?limit=50")
+
+    /** Zieht eine offene Anfrage zurück oder sagt eine bestätigte Buchung ab, solange die Zeit nicht vorbei ist. */
+    suspend fun cancelRoomRequest(id: String): ApiResult<Unit> = api.delete("/api/v1/raeume/anfragen/$id")
 }

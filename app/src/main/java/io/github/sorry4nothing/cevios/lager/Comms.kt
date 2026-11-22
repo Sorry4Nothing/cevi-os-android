@@ -51,11 +51,22 @@ data class Poll(
     @SerialName("optionen") val options: List<PollOption> = emptyList(),
 )
 
+/** Empfänger eines Beitrags. Personen, Ressorts und Gruppen nennt der Server nur, wer die Pinnwand bearbeitet (sonst leer). */
 @Serializable
 data class PostRecipients(
     @SerialName("anAlle") val everyone: Boolean = true,
     @SerialName("rollen") val roles: List<String> = emptyList(),
     @SerialName("personen") val people: List<String> = emptyList(),
+    @SerialName("ressortIds") val ressortIds: List<String> = emptyList(),
+    @SerialName("gruppeIds") val groupIds: List<String> = emptyList(),
+)
+
+/** Wer den Beitrag geöffnet hat: die Zahl für alle, die Namen (`people`) nur mit dem Recht, die Pinnwand zu bearbeiten. */
+@Serializable
+data class PostSeen(
+    @SerialName("anzahl") val count: Int = 0,
+    @SerialName("eigene") val own: Boolean = false,
+    @SerialName("personen") val people: List<RessortPerson>? = null,
 )
 
 @Serializable
@@ -75,6 +86,7 @@ data class Post(
     @SerialName("dateien") val files: List<CampFile> = emptyList(),
     @SerialName("umfrage") val poll: Poll? = null,
     @SerialName("reaktionen") val reactions: ReactionState = ReactionState(),
+    @SerialName("gesehen") val seen: PostSeen = PostSeen(),
 )
 
 @Serializable

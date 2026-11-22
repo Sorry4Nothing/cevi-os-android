@@ -30,6 +30,10 @@ data class Camp(
     @SerialName("rolle") val roleName: String,
     /** Nur im Detail: wahr bei abgeschlossen und archiviert, schreibende Anfragen antworten dann mit 409. */
     @SerialName("schreibgeschuetzt") val readOnlyFlag: Boolean? = null,
+    /** Wahr bei einem Übungslager (erfundene Daten). */
+    @SerialName("uebung") val practice: Boolean = false,
+    /** Nur im Detail: die Aktionen, die die eigene Rolle hier darf (Rechtekatalog des Vertrags, `<bereich>.<aktion>`); `null` in der Liste. */
+    @SerialName("rechte") val grantedRights: List<String>? = null,
 ) {
     val role: CampRole get() = CampRole.from(roleName)
 
@@ -45,24 +49,48 @@ private const val STATUS_ACTIVE = "aktiv"
 private const val STATUS_CLOSED = "abgeschlossen"
 private const val STATUS_ARCHIVED = "archiviert"
 
+/** Die Abschnitte der Lagerwahl: offene, abgeschlossene und Übungslager (sie stehen immer für sich, auch wenn sie abgeschlossen sind). */
+data class CampSections(val open: List<Camp>, val closed: List<Camp>, val practice: List<Camp>)
+
+fun List<Camp>.inSections(): CampSections {
+    val (practice, real) = partition { it.practice }
+    val (closed, open) = real.partition { it.readOnly }
+    return CampSections(open, closed, practice)
+}
+
 @Serializable
 data class CampList(@SerialName("lager") val camps: List<Camp>)
 
 /**
- * Was die Person im Lager tun darf, soweit die App es weiss: die Rolle, der Schreibschutz und die Objekttypen, die die Rolle lesen
- * darf (aus dem Änderungsfeed). Welches einzelne Recht eine Rolle hat, sagt der Server nur der Lagerleitung
- * (`GET /api/v1/lager/{id}/rechte`); für alle anderen entscheidet er bei jeder Anfrage. Die App zeigt darum eine Aktion nur,
- * wenn die Rolle sie grundsätzlich hat, und der Server bleibt die Instanz.
+ * Was die Person im Lager tun darf: die Aktionen aus `GET /api/v1/lager/{id}` (`rechte`, Einstellungen des Lagers
+ * eingerechnet), der Schreibschutz und die Objekttypen, die sie lesen darf (aus dem Änderungsfeed). Die App zeigt eine Aktion
+ * nur, wenn ihr Recht in der Liste steht; sonst fehlt der Knopf. Die Rolle ist nur die Beschriftung. Der Server prüft trotzdem
+ * bei jeder Anfrage. Solange das Detail fehlt, ist nichts erlaubt.
  */
-data class CampPermissions(val role: CampRole, val readOnly: Boolean, val readableTypes: Set<String>? = null) {
-    /** Schreiben kann nur, wer nicht nur liest und wessen Lager nicht geschlossen ist. */
-    val canWrite: Boolean get() = !readOnly && role != CampRole.READ_ONLY
+data class CampPermissions(
+    val role: CampRole,
+    val readOnly: Boolean,
+    val readableTypes: Set<String>? = null,
+    val granted: Set<String> = emptySet(),
+) {
+    /** Lesen: eines der Rechte steht in der Liste. */
+    fun may(vararg rights: String): Boolean = rights.any { it in granted }
+
+    /** Schreiben: eines der Rechte steht in der Liste, und das Lager ist nicht abgeschlossen. */
+    fun mayWrite(vararg rights: String): Boolean = !readOnly && may(*rights)
+
+    /** Der Start der Lagerleitung ist laut Vertrag für Lagerleitung und Leitung (kein Recht im Katalog, der Server entscheidet nach Rolle). */
+    val seesLeadershipStart: Boolean get() = role == CampRole.LEADERSHIP || role == CampRole.LEADER
 
     /** Ob die Rolle den Objekttyp lesen darf; solange die Liste fehlt, gilt «ja», der Server filtert ohnehin. */
     fun canRead(type: String): Boolean = readableTypes?.contains(type) ?: true
 }
 
-fun Camp.permissions(readableTypes: Set<String>? = null) = CampPermissions(role, readOnly, readableTypes)
+fun Camp.permissions(readableTypes: Set<String>? = null) =
+    CampPermissions(role, readOnly, readableTypes, grantedRights.orEmpty().toSet())
+
+/** Ohne geöffnetes Lager (oder solange das Detail lädt): nichts erlaubt, nichts zu ändern. */
+val NO_PERMISSIONS = CampPermissions(CampRole.READ_ONLY, readOnly = true)
 
 /** Folgenummer und lesbare Objekttypen (Antwort ohne `seit`). */
 @Serializable
@@ -83,6 +111,25 @@ data class FeedPage(
     @SerialName("bis") val until: Long,
     @SerialName("weitere") val more: Boolean,
 )
+
+/**
+ * Neuigkeiten-Stand (`GET /api/v1/lager/neuigkeiten`) für den Punkt an der Pille, ohne Inhalte: je Lager, ob es ungelesene
+ * Benachrichtigungen gibt, und ob es ungelesene Chat-Nachrichten gibt.
+ */
+@Serializable
+data class CampNews(
+    @SerialName("lager") val camps: List<CampNewsEntry> = emptyList(),
+    @SerialName("programme") val programs: ProgramsNews = ProgramsNews(),
+) {
+    /** Gibt es in irgendeinem Lager Neues (der Punkt an der Pille im Programm-Bereich)? */
+    val anyCamp: Boolean get() = camps.any { it.fresh }
+}
+
+@Serializable
+data class CampNewsEntry(@SerialName("lagerId") val campId: String, @SerialName("neu") val fresh: Boolean)
+
+@Serializable
+data class ProgramsNews(@SerialName("neu") val fresh: Boolean = false)
 
 @Serializable
 data class UnreadCount(@SerialName("anzahl") val count: Int)

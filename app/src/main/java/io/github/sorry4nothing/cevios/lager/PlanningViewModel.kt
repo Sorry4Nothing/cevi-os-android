@@ -40,7 +40,7 @@ class PlanningViewModel(
     val writer = DirectWriter(viewModelScope) { texts.fieldLabels() }
 
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie. */
-    var rights: PlanRights = PlanRights.of(CampRole.READ_ONLY, true)
+    var rights: PlanRights = PlanRights.of(NO_PERMISSIONS)
 
     private val _participants = MutableStateFlow<ApiResult<List<Participant>>?>(null)
     val participants: StateFlow<ApiResult<List<Participant>>?> = _participants.asStateFlow()
@@ -104,6 +104,11 @@ class PlanningViewModel(
     val people: StateFlow<List<RessortPerson>> = _people.asStateFlow()
     private var extraPeople: List<RessortPerson> = emptyList()
 
+    private val _members = MutableStateFlow<List<RessortPerson>?>(null)
+
+    /** Die Mitglieder des Lagers vom Server; solange sie fehlen (kein Recht, Fehler), gelten die bekannten Personen. */
+    val members: StateFlow<List<RessortPerson>?> = _members.asStateFlow()
+
     init {
         viewModelScope.launch { camp.changes.collect(::onChange) }
     }
@@ -123,7 +128,7 @@ class PlanningViewModel(
         _participants.value = null; _rooms.value = null; _openPeople.value = null; _trips.value = null; _withoutTrip.value = emptyMap()
         _groups.value = null; _mix.value = null; _plan.value = null; _schedule.value = null; _suggestion.value = null; _swaps.value = null
         _count.value = null; _filter.value = CountFilter(); _importPreview.value = null; _notice.value = null; _busy.value = false
-        _people.value = emptyList()
+        _people.value = emptyList(); _members.value = null
         writer.clear()
     }
 
@@ -134,7 +139,21 @@ class PlanningViewModel(
         recomputePeople()
     }
 
+    /** Lädt die Mitglieder für die Personenauswahl. Ein Fehler lässt die bekannten Personen stehen; es wird nichts geloggt. */
+    fun loadMembers() {
+        val id = campId ?: return
+        viewModelScope.launch(Background()) {
+            val result = api.members(id)
+            if (campId != id) return@launch
+            if (result is ApiResult.Ok) {
+                _members.value = result.value.members.map { RessortPerson(it.personId, it.name) }
+                recomputePeople()
+            }
+        }
+    }
+
     private fun recomputePeople() {
+        _members.value?.let { _people.value = it; return }
         _people.value = PlanRules.knownPeople(
             (_plan.value as? ApiResult.Ok)?.value, (_groups.value as? ApiResult.Ok)?.value, (_rooms.value as? ApiResult.Ok)?.value,
             (_trips.value as? ApiResult.Ok)?.value, extraPeople,
@@ -143,6 +162,9 @@ class PlanningViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        // Gelöschte Teilnehmende (Kinder) verschwinden sofort aus der Liste; Zimmer, Fahrten und Gruppen laden darauf neu.
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone -> _participants.update { it.withoutIds(gone) { p -> p.id } } }
+        if (change.reload && _members.value != null) loadMembers()
         fun touches(vararg prefixes: String) = change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { t -> prefixes.any { t.startsWith(it) } }
         if (touches("teilnehmer") && _participants.value != null) loadParticipants(silent = true)
         if (touches("zimmer", "teilnehmer") && _rooms.value != null) loadRooms(silent = true)
@@ -167,7 +189,7 @@ class PlanningViewModel(
             if (!silent) target.value = null
             val result = fetch(id)
             if (campId != id || !current()) return@launch
-            if (result is ApiResult.Ok || !silent || target.value == null) target.value = result
+            if (replacesState(result, silent, target.value != null)) target.value = result
             after()
         }
     }

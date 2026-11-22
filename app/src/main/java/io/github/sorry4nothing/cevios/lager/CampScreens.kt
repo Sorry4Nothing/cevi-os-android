@@ -91,7 +91,7 @@ private fun statusKind(camp: Camp) = when (camp.status) {
     else -> ChipKind.AGE_GROUP
 }
 
-/** Lagerwahl (Entwurf L1): meine Lager als Karten, aktive zuerst, abgeschlossene unter ihrem eigenen Abschnitt. */
+/** Lagerwahl (Entwurf L1): meine Lager als Karten, aktive zuerst, abgeschlossene und Übungslager unter ihrem eigenen Abschnitt. */
 @Composable
 fun CampListScreen(
     state: ApiResult<List<Camp>>?,
@@ -115,7 +115,7 @@ fun CampListScreen(
                 if (state.value.isEmpty()) {
                     StatePage(R.drawable.ic_tent, stringResource(R.string.camps_empty_title), stringResource(R.string.camps_empty_text))
                 } else {
-                    val (closed, open) = state.value.partition { it.readOnly }
+                    val (open, closed, practice) = state.value.inSections()
                     LazyColumn(
                         contentPadding = PaddingValues(start = Spacing.s3, end = Spacing.s3, bottom = Spacing.s4),
                         verticalArrangement = Arrangement.spacedBy(Spacing.s2),
@@ -130,6 +130,16 @@ fun CampListScreen(
                                 )
                             }
                             items(closed, key = { it.id }) { CampCard(it, onOpen) }
+                        }
+                        if (practice.isNotEmpty()) {
+                            item {
+                                Text(
+                                    stringResource(R.string.camps_section_practice),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(start = Spacing.s2, top = Spacing.s4).semantics { heading() },
+                                )
+                            }
+                            items(practice, key = { it.id }) { CampCard(it, onOpen) }
                         }
                     }
                 }
@@ -155,15 +165,20 @@ private fun CampCard(camp: Camp, onOpen: (String) -> Unit) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.Top) {
             Text(camp.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            StatusChip(statusKind(camp), stringResource(statusText(camp)))
+            if (camp.practice) StatusChip(ChipKind.PRACTICE, stringResource(R.string.camp_practice_chip))
+            else StatusChip(statusKind(camp), stringResource(statusText(camp)))
         }
-        Text(campDates(camp.from, camp.until), style = MaterialTheme.typography.bodyMedium)
-        camp.place?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = muted) }
-        Text(
-            stringResource(R.string.camp_role, stringResource(roleText(camp.role))),
-            style = MaterialTheme.typography.bodyMedium,
-            color = muted,
-        )
+        if (camp.practice) {
+            Text(stringResource(R.string.camp_practice_text), style = MaterialTheme.typography.bodyMedium, color = muted)
+        } else {
+            Text(campDates(camp.from, camp.until), style = MaterialTheme.typography.bodyMedium)
+            camp.place?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = muted) }
+            Text(
+                stringResource(R.string.camp_role, stringResource(roleText(camp.role))),
+                style = MaterialTheme.typography.bodyMedium,
+                color = muted,
+            )
+        }
     }
 }
 
@@ -209,6 +224,13 @@ fun CampStartScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.s3),
                     ) {
                         QueueBanner(queue, online, onOpenQueue)
+                        if (camp.practice) {
+                            NoticeBanner(
+                                NoticeKind.INFO,
+                                stringResource(R.string.camp_practice_title) + ". " + stringResource(R.string.camp_practice_text),
+                                Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            )
+                        }
                         if (camp.readOnly) {
                             NoticeBanner(
                                 NoticeKind.INFO,
@@ -304,11 +326,13 @@ fun ModeMenu(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     ModeItem(R.drawable.ic_calendar, stringResource(R.string.department), stringResource(R.string.mode_department_sub), inCamp == null, null, onClick = onDepartment)
-                    camps.filter { it.active }.forEach { camp ->
+                    // Übungslager stehen nach den echten, mit gedämpftem Icon (Entwurf B3).
+                    camps.filter { it.active }.sortedBy { it.practice }.forEach { camp ->
                         val news = unread[camp.id] ?: 0
                         ModeItem(
-                            R.drawable.ic_tent, camp.title, stringResource(R.string.mode_camp_sub), inCamp == camp.id,
+                            R.drawable.ic_tent, camp.title, stringResource(if (camp.practice) R.string.mode_practice_sub else R.string.mode_camp_sub), inCamp == camp.id,
                             news.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.mode_camp_news, it, it) },
+                            muted = camp.practice,
                         ) { onCamp(camp.id) }
                     }
                     ModeItem(R.drawable.ic_tent, stringResource(R.string.mode_all_camps), null, false, null, radio = false, onClick = onAllCamps)
@@ -319,7 +343,7 @@ fun ModeMenu(
 }
 
 @Composable
-private fun ModeItem(icon: Int, title: String, sub: String?, selected: Boolean, news: String?, radio: Boolean = true, onClick: () -> Unit) {
+private fun ModeItem(icon: Int, title: String, sub: String?, selected: Boolean, news: String?, radio: Boolean = true, muted: Boolean = false, onClick: () -> Unit) {
     val shape = MaterialTheme.shapes.medium
     Row(
         Modifier
@@ -336,7 +360,7 @@ private fun ModeItem(icon: Int, title: String, sub: String?, selected: Boolean, 
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.cevi.accent)
+        Icon(painterResource(icon), contentDescription = null, tint = if (muted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.cevi.accent)
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             sub?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }

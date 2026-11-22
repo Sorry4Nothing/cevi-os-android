@@ -21,6 +21,21 @@ data class Participant(
     val fullName: String get() = "$firstName $lastName"
 }
 
+/**
+ * Ein Mitglied des Lagers für Auswahllisten (`GET /api/v1/lager/{id}/mitglieder`): `name` ist der Anzeigename des Lagers
+ * (Cevi-Name, sonst Vorname). Keine Telefonnummer, keine E-Mail; nur anzeigen, nie loggen.
+ */
+@Serializable
+data class CampMember(
+    @SerialName("personId") val personId: String,
+    val name: String,
+    @SerialName("rolle") val role: String = "",
+    @SerialName("ressorts") val ressorts: List<String> = emptyList(),
+)
+
+@Serializable
+data class CampMemberList(@SerialName("mitglieder") val members: List<CampMember> = emptyList())
+
 @Serializable
 data class ParticipantPage(@SerialName("teilnehmer") val participants: List<Participant>, @SerialName("naechster") val next: String? = null)
 
@@ -334,6 +349,10 @@ data class Swap(
     val entschiedenVon: String? = null,
     @SerialName("entschiedenAm") val decidedAt: String? = null,
     @SerialName("erstelltAm") val createdAt: String,
+    /** Anzeigename der anfragenden Person; `null`, wenn sie nicht mehr Mitglied ist (und bei älteren Antworten). */
+    val vonName: String? = null,
+    /** Anzeigename der Wunschperson oder dessen, der übernommen hat; `null` ohne Person. */
+    val mitName: String? = null,
 ) {
     val status: SwapStatus get() = SwapStatus.from(statusWire)
 }

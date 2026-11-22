@@ -160,6 +160,7 @@ fun MinutesScreen(
                     items(items, key = { it.id }) { item ->
                         InfoCard {
                             Text(renderMentions(item.title, names, unknown), style = MaterialTheme.typography.titleMedium)
+                            item.minutes?.let { Text(pluralStringResource(R.plurals.agenda_minutes, it, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             item.text?.takeIf { it.isNotBlank() }?.let { Text(renderMentions(it, names, unknown), style = MaterialTheme.typography.bodyMedium) }
                             item.decision?.takeIf { it.isNotBlank() }?.let { Text(stringResource(R.string.agenda_decision, renderMentions(it, names, unknown)), style = MaterialTheme.typography.bodyMedium) }
                         }
@@ -317,7 +318,8 @@ fun MeetingModeScreen(
                         InfoCard {
                             Text(stringResource(R.string.mode_item_of, position, total), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(renderMentions(item.title, names, unknown), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-                            if (item.responsible.isNotEmpty()) Text(item.responsible.joinToString(", ") { it.display }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val who = item.responsible.map { it.display } + listOfNotNull(item.minutes?.let { pluralStringResource(R.plurals.agenda_minutes, it, it) })
+                            if (who.isNotEmpty()) Text(who.joinToString(", "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             item.text?.takeIf { it.isNotBlank() }?.let { Text(renderMentions(it, names, unknown), style = MaterialTheme.typography.bodyLarge) }
                             item.links.forEach { link -> TextActionButton(link.title, { open(link.url) }) }
                             item.decision?.takeIf { it.isNotBlank() }?.let { Text(stringResource(R.string.agenda_decision, renderMentions(it, names, unknown)), style = MaterialTheme.typography.bodyMedium) }

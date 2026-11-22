@@ -240,7 +240,7 @@ class MeetingsViewModel(
     // ---- Traktanden ----
 
     /** Legt ein Traktandum an (ohne `meetingId`: ein Punkt für den nächsten Höck). */
-    fun createItem(meetingId: String?, title: String, text: String?, responsible: List<String>, taskId: String? = null, onDone: (AgendaItem) -> Unit = {}) {
+    fun createItem(meetingId: String?, title: String, text: String?, responsible: List<String>, taskId: String? = null, minutes: Int? = null, onDone: (AgendaItem) -> Unit = {}) {
         val id = campId ?: return
         writer.dismissError()
         viewModelScope.launch {
@@ -250,6 +250,7 @@ class MeetingsViewModel(
                 text?.takeIf { it.isNotBlank() }?.let { put("text", it.trim()) }
                 if (responsible.isNotEmpty()) put("verantwortlichePersonIds", JsonArray(responsible.map(::JsonPrimitive)))
                 taskId?.let { put("aufgabeId", it) }
+                minutes?.let { put("dauerMinuten", it) }
             }
             when (val result = api.createItem(id, body)) {
                 is ApiResult.Ok -> {
@@ -257,7 +258,7 @@ class MeetingsViewModel(
                     meetingId?.let { loadMeeting(it, silent = true) }
                     onDone(result.value)
                 }
-                is ApiResult.Failure -> writer.fail(result) { createItem(meetingId, title, text, responsible, taskId, onDone) }
+                is ApiResult.Failure -> writer.fail(result) { createItem(meetingId, title, text, responsible, taskId, minutes, onDone) }
             }
         }
     }

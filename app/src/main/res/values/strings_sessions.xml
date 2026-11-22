@@ -107,6 +107,13 @@
     <string name="agenda_editor_edit">Traktandum bearbeiten</string>
     <string name="agenda_field_title">Titel</string>
     <string name="agenda_field_text">Text (optional)</string>
+    <string name="agenda_field_minutes">Dauer in Minuten (optional)</string>
+    <string name="agenda_minutes_hint">Eine Zahl von 1 bis 600.</string>
+    <string name="agenda_minutes_invalid">Gib eine Zahl von 1 bis 600 ein oder lass das Feld leer.</string>
+    <plurals name="agenda_minutes">
+        <item quantity="one">%d Minute</item>
+        <item quantity="other">%d Minuten</item>
+    </plurals>
     <string name="agenda_field_decision">Entscheid (optional)</string>
     <string name="agenda_field_responsible">Verantwortliche</string>
     <string name="agenda_field_mention">Person erwähnen</string>

@@ -67,6 +67,8 @@ data class AgendaItem(
     @SerialName("aufgabeId") val taskId: String? = null,
     @SerialName("status") val statusWire: String = "offen",
     @SerialName("verantwortliche") val responsible: List<RessortPerson> = emptyList(),
+    /** Geplante Dauer in Minuten (1 bis 600); `null` ohne Angabe. */
+    @SerialName("dauerMinuten") val minutes: Int? = null,
 ) {
     val status: AgendaStatus get() = AgendaStatus.from(statusWire)
 }

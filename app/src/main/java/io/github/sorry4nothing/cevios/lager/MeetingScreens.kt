@@ -59,6 +59,7 @@ import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.LocalDate
 
@@ -236,7 +237,7 @@ fun MeetingEditorSheet(initial: MeetingDraft, isNew: Boolean, onSave: (MeetingDr
 }
 
 /** Das Traktandum, das bearbeitet wird (oder ein neues). */
-private data class ItemDraft(val title: String, val text: String, val decision: String, val responsible: Set<String>)
+private data class ItemDraft(val title: String, val text: String, val decision: String, val responsible: Set<String>, val minutes: String = "")
 
 /**
  * Die Traktanden eines Höcks (Entwurf L12): nummerierte Karten mit Titel und Verantwortlichen, «Auf nächsten Höck» mit Rückgängig,
@@ -418,12 +419,12 @@ fun AgendaScreen(
                 if (adding || editing != null) {
                     val item = editing
                     AgendaEditorSheet(
-                        initial = item?.let { ItemDraft(it.title, it.text.orEmpty(), it.decision.orEmpty(), it.responsible.map { p -> p.id }.toSet()) } ?: ItemDraft("", "", "", emptySet()),
+                        initial = item?.let { ItemDraft(it.title, it.text.orEmpty(), it.decision.orEmpty(), it.responsible.map { p -> p.id }.toSet(), it.minutes?.toString().orEmpty()) } ?: ItemDraft("", "", "", emptySet()),
                         isNew = item == null, members = members,
                         onSave = { saved ->
                             adding = false; editing = null
                             if (item == null) {
-                                vm.createItem(m.id, saved.title, saved.text, saved.responsible.toList())
+                                vm.createItem(m.id, saved.title, saved.text, saved.responsible.toList(), minutes = MeetingRules.minutesOf(saved.minutes))
                             } else {
                                 vm.changeItem(item, itemFields(item, saved), item.title)
                             }
@@ -450,6 +451,7 @@ private fun itemFields(old: AgendaItem, draft: ItemDraft): Map<String, JsonEleme
     if (draft.text.trim() != old.text.orEmpty()) put("text", nullable(draft.text.trim().ifBlank { null }))
     if (draft.decision.trim() != old.decision.orEmpty()) put("entscheid", nullable(draft.decision.trim().ifBlank { null }))
     if (draft.responsible != old.responsible.map { it.id }.toSet()) put("verantwortlichePersonIds", JsonArray(draft.responsible.map(::JsonPrimitive)))
+    if (MeetingRules.minutesOf(draft.minutes) != old.minutes) put("dauerMinuten", MeetingRules.minutesOf(draft.minutes)?.let { JsonPrimitive(it) } ?: JsonNull)
 }
 
 @Composable
@@ -484,7 +486,8 @@ private fun AgendaCard(
     onDelete: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
-    val who = item.responsible.joinToString(", ") { it.display }.ifBlank { null }
+    val duration = item.minutes?.let { pluralStringResource(R.plurals.agenda_minutes, it, it) }
+    val who = (item.responsible.map { it.display } + listOfNotNull(duration)).joinToString(", ").ifBlank { null }
     val unknown = stringResource(R.string.mention_unknown)
     val decision = item.decision?.takeIf { it.isNotBlank() }?.let { renderMentions(it, names, unknown) }
     val done = item.status == AgendaStatus.DONE
@@ -565,6 +568,11 @@ private fun AgendaEditorSheet(initial: ItemDraft, isNew: Boolean, members: List<
                 hint = if (showErrors && draft.title.isBlank()) stringResource(R.string.error_field_required) else null,
             )
             LabeledTextField(stringResource(R.string.agenda_field_text), draft.text, { draft = draft.copy(text = it) }, 5000, Modifier.fillMaxWidth(), minLines = 3)
+            LabeledTextField(
+                stringResource(R.string.agenda_field_minutes), draft.minutes, { draft = draft.copy(minutes = it.filter(Char::isDigit)) }, 3, Modifier.fillMaxWidth(),
+                hint = if (showErrors && !MeetingRules.isValidMinutes(draft.minutes)) stringResource(R.string.agenda_minutes_invalid) else stringResource(R.string.agenda_minutes_hint),
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+            )
             if (!isNew) {
                 LabeledTextField(stringResource(R.string.agenda_field_decision), draft.decision, { draft = draft.copy(decision = it) }, 1000, Modifier.fillMaxWidth(), minLines = 2)
             }
@@ -587,7 +595,7 @@ private fun AgendaEditorSheet(initial: ItemDraft, isNew: Boolean, members: List<
                 }
                 Text(stringResource(R.string.agenda_mention_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            PrimaryButton(stringResource(R.string.save), { if (draft.title.isBlank()) showErrors = true else onSave(draft) }, Modifier.fillMaxWidth())
+            PrimaryButton(stringResource(R.string.save), { if (draft.title.isBlank() || !MeetingRules.isValidMinutes(draft.minutes)) showErrors = true else onSave(draft) }, Modifier.fillMaxWidth())
             OutlinedPillButton(stringResource(R.string.cancel), onDismiss, Modifier.fillMaxWidth())
         }
     }

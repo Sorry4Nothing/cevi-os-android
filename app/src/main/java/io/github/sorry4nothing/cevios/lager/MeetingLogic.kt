@@ -79,6 +79,12 @@ object MeetingRules {
         return copy
     }
 
+    /** Die Dauer aus dem Eingabefeld: `null` für leer oder ungültig. Gültig sind ganze Zahlen von 1 bis 600 (Minuten). */
+    fun minutesOf(text: String): Int? = text.trim().toIntOrNull()?.takeIf { it in 1..600 }
+
+    /** Leer ist erlaubt (keine Angabe), sonst muss die Zahl gültig sein. */
+    fun isValidMinutes(text: String): Boolean = text.isBlank() || minutesOf(text) != null
+
     /** Wie viele Anwesende von allen Mitgliedern («3 von 4»). */
     fun presentCount(members: List<MemberPresence>): Int = members.count { it.present }
 

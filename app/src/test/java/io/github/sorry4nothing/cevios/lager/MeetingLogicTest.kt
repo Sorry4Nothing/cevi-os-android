@@ -30,6 +30,17 @@ class MeetingLogicTest {
     private fun meeting(id: String, date: String, time: String? = null) = Meeting(id, 1, "lagerleitung", date, time, "Höck $id")
 
     @Test
+    fun durationIsAWholeNumberOfMinutesFromOneToSixHundred() {
+        assertEquals(15, MeetingRules.minutesOf(" 15 "))
+        assertNull(MeetingRules.minutesOf(""))
+        assertNull(MeetingRules.minutesOf("0"))
+        assertNull(MeetingRules.minutesOf("601"))
+        assertNull(MeetingRules.minutesOf("1,5"))
+        assertTrue(MeetingRules.isValidMinutes("") && MeetingRules.isValidMinutes("600"))
+        assertFalse(MeetingRules.isValidMinutes("0") || MeetingRules.isValidMinutes("abc"))
+    }
+
+    @Test
     fun rightsFollowTheRoleAndTheClosedCamp() {
         val leadership = MeetingRights.of(defaultPermissions(CampRole.LEADERSHIP, false))
         assertTrue(leadership.editMeetings && leadership.readInbox && leadership.answerInbox && leadership.editPinboard)

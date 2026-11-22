@@ -86,6 +86,18 @@ class MeetingsApiTest {
     }
 
     @Test
+    fun agendaItemReadsTheDurationAndClearsItWithNull() {
+        server.enqueue(json(200, item.replace("\"status\":\"offen\"", "\"status\":\"offen\",\"dauerMinuten\":15")))
+        val withDuration = (runBlocking { api.changeItem(camp, itemId, buildJsonObject { put("version", 4); put("dauerMinuten", 15) }) } as ApiResult.Ok).value
+        assertEquals(15, withDuration.minutes)
+        assertEquals("""{"version":4,"dauerMinuten":15}""", server.takeRequest().body!!.utf8())
+        server.enqueue(json(200, item.replace("\"status\":\"offen\"", "\"status\":\"offen\",\"dauerMinuten\":null")))
+        val cleared = (runBlocking { api.changeItem(camp, itemId, buildJsonObject { put("version", 5); put("dauerMinuten", kotlinx.serialization.json.JsonNull) }) } as ApiResult.Ok).value
+        assertNull(cleared.minutes)
+        assertEquals("""{"version":5,"dauerMinuten":null}""", server.takeRequest().body!!.utf8())
+    }
+
+    @Test
     fun changeItemMovesToNextMeetingWithNullAndVersion() {
         server.enqueue(json(200, item.replace("\"hoeckId\":\"$meetingId\"", "\"hoeckId\":null")))
         val body = buildJsonObject { put("version", 4); put("hoeckId", kotlinx.serialization.json.JsonNull) }

@@ -326,6 +326,15 @@ class PlanningApiTest {
     }
 
     @Test
+    fun aSwapCarriesTheDisplayNamesOfTheAnswer() {
+        val named = swap.replaceFirst("{", "{\"vonName\":\"Biber\",\"mitName\":null,")
+        server.enqueue(json(200, """{"tausche":[$named]}"""))
+        val own = (runBlocking { api.ownSwaps(camp) } as ApiResult.Ok).value.single()
+        assertEquals("Biber", own.vonName)
+        assertNull(own.mitName)
+    }
+
+    @Test
     fun countReadsAllPagesWithTheFilterAndTheSums() {
         server.enqueue(json(200, """{"eintraege":[{"id":"$a","teilnehmerId":"$a","vorname":"Anna","nachname":"Beispiel","stufe":"Wölfe","geprueft":true,"geprueftAm":"2027-07-17T08:00:00Z"}],"naechster":"$b","da":18,"gesamt":22}"""))
         server.enqueue(json(200, """{"eintraege":[{"id":"$b","personId":"$b","name":"Lea","ceviName":"Biber","geprueft":false,"geprueftAm":null}],"naechster":null,"da":18,"gesamt":22}"""))

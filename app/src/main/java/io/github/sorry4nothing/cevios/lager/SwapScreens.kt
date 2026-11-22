@@ -135,7 +135,7 @@ private fun SwapCard(
     val what = if (shift != null && duty != null) "$duty ${formatMeetingDay(shift.date)}" else stringResource(R.string.swaps_unknown_shift)
     val who = PlanRules.swapActor(swap, plan, names, unknown)
     val withShift = swap.mitSchichtId?.let { id -> plan?.shifts?.firstOrNull { it.id == id } }
-    val partner = swap.mitPersonId?.let { names[it] } ?: withShift?.name ?: unknown
+    val partner = swap.mitName?.takeIf { it.isNotBlank() } ?: swap.mitPersonId?.let { names[it] } ?: withShift?.name ?: unknown
     val sentence = when {
         swap.mitSchichtId != null -> stringResource(R.string.swaps_sentence_swap, who, what, partner)
         swap.mitPersonId != null -> stringResource(R.string.swaps_sentence_person, who, what, partner)

@@ -349,6 +349,10 @@ data class Swap(
     val entschiedenVon: String? = null,
     @SerialName("entschiedenAm") val decidedAt: String? = null,
     @SerialName("erstelltAm") val createdAt: String,
+    /** Anzeigename der anfragenden Person; `null`, wenn sie nicht mehr Mitglied ist (und bei älteren Antworten). */
+    val vonName: String? = null,
+    /** Anzeigename der Wunschperson oder dessen, der übernommen hat; `null` ohne Person. */
+    val mitName: String? = null,
 ) {
     val status: SwapStatus get() = SwapStatus.from(statusWire)
 }

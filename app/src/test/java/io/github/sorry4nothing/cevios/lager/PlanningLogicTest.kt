@@ -131,6 +131,13 @@ class PlanningLogicTest {
     }
 
     @Test
+    fun swapActorPrefersTheNameFromTheAnswer() {
+        val swap = Swap("s", 1, "p", "x", null, null, null, "offen", null, null, "t", vonName = "Biber")
+        assertEquals("Biber", PlanRules.swapActor(swap, null, mapOf("p" to "Pia"), "jemand"))
+        assertEquals("jemand", PlanRules.swapActor(swap.copy(vonName = null), null, emptyMap(), "jemand"))
+    }
+
+    @Test
     fun swapTimeIsReadableInSwissTimeAndEmptyWhenUnreadable() {
         assertEquals("16.7. 21:40", swapTime("2027-07-16T19:40:00.000Z"))
         assertEquals("", swapTime("kaputt"))

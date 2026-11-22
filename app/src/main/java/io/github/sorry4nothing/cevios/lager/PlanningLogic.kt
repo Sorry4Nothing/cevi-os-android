@@ -121,7 +121,7 @@ object PlanRules {
 
     /** Der Name einer Person oder eines Teilnehmenden in einer Schicht: wer nicht bekannt ist, bekommt `fallback`. */
     fun swapActor(swap: Swap, plan: ShiftPlan?, people: Map<String, String>, fallback: String): String =
-        people[swap.vonPersonId] ?: plan?.shifts?.firstOrNull { it.id == swap.schichtId && it.personId == swap.vonPersonId }?.name ?: fallback
+        swap.vonName?.takeIf { it.isNotBlank() } ?: people[swap.vonPersonId] ?: plan?.shifts?.firstOrNull { it.id == swap.schichtId && it.personId == swap.vonPersonId }?.name ?: fallback
 
     /** Offene Anfragen zuerst (die älteste oben), danach die entschiedenen, die jüngste zuerst. */
     fun sortedSwaps(swaps: List<Swap>): List<Swap> =

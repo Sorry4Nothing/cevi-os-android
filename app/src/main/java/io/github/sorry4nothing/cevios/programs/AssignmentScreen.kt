@@ -57,7 +57,7 @@ private val CARD = RoundedCornerShape(16.dp)
 /** Stufen und Sichtbarkeit eines Programms setzen. Die App schickt den vollen neuen Stand, wie es die API verlangt. */
 @Composable
 fun AssignmentScreen(
-    program: Program,
+    program: ApiResult<Program>?,
     ageGroups: ApiResult<AgeGroupList>?,
     profile: Profile?,
     edit: EditState,
@@ -67,15 +67,19 @@ fun AssignmentScreen(
 ) {
     val back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_program), onBack)
     when {
+        program is ApiResult.Failure -> Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+            Header(title = null, back = back)
+            ErrorState(program.error, onRetry, onToPrograms = onBack)
+        }
         ageGroups is ApiResult.Failure -> Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             Header(title = null, back = back)
             ErrorState(ageGroups.error, onRetry, onToPrograms = onBack)
         }
-        ageGroups !is ApiResult.Ok || profile == null -> Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+        program !is ApiResult.Ok || ageGroups !is ApiResult.Ok || profile == null -> Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             Header(title = null, back = back)
             LoadingSkeleton(stringResource(R.string.assignment_loading))
         }
-        else -> AssignmentForm(program, AssignmentRules.choices(ageGroups.value.ageGroups, profile), edit, onSave, onBack)
+        else -> AssignmentForm(program.value, AssignmentRules.choices(ageGroups.value.ageGroups, profile), edit, onSave, onBack)
     }
 }
 

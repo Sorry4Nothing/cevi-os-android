@@ -115,6 +115,15 @@
     <string name="state_access_text">Diese Seite ist nur für die Leitung. Wenn du denkst, das ist ein Fehler, frag deine Stufenleitung.</string>
     <string name="state_session_title">Bitte melde dich neu an</string>
     <string name="state_session_text">Du warst länger nicht aktiv. Zu deiner Sicherheit haben wir dich abgemeldet.</string>
+    <string name="program_add_to_calendar">Zum Kalender hinzufügen</string>
+    <string name="program_no_calendar_app">Auf diesem Gerät gibt es keine Kalender-App.</string>
+    <string name="event_section">Anmeldung</string>
+    <string name="event_registered">Angemeldet</string>
+    <string name="event_not_registered">Noch nicht angemeldet</string>
+    <string name="event_closed">Anmeldung geschlossen</string>
+    <string name="event_deadline">Anmeldeschluss: %1$s</string>
+    <string name="event_register">Anmelden</string>
+    <string name="event_show">Anmeldung ansehen</string>
     <string name="program_open">Programm öffnen</string>
     <string name="status_cancelled">Abgesagt</string>
     <string name="status_review">Wird noch geprüft</string>
@@ -131,7 +140,6 @@
     <string name="button_yes">Ja</string>
     <string name="button_no">Nein</string>
 
-    <string name="stage_all">Alle Stufen</string>
     <string name="section_leaders">Für Leitende</string>
     <string name="save">Speichern</string>
     <string name="saving">Wird gespeichert …</string>

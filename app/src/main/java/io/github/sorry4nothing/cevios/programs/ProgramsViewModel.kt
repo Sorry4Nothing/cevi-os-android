@@ -64,6 +64,10 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
     private val _profile = MutableStateFlow<ApiResult<Profile>?>(null)
     val profile: StateFlow<ApiResult<Profile>?> = _profile.asStateFlow()
 
+    /** Der ältere Stand des Programms mit Stufen und Sichtbarkeit, den die Zuordnung braucht (der Kalender kennt beides nicht). */
+    private val _assignable = MutableStateFlow<ApiResult<Program>?>(null)
+    val assignable: StateFlow<ApiResult<Program>?> = _assignable.asStateFlow()
+
     private val _ageGroups = MutableStateFlow<ApiResult<AgeGroupList>?>(null)
     val ageGroups: StateFlow<ApiResult<AgeGroupList>?> = _ageGroups.asStateFlow()
 
@@ -107,6 +111,14 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
 
     fun resetEdit() {
         _edit.value = EditState()
+        _assignable.value = null
+    }
+
+    /** Lädt für die Zuordnung den älteren Stand des Programms und die Stufen der Abteilung. */
+    fun loadAssignment(programId: String) {
+        _assignable.value = null
+        viewModelScope.launch { _assignable.value = api.readAssignable(programId) }
+        loadAgeGroups()
     }
 
     fun saveAssignment(programId: String, request: AssignmentRequest, onSaved: () -> Unit) =

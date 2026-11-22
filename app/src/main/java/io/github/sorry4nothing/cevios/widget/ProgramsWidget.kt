@@ -17,6 +17,7 @@ import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.Program
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
+import io.github.sorry4nothing.cevios.programs.groupChips
 import io.github.sorry4nothing.cevios.security.AppLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -107,7 +108,7 @@ class ProgramsWidget : AppWidgetProvider() {
 
         private fun row(context: Context, program: Program, divider: Boolean): RemoteViews {
             val row = RemoteViews(context.packageName, R.layout.widget_row)
-            val stage = if (program.allAgeGroups) context.getString(R.string.stage_all) else program.ageGroups.joinToString(", ") { it.name }
+            val stage = groupChips(program).joinToString(", ") { it.name }
             row.setViewVisibility(R.id.row_divider, if (divider) View.VISIBLE else View.GONE)
             row.setTextViewText(R.id.row_title, program.title)
             row.setTextViewText(R.id.row_time, dateLine(program, context.getString(R.string.time_list_all_day)))

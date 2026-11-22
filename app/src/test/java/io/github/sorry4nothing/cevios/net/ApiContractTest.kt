@@ -43,11 +43,11 @@ class ApiContractTest {
     /** Die Aufrufe der Klassen `*Api` in `app/src/main`, mit Methode aus dem Namen der Funktion von `ApiClient`. */
     private fun calls(): List<Call> {
         val methods = mapOf(
-            "get" to "GET", "post" to "POST", "postAction" to "POST", "postWithoutBody" to "POST",
+            "get" to "GET", "post" to "POST", "postAction" to "POST", "postWithoutBody" to "POST", "postWithoutBodyJson" to "POST",
             "put" to "PUT", "putJson" to "PUT", "putWithoutBody" to "PUT", "putBytes" to "PUT", "patch" to "PATCH", "patchJson" to "PATCH", "delete" to "DELETE",
             "readStream" to "GET",
         )
-        val call = Regex("api\\.(get|post|put|putJson|patch|patchJson|postAction|postWithoutBody|putWithoutBody|putBytes|delete|readStream)(?:<[^>]*>)?\\(\\s*\"([^\"]+)\"")
+        val call = Regex("api\\.(get|post|put|putJson|patch|patchJson|postAction|postWithoutBody|postWithoutBodyJson|putWithoutBody|putBytes|delete|readStream)(?:<[^>]*>)?\\(\\s*\"([^\"]+)\"")
         val page = Regex("pageUrl\\(\\s*\"([^\"]+)\"")
         return File(projectRoot, "app/src/main").walkTopDown()
             .filter { it.isFile && it.name.endsWith("Api.kt") }

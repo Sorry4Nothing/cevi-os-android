@@ -23,6 +23,19 @@ data class ProgramAgeGroup(
 @Serializable
 data class ProgramChild(val id: String, @SerialName("vorname") val firstName: String, val status: String? = null)
 
+/** Eine Gruppe des Termins (Outlook-Kategorie): `type` ist `stufe`, `funktion`, `team` oder `lager`. Die API liefert nur die eigenen Gruppen. */
+@Serializable
+data class ProgramTag(val id: String, val name: String, @SerialName("typ") val type: String = "")
+
+/** Der Anlass zu einem Termin, aus Sicht der Person (`anlass` der API): Ziel von `GET /api/v1/anlaesse/{id}`. */
+@Serializable
+data class ProgramEvent(
+    val id: String,
+    @SerialName("anmeldeschluss") val deadline: String? = null,
+    @SerialName("anmeldungOffen") val open: Boolean = false,
+    @SerialName("angemeldet") val registered: Boolean = false,
+)
+
 /** Die Zusagen der eigenen Kinder in Zahlen; alles ausser «ja» und «nein» zählt als offen. */
 data class ChildCounts(val yes: Int, val no: Int, val open: Int)
 
@@ -45,12 +58,18 @@ data class Program(
     @SerialName("ende") val end: String? = null,
     @SerialName("tagVon") val dayFrom: String? = null,
     @SerialName("tagBis") val dayTo: String? = null,
+    /** Ort aus dem Kalender (`ort` bei «Mein Kalender»). */
+    @SerialName("ort") val place: String? = null,
+    /** Nur der ältere Stand (`GET /api/v1/programme`) kennt `googleOrt`. */
     @SerialName("googleOrt") val googleLocation: String? = null,
     @SerialName("treffpunkt") val meetingPoint: String? = null,
     @SerialName("schlussOrt") val closingLocation: String? = null,
     @SerialName("schlussZeit") val closingTime: String? = null,
     @SerialName("mitnehmen") val bringAlong: String? = null,
     @SerialName("stufen") val ageGroups: List<ProgramAgeGroup> = emptyList(),
+    /** Die Gruppen, die aus den Kategorien des Termins entstehen (nur die eigenen). */
+    @SerialName("tags") val tags: List<ProgramTag> = emptyList(),
+    @SerialName("anlass") val event: ProgramEvent? = null,
     /** Wahr, solange das Programm aktiv ist und nicht begonnen hat: nur dann lässt sich antworten. */
     @SerialName("teilnahmeOffen") val attendanceOpen: Boolean = false,
     @SerialName("kinder") val children: List<ProgramChild> = emptyList(),
@@ -62,8 +81,11 @@ data class Program(
     /** Ein Programm ohne Stufe gilt für alle Stufen; die API liefert dann eine leere Liste. */
     val allAgeGroups get() = ageGroups.isEmpty()
 
-    /** Der Treffpunkt der Leitung, sonst der Ort aus dem Google-Kalender. */
-    val location get() = parseMeetingPoint(meetingPoint).place ?: googleLocation?.takeIf { it.isNotBlank() }
+    /** Der Ort aus dem Kalender. */
+    val calendarLocation get() = (place ?: googleLocation)?.takeIf { it.isNotBlank() }
+
+    /** Der Treffpunkt der Leitung, sonst der Ort aus dem Kalender. */
+    val location get() = parseMeetingPoint(meetingPoint).place ?: calendarLocation
 }
 
 /** Zeit und Ort des Treffpunkts, wie der Server sie in einem Text liefert. */
@@ -81,6 +103,14 @@ fun parseMeetingPoint(text: String?): MeetingPoint {
 
 @Serializable
 data class ProgramList(@SerialName("programme") val programs: List<Program>)
+
+/** Eine Seite von «Mein Kalender»; `next` ist undurchsichtig und geht unverändert als `nach` zurück. */
+@Serializable
+data class ProgramPage(
+    @SerialName("termine") val programs: List<Program>,
+    @SerialName("weitere") val more: Boolean = false,
+    @SerialName("naechste") val next: String? = null,
+)
 
 sealed interface Timing {
     /** Schweizer Kalendertage, `until` ist inklusive. */

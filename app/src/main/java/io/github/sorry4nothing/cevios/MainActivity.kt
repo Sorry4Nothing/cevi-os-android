@@ -160,6 +160,16 @@ import io.github.sorry4nothing.cevios.push.PushApi
 import io.github.sorry4nothing.cevios.push.PushTarget
 import io.github.sorry4nothing.cevios.push.PushToken
 import io.github.sorry4nothing.cevios.push.PushViewModel
+import io.github.sorry4nothing.cevios.termine.CalendarLinkSection
+import io.github.sorry4nothing.cevios.termine.CalendarLinkViewModel
+import io.github.sorry4nothing.cevios.termine.EventScreen
+import io.github.sorry4nothing.cevios.termine.EventViewModel
+import io.github.sorry4nothing.cevios.termine.GroupsSection
+import io.github.sorry4nothing.cevios.termine.ProposalScreen
+import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
+import io.github.sorry4nothing.cevios.termine.TermineApi
+import io.github.sorry4nothing.cevios.auth.SettingsCard
+import io.github.sorry4nothing.cevios.auth.SettingsRow
 import io.github.sorry4nothing.cevios.programs.AssignmentRules
 import io.github.sorry4nothing.cevios.programs.AssignmentScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
@@ -316,7 +326,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                     val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
                     CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
                         MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), current.profile,
+                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
                             passwordSaved, form, imageForm, auth,
                             pushTarget, onPushTargetHandled,
                             onOpenPrivacy = openPrivacy,
@@ -372,6 +382,8 @@ private sealed interface Screen {
     data class Conflict(val changeId: String) : Screen { override val depth = 2 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
     data class Assign(val programId: String) : Screen { override val depth = 2 }
+    data class Event(val eventId: String) : Screen { override val depth = 2 }
+    data object Proposal : Screen { override val depth = 1 }
 }
 
 @Composable
@@ -386,6 +398,7 @@ private fun MainContent(
     planningApi: PlanningApi,
     liveApi: LiveApi,
     archiveApi: ArchiveApi,
+    termineApi: TermineApi,
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
@@ -413,6 +426,9 @@ private fun MainContent(
     val planning = viewModel { PlanningViewModel(planningApi, camp, AndroidCommsTexts(appContext), account.id) }
     val live = viewModel { LiveViewModel(liveApi, camp, AndroidCommsTexts(appContext), account.id) }
     val archive = viewModel { ArchiveViewModel(archiveApi, meetingsApi, tasksApi, camp, AndroidCommsTexts(appContext)) }
+    val calendarLink = viewModel { CalendarLinkViewModel(termineApi) }
+    val proposals = viewModel { ProposalsViewModel(termineApi) }
+    val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
@@ -442,6 +458,9 @@ private fun MainContent(
     var postEditorOpen by rememberSaveable { mutableStateOf(false) }
     var editedPost by rememberSaveable { mutableStateOf<String?>(null) }
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
+    // Termine: die Anmeldung zu einem Anlass (ID des Anlasses) und «Termin vorschlagen».
+    var openedEvent by rememberSaveable { mutableStateOf<String?>(null) }
+    var proposalOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var assigning by rememberSaveable { mutableStateOf(false) }
@@ -462,8 +481,9 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false
+        notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false
         when (target) {
+            is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
             is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
             // Das Lager des Objekts löst der Server auf; die Module öffnen später das Objekt selbst (Schnitte A1 bis A5).
@@ -513,7 +533,21 @@ private fun MainContent(
     LaunchedEffect(openedRessort) { openedRessort?.let(tasks::openRessort) ?: tasks.closeRessort() }
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
-    LaunchedEffect(assigning) { if (assigning) programs.loadAgeGroups() }
+    LaunchedEffect(openedEvent) { openedEvent?.let(eventForm::load) }
+    LaunchedEffect(proposalOpen) {
+        if (proposalOpen) {
+            proposals.reloadOptions()
+            proposals.loadMine()
+        }
+    }
+    // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
+    LaunchedEffect(destination) {
+        if (destination == Destination.PROFILE) {
+            calendarLink.load()
+            proposals.loadOptions()
+        }
+    }
+    LaunchedEffect(assigning, openedProgram) { if (assigning) openedProgram?.let(programs::loadAssignment) }
     LaunchedEffect(viewingRegistrations, openedProgram) {
         val id = openedProgram
         if (viewingRegistrations && id != null) programs.loadRegistrations(id)
@@ -659,7 +693,9 @@ private fun MainContent(
             campArea && campId != null && mentionsOpen -> Screen.Mentions
             campArea && campId != null && inboxOpen -> Screen.Inbox
             campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
-            programId != null && assigning && assignedProgram != null -> Screen.Assign(programId)
+            openedEvent != null -> Screen.Event(openedEvent!!)
+            proposalOpen -> Screen.Proposal
+            programId != null && assigning -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
             chatId != null -> Screen.Chat(chatId)
@@ -691,15 +727,46 @@ private fun MainContent(
             when (screen) {
                 is Screen.Assign -> {
                     val programId = screen.programId
-                    val assigned = assignedProgram ?: return@AnimatedContent
                     val leave = { assigning = false; programs.resetEdit() }
                     BackHandler(onBack = leave)
                     val edit = programs.edit.collectAsState().value
                     AssignmentScreen(
-                        assigned, programs.ageGroups.collectAsState().value, programProfile, edit,
+                        programs.assignable.collectAsState().value, programs.ageGroups.collectAsState().value, programProfile, edit,
                         onSave = { request -> programs.saveAssignment(programId, request, leave) },
                         onBack = leave,
-                        onRetry = programs::loadAgeGroups,
+                        onRetry = { programs.loadAssignment(programId) },
+                    )
+                }
+                is Screen.Event -> {
+                    val leave = { openedEvent = null }
+                    BackHandler(onBack = leave)
+                    EventScreen(
+                        form = eventForm.form.collectAsState().value,
+                        states = eventForm.states.collectAsState().value,
+                        onAnswer = eventForm::setAnswer,
+                        onText = eventForm::setText,
+                        onSubmit = eventForm::submit,
+                        onUnregister = eventForm::unregister,
+                        onDismiss = eventForm::dismiss,
+                        onBack = leave,
+                        onRetry = { eventForm.load(screen.eventId) },
+                    )
+                }
+                Screen.Proposal -> {
+                    val leave = { proposalOpen = false; proposals.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    ProposalScreen(
+                        options = proposals.options.collectAsState().value,
+                        draft = proposals.draft.collectAsState().value,
+                        send = proposals.send.collectAsState().value,
+                        mine = proposals.mine.collectAsState().value,
+                        onEdit = proposals::edit,
+                        onSubmit = proposals::submit,
+                        onUndo = proposals::undo,
+                        onWithdraw = proposals::withdraw,
+                        onDismiss = proposals::dismissNotice,
+                        onBack = leave,
+                        onRetry = proposals::reloadOptions,
                     )
                 }
                 is Screen.Registrations -> {
@@ -737,6 +804,7 @@ private fun MainContent(
                             onLeader = { attending -> programs.rsvpLeader(programId, attending) },
                             onAssign = { assigning = true },
                             onRegistrations = { viewingRegistrations = true },
+                            onEvent = { openedEvent = it },
                             onBack = { openedProgram = null },
                             onRetry = { programs.loadDetail(programId) },
                         )
@@ -1029,7 +1097,25 @@ private fun MainContent(
                                 onOpenSupport = onOpenSupport,
                                 onOpenDeleteAccount = onOpenDeleteAccount,
                                 onSignOut = auth::signOut,
-                                onLeave = { auth.clearPasswordSaved(); auth.clearImageError() },
+                                onLeave = { auth.clearPasswordSaved(); auth.clearImageError(); calendarLink.forget() },
+                                termine = {
+                                    GroupsSection(account)
+                                    CalendarLinkSection(
+                                        status = calendarLink.status.collectAsState().value,
+                                        hasFresh = calendarLink.fresh.collectAsState().value != null,
+                                        busy = calendarLink.busy.collectAsState().value,
+                                        url = calendarLink::url,
+                                        onCreate = calendarLink::create,
+                                        onRevoke = calendarLink::revoke,
+                                        onReload = calendarLink::reload,
+                                        onDismissError = calendarLink::dismissError,
+                                    )
+                                    if ((proposals.options.collectAsState().value as? ApiResult.Ok)?.value?.mayPropose == true) {
+                                        SettingsCard {
+                                            SettingsRow(R.drawable.ic_calendar_plus, stringResource(R.string.proposal_row), onClick = { proposalOpen = true }, chevron = true)
+                                        }
+                                    }
+                                },
                                 lockAvailable = lockAvailable,
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,

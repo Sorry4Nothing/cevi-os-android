@@ -33,6 +33,9 @@ enum class NoticeKind(@DrawableRes val icon: Int) {
     ERROR(R.drawable.ic_warning),
     INFO(R.drawable.ic_info),
     WARNING(R.drawable.ic_warning),
+
+    /** Eine Aktion hat geklappt; mit Symbol und Wort, nie nur Farbe. */
+    SUCCESS(R.drawable.ic_check),
 }
 
 /** Banner im Inhalt: erklärt, warum etwas so ist, oder sagt, was schiefging. Immer Icon und Text. */
@@ -43,6 +46,7 @@ fun NoticeBanner(kind: NoticeKind, text: String, modifier: Modifier = Modifier) 
         NoticeKind.ERROR -> scheme.errorContainer to scheme.onErrorContainer
         NoticeKind.INFO -> scheme.secondaryContainer to scheme.onSecondaryContainer
         NoticeKind.WARNING -> MaterialTheme.cevi.warningContainer to MaterialTheme.cevi.onWarningContainer
+        NoticeKind.SUCCESS -> MaterialTheme.cevi.successContainer to MaterialTheme.cevi.onSuccessContainer
     }
     Row(
         modifier
@@ -76,6 +80,7 @@ fun ActionBanner(
         NoticeKind.ERROR -> scheme.errorContainer to scheme.onErrorContainer
         NoticeKind.INFO -> scheme.secondaryContainer to scheme.onSecondaryContainer
         NoticeKind.WARNING -> MaterialTheme.cevi.warningContainer to MaterialTheme.cevi.onWarningContainer
+        NoticeKind.SUCCESS -> MaterialTheme.cevi.successContainer to MaterialTheme.cevi.onSuccessContainer
     }
     val closeLabel = stringResource(R.string.notice_close)
     Row(

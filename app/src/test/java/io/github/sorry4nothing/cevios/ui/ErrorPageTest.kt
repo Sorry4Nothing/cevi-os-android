@@ -19,5 +19,8 @@ class ErrorPageTest {
         assertEquals(ErrorPage.OUTDATED, ErrorPage.from(ApiError.APP_OUTDATED))
         assertEquals(ErrorPage.ERROR, ErrorPage.from(ApiError.UNKNOWN))
         assertEquals(ErrorPage.ERROR, ErrorPage.from(ApiError.TOO_MANY_REQUESTS))
+        assertEquals(ErrorPage.MAINTENANCE, ErrorPage.from(ApiError.MAINTENANCE))
+        assertEquals(ErrorPage.SECOND_FACTOR, ErrorPage.from(ApiError.SECOND_FACTOR_MISSING))
+        assertEquals(ErrorPage.ERROR, ErrorPage.from(ApiError.LAGER_CLOSED))
     }
 }

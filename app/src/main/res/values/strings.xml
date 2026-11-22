@@ -284,4 +284,113 @@
     <string name="widget_own_yes">Du kommst</string>
     <string name="widget_own_no">Du kommst nicht</string>
     <string name="widget_own_open">Deine Zusage ist offen</string>
+
+    <!-- Lager: Bereichswechsel und Dock -->
+    <string name="tab_start">Start</string>
+    <string name="tab_more">Mehr</string>
+    <string name="mode_description">Bereich: %1$s. Wechseln</string>
+    <string name="mode_news">, Neues im Bereich %1$s</string>
+    <string name="mode_area_programs">Programme</string>
+    <string name="mode_area_camp">Lager</string>
+    <string name="mode_menu_title">Bereich wechseln</string>
+    <string name="mode_department_sub">Programme, Chat, Profil</string>
+    <string name="mode_camp_sub">Start, Chat, Mehr</string>
+    <string name="mode_all_camps">Alle Lager</string>
+    <plurals name="mode_camp_news">
+        <item quantity="one">%d neu</item>
+        <item quantity="other">%d neu</item>
+    </plurals>
+
+    <!-- Lager: Lagerwahl und Start -->
+    <string name="camps_title">Deine Lager</string>
+    <string name="camps_loading">Lager werden geladen</string>
+    <string name="camps_empty_title">Du bist in keinem Lager</string>
+    <string name="camps_empty_text">Sobald dich die Lagerleitung hinzufügt, erscheint das Lager hier.</string>
+    <string name="camps_section_closed">Abgeschlossen</string>
+    <string name="camp_open">Lager öffnen</string>
+    <string name="camp_status_draft">Entwurf</string>
+    <string name="camp_status_active">Aktiv</string>
+    <string name="camp_status_closed">Abgeschlossen</string>
+    <string name="camp_status_archived">Archiviert</string>
+    <string name="camp_role">Deine Rolle: %1$s</string>
+    <string name="camp_role_leadership">Lagerleitung</string>
+    <string name="camp_role_leader">Leitung</string>
+    <string name="camp_role_team">Team</string>
+    <string name="camp_role_read_only">Nur lesen</string>
+    <string name="camp_loading">Lager wird geladen</string>
+    <string name="camp_closed_title">Lager abgeschlossen</string>
+    <string name="camp_closed_text">Du kannst alles ansehen, aber nichts mehr ändern.</string>
+    <string name="camp_start_empty">Hier erscheinen bald Aufgaben, Pinnwand und alles, was im Lager läuft.</string>
+    <string name="camp_push_missing">Das Ziel dieser Mitteilung gibt es nicht mehr, oder du hast dort keinen Zugriff mehr.</string>
+    <string name="state_camp_access_text">Du bist in diesem Lager nicht dabei. Frag die Lagerleitung.</string>
+    <string name="to_camps">Zu deinen Lagern</string>
+    <string name="state_maintenance_title">Lager-Modul nicht erreichbar</string>
+    <string name="state_maintenance_text">Das Lager-Modul ist gerade nicht erreichbar. Deine Änderungen warten in der App, solange du sie offen lässt.</string>
+    <string name="error_lager_closed">Dieses Lager ist abgeschlossen. Du kannst nichts mehr ändern.</string>
+    <string name="error_feed_reload">Dein Stand im Lager ist zu alt. Die App lädt ihn neu.</string>
+    <string name="error_second_factor">Die Lagerleitung braucht einen zweiten Faktor. Die App kann ihn noch nicht abfragen. Melde dich dafür im Web an.</string>
+    <string name="state_second_factor_title">Zweiter Faktor fehlt</string>
+    <string name="error_maintenance">Das Lager-Modul ist gerade nicht erreichbar. Bitte versuche es später nochmals.</string>
+
+    <!-- Lager: Mehr -->
+    <string name="more_title">Mehr</string>
+    <string name="more_section_you">Du</string>
+    <string name="more_profile">Profil</string>
+    <string name="more_settings">Einstellungen</string>
+
+    <!-- Lager: Warteschlange und Konflikt -->
+    <string name="queue_title">Warteschlange</string>
+    <string name="back_to_camp">Zurück zum Lager</string>
+    <string name="back_to_queue">Zurück zur Warteschlange</string>
+    <string name="queue_offline_title">Ohne Netz</string>
+    <string name="queue_offline_stale">Du siehst den zuletzt geladenen Stand.</string>
+    <plurals name="queue_banner_offline">
+        <item quantity="one">Ohne Netz · %d Änderung wartet</item>
+        <item quantity="other">Ohne Netz · %d Änderungen warten</item>
+    </plurals>
+    <plurals name="queue_banner_sending">
+        <item quantity="one">%d Änderung wird gesendet</item>
+        <item quantity="other">%d Änderungen werden gesendet</item>
+    </plurals>
+    <plurals name="queue_banner_decision">
+        <item quantity="one">%d Änderung braucht dich</item>
+        <item quantity="other">%d Änderungen brauchen dich</item>
+    </plurals>
+    <plurals name="queue_offline_text">
+        <item quantity="one">%d Änderung wartet. Sie geht automatisch weg, sobald du wieder Netz hast.</item>
+        <item quantity="other">%d Änderungen warten. Sie gehen automatisch weg, sobald du wieder Netz hast.</item>
+    </plurals>
+    <string name="queue_open">Warteschlange öffnen</string>
+    <string name="queue_send_now">Jetzt senden</string>
+    <string name="queue_sending">Wird gesendet</string>
+    <string name="queue_send_hint">Senden klappt erst, wenn das Gerät wieder Netz hat.</string>
+    <string name="queue_empty_title">Nichts in der Warteschlange</string>
+    <string name="queue_empty_text">Alle deine Änderungen sind angekommen.</string>
+    <string name="queue_memory_hint">Die Änderungen warten nur, solange die App offen ist.</string>
+    <string name="change_waiting">Wartet</string>
+    <string name="change_sent">Gesendet</string>
+    <string name="change_conflict">Konflikt</string>
+    <string name="change_rejected">Abgelehnt</string>
+    <string name="change_time_today">Heute %1$s</string>
+    <string name="change_discard">Verwerfen</string>
+    <string name="change_decide">Entscheiden</string>
+    <string name="change_reason_forbidden">Dafür hast du kein Recht.</string>
+    <string name="change_reason_not_found">Das gibt es nicht mehr.</string>
+    <string name="change_reason_closed">Das Lager ist abgeschlossen.</string>
+    <string name="change_reason_invalid">Der Server hat die Änderung nicht angenommen.</string>
+    <string name="change_reason_unknown">Die Änderung wurde abgelehnt.</string>
+    <string name="conflict_title">Jemand hat das gerade geändert</string>
+    <string name="conflict_intro">Wähle, welche Fassung gilt. Unterschiede sind markiert.</string>
+    <string name="conflict_mine">Deine Fassung</string>
+    <string name="conflict_current">Aktuelle Fassung</string>
+    <string name="conflict_keep_mine">Meine behalten</string>
+    <string name="conflict_take_current">Aktuelle übernehmen</string>
+    <string name="conflict_differs">anders</string>
+    <string name="conflict_empty_value">leer</string>
+
+    <!-- Lager: Mitteilungskanäle -->
+    <string name="channel_group_camp">Lager</string>
+    <string name="channel_camp_tasks">Lager: Aufgaben</string>
+    <string name="channel_camp_messages">Lager: Mitteilungen</string>
+    <string name="channel_camp_planning">Lager: Einteilung und Anwesenheit</string>
 </resources>

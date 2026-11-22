@@ -2,6 +2,11 @@ package io.github.sorry4nothing.cevios.net
 
 import android.content.Context
 import io.github.sorry4nothing.cevios.BuildConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -24,6 +29,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import java.security.GeneralSecurityException
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
@@ -128,6 +134,37 @@ class ApiClient(
     suspend fun <T> send(request: Request, decode: (String) -> T): ApiResult<T> =
         sendRaw(request) { decode(it.body.string()) }
 
+    /**
+     * Liest einen offenen Textstrom (Server-Sent Events) Zeile für Zeile, bis er endet oder die Coroutine abbricht. Er zählt nicht
+     * in [pending] (er ist offen, solange die Ansicht es ist). `lastEventId` geht als `Last-Event-ID` mit. Eine Antwort ohne
+     * Erfolg gibt denselben Fehler wie jede andere Anfrage; ein abgebrochener oder getrennter Strom ist ein Netzfehler.
+     */
+    suspend fun readStream(path: String, lastEventId: Long?, onLine: suspend (String) -> Unit): ApiResult<Unit> = coroutineScope {
+        val request = request(path).header("Accept", "text/event-stream")
+            .apply { lastEventId?.let { header("Last-Event-ID", it.toString()) } }
+            .get().build()
+        // Der Server schickt alle 25 Sekunden einen Herzschlag; ohne Zeile in 70 Sekunden ist die Verbindung tot.
+        val call = http.newBuilder().readTimeout(STREAM_TIMEOUT_SECONDS, TimeUnit.SECONDS).build().newCall(request)
+        val watcher = launch { try { awaitCancellation() } finally { call.cancel() } }
+        try {
+            withContext(Dispatchers.IO) {
+                try {
+                    call.execute().use { response ->
+                        if (!response.isSuccessful) return@withContext failure(response)
+                        val source = response.body.source()
+                        while (true) onLine(source.readUtf8Line() ?: break)
+                        ApiResult.Ok(Unit)
+                    }
+                } catch (e: IOException) {
+                    ensureActive()
+                    ApiResult.Failure(ApiError.NETWORK)
+                }
+            }
+        } finally {
+            watcher.cancel()
+        }
+    }
+
     private suspend fun <T> sendRaw(request: Request, decode: (Response) -> T): ApiResult<T> {
         val counted = coroutineContext[Background] == null
         if (counted) _pending.update { it + 1 }
@@ -152,14 +189,18 @@ class ApiClient(
         }
     }
 
+    private fun failure(response: Response): ApiResult.Failure {
+        if (response.code == 401 && !response.request.url.encodedPath.startsWith(SIGN_IN_PATH)) _unauthorized.tryEmit(Unit)
+        if (response.code == 403 && response.request.url.encodedPath.startsWith(API_PATH)) _forbidden.tryEmit(Unit)
+        val read = if (response.code in CODE_STATUSES) errorCode(response) else null
+        // Bei 403 zählt nur der zweite Faktor; sonst heisst 403 schlicht «kein Recht», ohne Code.
+        val code = if (response.code == 403 && read != SECOND_FACTOR_CODE) null else read
+        val retryAfter = if (response.code == 429) response.header(RETRY_AFTER)?.toIntOrNull()?.coerceIn(1, MAX_RETRY_AFTER) else null
+        return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter)
+    }
+
     private fun <T> evaluate(response: Response, decode: (Response) -> T): ApiResult<T> {
-        if (!response.isSuccessful) {
-            if (response.code == 401 && !response.request.url.encodedPath.startsWith(SIGN_IN_PATH)) _unauthorized.tryEmit(Unit)
-            if (response.code == 403 && response.request.url.encodedPath.startsWith(API_PATH)) _forbidden.tryEmit(Unit)
-            val code = if (response.code == 400 || response.code == 409) errorCode(response) else null
-            val retryAfter = if (response.code == 429) response.header(RETRY_AFTER)?.toIntOrNull()?.coerceIn(1, MAX_RETRY_AFTER) else null
-            return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter)
-        }
+        if (!response.isSuccessful) return failure(response)
         return try {
             ApiResult.Ok(decode(response))
         } catch (e: IOException) {
@@ -183,6 +224,10 @@ class ApiClient(
 
     companion object {
         private const val SIGN_IN_PATH = "/api/auth/sign-in"
+        /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed) und 503 (Wartung). */
+        private val CODE_STATUSES = setOf(400, 403, 409, 410, 503)
+        private const val SECOND_FACTOR_CODE = "ZWEITER_FAKTOR_FEHLT"
+        private const val STREAM_TIMEOUT_SECONDS = 70L
         private const val API_PATH = "/api/v1/"
 
         /** Wartezeit in Sekunden bei 429; eine Stunde ist die Obergrenze, was der Server schickt, ist nicht vertrauenswürdig. */

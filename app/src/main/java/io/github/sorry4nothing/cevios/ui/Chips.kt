@@ -34,6 +34,12 @@ enum class ChipKind(@DrawableRes val icon: Int?) {
     PENDING(R.drawable.ic_question),
     REVIEW(R.drawable.ic_warning),
     AGE_GROUP(null),
+
+    /** Eine Änderung wartet aufs Senden. */
+    WAITING(R.drawable.ic_clock),
+
+    /** Eine Änderung ist beim Server angekommen. */
+    SENT(R.drawable.ic_check),
 }
 
 /** Eine Gruppe als Etikett. `stageId` ist nur bei einer echten Stufe gesetzt, nie bei «Alle Stufen». */
@@ -50,10 +56,10 @@ fun StatusChip(kind: ChipKind, text: String, modifier: Modifier = Modifier, stag
     val colors = MaterialTheme.cevi
     val scheme = MaterialTheme.colorScheme
     val (surfaceColor, contentColor) = when (kind) {
-        ChipKind.YES -> colors.successContainer to colors.onSuccessContainer
+        ChipKind.YES, ChipKind.SENT -> colors.successContainer to colors.onSuccessContainer
         ChipKind.NO -> scheme.errorContainer to scheme.onErrorContainer
         ChipKind.PENDING -> Color.Transparent to scheme.onSurfaceVariant
-        ChipKind.REVIEW -> colors.warningContainer to colors.onWarningContainer
+        ChipKind.REVIEW, ChipKind.WAITING -> colors.warningContainer to colors.onWarningContainer
         ChipKind.AGE_GROUP -> colors.ageGroupContainer to colors.onAgeGroupContainer
     }
     Row(

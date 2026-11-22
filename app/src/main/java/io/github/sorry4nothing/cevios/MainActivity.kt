@@ -1,6 +1,19 @@
 package io.github.sorry4nothing.cevios
 
 import io.github.sorry4nothing.cevios.ui.screenTransition
+import io.github.sorry4nothing.cevios.lager.CampApi
+import io.github.sorry4nothing.cevios.lager.CampListScreen
+import io.github.sorry4nothing.cevios.lager.CampStartScreen
+import io.github.sorry4nothing.cevios.lager.CampViewModel
+import io.github.sorry4nothing.cevios.lager.ChangeState
+import io.github.sorry4nothing.cevios.lager.ConflictScreen
+import io.github.sorry4nothing.cevios.lager.ModeMenu
+import io.github.sorry4nothing.cevios.lager.MoreEntry
+import io.github.sorry4nothing.cevios.lager.MoreSheet
+import io.github.sorry4nothing.cevios.lager.QueueScreen
+import io.github.sorry4nothing.cevios.lager.QueueState
+import io.github.sorry4nothing.cevios.ui.LocalModeSwitch
+import io.github.sorry4nothing.cevios.ui.ModeSwitch
 import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
 import io.github.sorry4nothing.cevios.ui.loginTransition
 import io.github.sorry4nothing.cevios.ui.tabTransition
@@ -49,6 +62,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -245,7 +259,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                     val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
                     CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
                         MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), current.profile,
+                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), current.profile,
                             passwordSaved, form, imageForm, auth,
                             pushTarget, onPushTargetHandled,
                             onOpenPrivacy = openPrivacy,
@@ -283,6 +297,8 @@ private sealed interface Screen {
     data class CropImage(val uri: Uri) : Screen { override val depth = 1 }
     data class Program(val programId: String) : Screen { override val depth = 1 }
     data class Chat(val chatId: String) : Screen { override val depth = 1 }
+    data object Queue : Screen { override val depth = 1 }
+    data class Conflict(val changeId: String) : Screen { override val depth = 2 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
     data class Assign(val programId: String) : Screen { override val depth = 2 }
 }
@@ -292,6 +308,7 @@ private fun MainContent(
     programsApi: ProgramsApi,
     chatApi: ChatApi,
     pushApi: PushApi,
+    campApi: CampApi,
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
@@ -312,9 +329,17 @@ private fun MainContent(
     val programs = viewModel { ProgramsViewModel(programsApi) { ProgramsWidget.refresh(appContext) } }
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
+    val camp = viewModel { CampViewModel(campApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
+    // Bereich Lager: `campArea` schaltet das Dock um, `campId` ist das offene Lager (ohne eins zeigt Start die Lagerwahl).
+    var campArea by rememberSaveable { mutableStateOf(false) }
+    var campId by rememberSaveable { mutableStateOf<String?>(null) }
+    var modeMenuOpen by rememberSaveable { mutableStateOf(false) }
+    var moreOpen by rememberSaveable { mutableStateOf(false) }
+    var queueOpen by rememberSaveable { mutableStateOf(false) }
+    var conflictId by rememberSaveable { mutableStateOf<String?>(null) }
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
@@ -339,7 +364,12 @@ private fun MainContent(
         notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false
         when (target) {
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
-            is PushTarget.Program -> { destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
+            is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
+            // Das Lager des Objekts löst der Server auf; die Module öffnen später das Objekt selbst (Schnitte A1 bis A5).
+            is PushTarget.Camp -> {
+                openedChat = null; openedProgram = null
+                camp.resolvePush(target.type, target.id) { found -> campArea = true; campId = found.campId; destination = Destination.START; queueOpen = false; conflictId = null }
+            }
         }
         onPushTargetHandled()
     }
@@ -360,6 +390,18 @@ private fun MainContent(
         onDispose { OpenChat.id = null }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // Das offene Lager lädt sein Detail und bleibt im Vordergrund aktuell (Ereignisstrom, Feed, Warteschlange).
+    LaunchedEffect(campId) {
+        val id = campId
+        if (id == null) {
+            camp.close()
+        } else {
+            camp.open(id)
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { camp.follow(id) }
+        }
+    }
+    // Die Lagerliste und die Zähler lesen still neu, wenn der Bereich wechselt.
+    LaunchedEffect(campArea) { camp.refreshCamps() }
     // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
     // fragt sie nur, solange sie sichtbar ist.
     LaunchedEffect(destination, openedChat, phoneOpen) {
@@ -385,8 +427,27 @@ private fun MainContent(
         val chatUnread = (chat.list.collectAsState().value as? ApiResult.Ok)?.value?.chats?.sumOf { it.unread } ?: 0
         val tabState = rememberSaveableStateHolder()
         val cropping = croppingImage
+        val camps = (camp.camps.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
+        val campUnread by camp.unread.collectAsState()
+        val queueState = campId?.let { camp.queueFor(it).state.collectAsState().value } ?: QueueState()
+        val online by camp.online.collectAsState()
+        val lostAccess by camp.lostAccess.collectAsState()
+        val campDetail = camp.detail.collectAsState().value.let { if (lostAccess != null && lostAccess == campId) ApiResult.Failure(ApiError.FORBIDDEN) else it }
+        val conflict = conflictId?.let { id -> queueState.changes.firstOrNull { it.clientOpId == id && it.state == ChangeState.CONFLICT } }
+        val openedCamp = (campDetail as? ApiResult.Ok)?.value?.takeIf { it.id == campId }
+        val modeSwitch = if (camps.isEmpty()) null else {
+            val programs = stringResource(R.string.mode_area_programs)
+            val lager = stringResource(R.string.mode_area_camp)
+            if (campArea) {
+                ModeSwitch(openedCamp?.title ?: stringResource(R.string.camps_title), programs, news = false) { modeMenuOpen = true }
+            } else {
+                ModeSwitch(stringResource(R.string.department), lager, news = campUnread.values.any { it > 0 }) { modeMenuOpen = true }
+            }
+        }
         val target = when {
             cropping != null -> Screen.CropImage(cropping)
+            conflict != null -> Screen.Conflict(conflict.clientOpId)
+            queueOpen && campArea && campId != null -> Screen.Queue
             programId != null && assigning && assignedProgram != null -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
@@ -499,6 +560,31 @@ private fun MainContent(
                         onBack = leave,
                     )
                 }
+                is Screen.Conflict -> {
+                    val change = conflict ?: return@AnimatedContent
+                    val leave = { conflictId = null }
+                    BackHandler(onBack = leave)
+                    val queue = camp.queueFor(campId ?: return@AnimatedContent)
+                    ConflictScreen(
+                        change,
+                        onKeepMine = { queue.keepMine(change.clientOpId); conflictId = null; campId?.let(camp::sendNow) },
+                        onTakeCurrent = { queue.discard(change.clientOpId); conflictId = null },
+                        onBack = leave,
+                    )
+                }
+                Screen.Queue -> {
+                    val id = campId ?: return@AnimatedContent
+                    val queue = camp.queueFor(id)
+                    val leave = { queue.clearSent(); queueOpen = false }
+                    BackHandler(onBack = leave)
+                    QueueScreen(
+                        queueState, online,
+                        onSendNow = { camp.sendNow(id) },
+                        onDecide = { conflictId = it.clientOpId },
+                        onDiscard = { queue.discard(it.clientOpId) },
+                        onBack = leave,
+                    )
+                }
                 Screen.Notifications -> {
                     val leave = { notificationsOpen = false; push.clearError() }
                     BackHandler(onBack = leave)
@@ -527,7 +613,13 @@ private fun MainContent(
                     BackHandler(onBack = leave)
                     PasswordScreen(first = false, form, onSave = auth::changePassword, onBack = leave)
                 }
-                Screen.Home -> MainScaffold(destination, onDestination = { destination = it }, unread = chatUnread) {
+                Screen.Home -> CompositionLocalProvider(LocalModeSwitch provides modeSwitch) { MainScaffold(
+                    // Ohne gewähltes Lager (Lagerwahl) steht im Dock nichts als aktiv.
+                    active = if (campArea && campId == null && destination == Destination.START) null else destination,
+                    onDestination = { if (it == Destination.MORE) moreOpen = true else if (it != Destination.START || campId != null) destination = it },
+                    unread = chatUnread,
+                    destinations = if (campArea) Destination.CAMP else Destination.PROGRAM,
+                ) {
                     AnimatedContent(
                         destination,
                         modifier = Modifier.fillMaxSize(),
@@ -560,6 +652,24 @@ private fun MainContent(
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,
                             )
+                        } else if (tab == Destination.START) {
+                            val id = campId
+                            if (id == null) {
+                                CampListScreen(
+                                    camp.camps.collectAsState().value,
+                                    camp.pushMissing.collectAsState().value,
+                                    onDismissPushMissing = camp::dismissPushMissing,
+                                    onOpen = { campId = it },
+                                    onRetry = camp::loadCamps,
+                                )
+                            } else {
+                                CampStartScreen(
+                                    campDetail, queueState, online,
+                                    onRetry = { camp.open(id) },
+                                    onToCamps = { campId = null },
+                                    onOpenQueue = { queueOpen = true },
+                                )
+                            }
                         } else {
                             ChatListScreen(
                                 chat.list.collectAsState().value,
@@ -574,8 +684,26 @@ private fun MainContent(
                         }
                         }
                     }
-                }
+                } }
             }
+        }
+        if (modeMenuOpen) {
+            ModeMenu(
+                inCamp = if (campArea) campId ?: "" else null,
+                camps = camps,
+                unread = campUnread,
+                onDepartment = { campArea = false; campId = null; destination = Destination.PROGRAMS; modeMenuOpen = false },
+                onCamp = { campArea = true; campId = it; destination = Destination.START; modeMenuOpen = false },
+                onAllCamps = { campArea = true; campId = null; destination = Destination.START; modeMenuOpen = false },
+                onDismiss = { modeMenuOpen = false },
+            )
+        }
+        if (moreOpen) {
+            val you = listOf(
+                MoreEntry(R.string.more_profile, R.drawable.ic_profile) { moreOpen = false; campArea = false; campId = null; destination = Destination.PROFILE },
+                MoreEntry(R.string.queue_title, R.drawable.ic_clock) { moreOpen = false; if (campId != null) queueOpen = true },
+            ).filter { it.text != R.string.queue_title || campId != null }
+            MoreSheet(listOf(R.string.more_section_you to you), onDismiss = { moreOpen = false })
         }
     }
 }

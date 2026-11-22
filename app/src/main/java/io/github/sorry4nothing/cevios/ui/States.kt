@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
 
 /** Welche ganzseitige Fehlerseite ein [ApiError] bekommt (Design: Zustand-Screens). */
 enum class ErrorPage {
-    OFFLINE, NOT_FOUND, NO_ACCESS, SESSION, OUTDATED, ERROR;
+    OFFLINE, NOT_FOUND, NO_ACCESS, SESSION, OUTDATED, MAINTENANCE, SECOND_FACTOR, ERROR;
 
     companion object {
         fun from(error: ApiError) = when (error) {
@@ -59,8 +59,10 @@ enum class ErrorPage {
             ApiError.FORBIDDEN -> NO_ACCESS
             ApiError.NOT_SIGNED_IN -> SESSION
             ApiError.APP_OUTDATED -> OUTDATED
+            ApiError.MAINTENANCE -> MAINTENANCE
+            ApiError.SECOND_FACTOR_MISSING -> SECOND_FACTOR
             ApiError.TOO_MANY_REQUESTS, ApiError.REGISTRATION_CLOSED, ApiError.PROGRAM_STARTED, ApiError.DIRECT_CHAT_UNAVAILABLE,
-            ApiError.MESSAGE_TOO_FAST, ApiError.UNKNOWN -> ERROR
+            ApiError.MESSAGE_TOO_FAST, ApiError.LAGER_CLOSED, ApiError.FEED_RELOAD, ApiError.UNKNOWN -> ERROR
         }
     }
 }
@@ -124,6 +126,9 @@ fun ErrorState(
     onToPrograms: (() -> Unit)? = null,
     onSignIn: (() -> Unit)? = null,
     @StringRes notFoundText: Int = R.string.state_404_text,
+    @StringRes noAccessText: Int = R.string.state_access_text,
+    /** Beschriftung des Knopfs `onToPrograms` (im Lager «Zu deinen Lagern»). */
+    @StringRes homeLabel: Int = R.string.to_programs,
 ) {
     val scheme = MaterialTheme.colorScheme
     when (ErrorPage.from(error)) {
@@ -134,11 +139,11 @@ fun ErrorState(
 
         ErrorPage.NOT_FOUND -> StatePage(
             R.drawable.ic_not_found, stringResource(R.string.state_404_title), stringResource(notFoundText), modifier,
-        ) { onToPrograms?.let { PrimaryButton(stringResource(R.string.to_programs), it) } }
+        ) { onToPrograms?.let { PrimaryButton(stringResource(homeLabel), it) } }
 
         ErrorPage.NO_ACCESS -> StatePage(
-            R.drawable.ic_lock, stringResource(R.string.state_access_title), stringResource(R.string.state_access_text), modifier,
-        ) { onToPrograms?.let { PrimaryButton(stringResource(R.string.to_programs), it) } }
+            R.drawable.ic_lock, stringResource(R.string.state_access_title), stringResource(noAccessText), modifier,
+        ) { onToPrograms?.let { PrimaryButton(stringResource(homeLabel), it) } }
 
         ErrorPage.SESSION -> StatePage(
             R.drawable.ic_clock, stringResource(R.string.state_session_title), stringResource(R.string.state_session_text), modifier,
@@ -149,12 +154,20 @@ fun ErrorState(
             circle = scheme.errorContainer, iconColor = scheme.onErrorContainer, error = true,
         )
 
+        ErrorPage.SECOND_FACTOR -> StatePage(
+            R.drawable.ic_lock, stringResource(R.string.state_second_factor_title), stringResource(error.text), modifier,
+        ) { onToPrograms?.let { PrimaryButton(stringResource(homeLabel), it) } }
+
+        ErrorPage.MAINTENANCE -> StatePage(
+            R.drawable.ic_settings, stringResource(R.string.state_maintenance_title), stringResource(R.string.state_maintenance_text), modifier,
+        ) { PrimaryButton(stringResource(R.string.retry), onRetry, icon = R.drawable.ic_refresh) }
+
         ErrorPage.ERROR -> StatePage(
             R.drawable.ic_warning, stringResource(R.string.state_error_title), stringResource(R.string.state_error_text), modifier,
             circle = scheme.errorContainer, iconColor = scheme.onErrorContainer, error = true,
         ) {
             PrimaryButton(stringResource(R.string.retry), onRetry, icon = R.drawable.ic_refresh)
-            onToPrograms?.let { TextActionButton(stringResource(R.string.to_programs), it) }
+            onToPrograms?.let { TextActionButton(stringResource(homeLabel), it) }
         }
     }
 }
@@ -229,5 +242,30 @@ private fun SkeletonCard(number: Int) {
         Bar(widths[0], 12)
         Bar(widths[1], 18)
         Bar(widths[2], 12)
+    }
+}
+
+/** Skelett für Listen aus Karten (Lagerwahl, später Aufgaben): `count` Karten mit drei Balken. Angesagt wie bei [LoadingSkeleton]. */
+@Composable
+fun CardSkeleton(description: String, modifier: Modifier = Modifier, count: Int = 3) {
+    var announced by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(1000)
+        announced = true
+    }
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = Spacing.s3).then(
+            if (announced) {
+                Modifier.semantics {
+                    contentDescription = description
+                    liveRegion = LiveRegionMode.Polite
+                }
+            } else {
+                Modifier.semantics { contentDescription = "" }
+            },
+        ),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+    ) {
+        repeat(count) { SkeletonCard(it) }
     }
 }

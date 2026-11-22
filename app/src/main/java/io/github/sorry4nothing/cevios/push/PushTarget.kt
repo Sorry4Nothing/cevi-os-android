@@ -1,6 +1,6 @@
 package io.github.sorry4nothing.cevios.push
 
-/** Wohin ein Push führt: in einen Chat oder in ein Programm. */
+/** Wohin ein Push führt: in einen Chat, in ein Programm oder zu einem Objekt im Lager. */
 sealed interface PushTarget {
     val id: String
 
@@ -8,7 +8,13 @@ sealed interface PushTarget {
 
     data class Program(override val id: String) : PushTarget
 
+    /** Ein Objekt im Lager (`id`); in welchem Lager es liegt, löst `GET /api/v1/lager/aufloesen/{typ}/{id}` auf. */
+    data class Camp(val type: String, override val id: String) : PushTarget
+
     companion object {
+        /** Die `typ`-Werte der Lager-Pushes (`LagerPushTyp` im Vertrag). */
+        val CAMP_TYPES = setOf("lager_aufgabe", "lager_erwaehnung", "lager_pinnwand", "lager_eingang", "lager_einteilung", "lager_anwesenheit")
+
         private val ID = Regex("^[0-9a-fA-F-]{36}$")
 
         /**
@@ -20,6 +26,7 @@ sealed interface PushTarget {
             return when (type) {
                 "chat" -> Chat(id)
                 "programm" -> Program(id)
+                in CAMP_TYPES -> Camp(type!!, id)
                 else -> null
             }
         }

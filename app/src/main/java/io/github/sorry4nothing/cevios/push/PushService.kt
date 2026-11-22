@@ -14,7 +14,7 @@ class PushService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val type = message.data["typ"]
         val id = message.data["id"]
-        if (OpenChat.hides(type, id)) return
+        if (OpenChat.hides(type, id) || OpenCampObject.hides(type, id)) return
         val notification = message.notification
         Notifications.show(applicationContext, notification?.title, notification?.body, notification?.channelId, type, id)
     }

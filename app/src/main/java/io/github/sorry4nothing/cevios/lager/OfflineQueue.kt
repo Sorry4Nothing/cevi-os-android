@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import java.util.UUID
 
 /** Wo eine Änderung steht: wartet aufs Senden, gesendet, mit Konflikt (neuere Version) oder abgelehnt. */
@@ -36,6 +37,8 @@ data class QueuedChange(
     val current: JsonObject? = null,
     /** Nur bei CONFLICT: die Felder, die jetzt anders stehen. */
     val differing: List<String> = emptyList(),
+    /** Bleibt gleich, auch wenn die Änderung eine neue `clientOpId` bekommt: Daran erkennt die Anzeige «ihre» Änderung wieder. */
+    val ref: String = clientOpId,
 )
 
 /** Alle Änderungen eines Lagers, ob das Netz fehlt und ob gerade gesendet wird. */
@@ -104,30 +107,47 @@ class OfflineQueue(
     }
 
     /**
-     * Ändert eine Änderung, die noch wartet (zum Beispiel ein zweiter Tipp auf denselben Status): Sie geht mit der neuen Nutzlast
-     * und derselben `clientOpId` weg. Eine Änderung, die schon unterwegs oder entschieden ist, bleibt wie sie ist (`false`).
+     * Ändert eine Änderung, die noch wartet (zum Beispiel ein zweiter Tipp auf denselben Status). Hat sich der Inhalt geändert, geht
+     * sie mit einer neuen `clientOpId` weg: Eine frühere Anfrage kann angekommen sein, nur die Antwort fehlt, und der Server würde
+     * dieselbe `clientOpId` als erledigt überspringen. Eine Änderung, die schon unterwegs oder entschieden ist, bleibt wie sie ist (`false`).
      */
-    fun revise(clientOpId: String, payload: JsonObject, summary: String): Boolean {
-        // Während des Sendens kann die Nutzlast schon unterwegs sein: Dann bleibt sie, wie sie ist.
-        if (_state.value.sending || _state.value.changes.none { it.clientOpId == clientOpId && it.state == ChangeState.WAITING }) return false
-        update { all -> all.map { if (it.clientOpId == clientOpId && it.state == ChangeState.WAITING) it.copy(payload = payload, summary = summary) else it } }
-        return true
+    fun revise(clientOpId: String, payload: JsonObject, summary: String): Boolean = edit { state ->
+        if (state.sending || state.changes.none { it.clientOpId == clientOpId && it.state == ChangeState.WAITING }) return@edit null
+        state.changes.map {
+            if (it.clientOpId != clientOpId || it.state != ChangeState.WAITING) it
+            else it.copy(payload = payload, summary = summary, clientOpId = if (payload == it.payload) it.clientOpId else newId())
+        }
     }
 
     /** Nimmt eine Änderung zurück, die noch wartet und nicht unterwegs ist (die Aufgabe, die sie anlegen wollte, wurde gelöscht). */
-    fun cancel(clientOpId: String): Boolean {
-        if (_state.value.sending || _state.value.changes.none { it.clientOpId == clientOpId && it.state == ChangeState.WAITING }) return false
-        update { all -> all.filterNot { it.clientOpId == clientOpId } }
-        return true
+    fun cancel(clientOpId: String): Boolean = edit { state ->
+        if (state.sending || state.changes.none { it.clientOpId == clientOpId && it.state == ChangeState.WAITING }) null
+        else state.changes.filterNot { it.clientOpId == clientOpId }
+    }
+
+    /** Prüfen und ändern in einem Schritt, damit zwischen beidem kein Sendeversuch beginnt; `null` heisst: nichts ändern. */
+    private fun edit(block: (QueueState) -> List<QueuedChange>?): Boolean {
+        var applied = false
+        _state.update { state ->
+            val changes = block(state)
+            applied = changes != null
+            if (changes == null) state else state.copy(changes = changes.also { store.save(campId, it) })
+        }
+        return applied
     }
 
     /** Sendet alle wartenden Änderungen, 100 je Anfrage, der Reihe nach. Gleichzeitige Aufrufe warten aufeinander. */
     suspend fun flush(): FlushResult = lock.withLock {
         var sentAny = false
+        var limit = MAX_BATCH
         while (true) {
-            val batch = _state.value.changes.filter { it.state == ChangeState.WAITING }.take(MAX_BATCH)
+            // Auswahl und «sending» in einem Schritt: Eine Änderung der Nutzlast kann nicht mehr dazwischen kommen.
+            var batch = emptyList<QueuedChange>()
+            _state.update { state ->
+                batch = nextBatch(state.changes, limit)
+                state.copy(sending = batch.isNotEmpty())
+            }
             if (batch.isEmpty()) break
-            _state.update { it.copy(sending = true) }
             // Auch bei einer Ausnahme (oder beim Abbruch) darf «sending» nicht stehen bleiben: Sonst liessen sich wartende Änderungen nie mehr ändern.
             val result = try {
                 api.sendQueue(campId, batch.map { QueueOperation(it.clientOpId, it.type, it.payload) })
@@ -146,6 +166,13 @@ class OfflineQueue(
                     }
                 }
                 is ApiResult.Failure -> {
+                    // 400 oder 413 für die ganze Anfrage: Halbieren, bis die eine Änderung gefunden ist, die der Server nicht annimmt.
+                    // Sie wird abgelehnt und sichtbar; die anderen kommen durch (sonst sperrte sie alle folgenden und die Anfrage liefe alle 15 s von vorn).
+                    if (result.status == 400 || result.status == 413) {
+                        if (batch.size > 1) limit = (batch.size + 1) / 2
+                        else reject(listOf(batch.single().clientOpId), "UNGUELTIGE_EINGABE")
+                        continue
+                    }
                     when (result.error) {
                         ApiError.NETWORK -> _state.update { it.copy(offline = true) }
                         // Das Lager ist zu: Keine dieser Änderungen kommt mehr an, die Person soll es sehen.
@@ -166,8 +193,18 @@ class OfflineQueue(
 
     private fun apply(batch: List<QueuedChange>, results: List<QueueResult>) {
         val byId = results.associateBy { it.clientOpId }
+        // Eine spätere, noch wartende Änderung an derselben Zeile übernimmt die neue Version (sonst endete sie im Konflikt mit der eigenen).
+        val versions = batch.mapNotNull { sent ->
+            val result = byId[sent.clientOpId]?.takeIf { it.status == "ok" } ?: return@mapNotNull null
+            val version = result.result?.get("version") as? JsonPrimitive ?: return@mapNotNull null
+            rowOf(sent)?.let { it to version }
+        }.toMap()
         update { all ->
             all.map { change ->
+                if (change.state == ChangeState.WAITING && change.clientOpId !in byId && "version" in change.payload) {
+                    val next = rowOf(change)?.let { versions[it] }
+                    if (next != null) return@map change.copy(payload = JsonObject(change.payload + ("version" to next)))
+                }
                 val result = byId[change.clientOpId]?.takeIf { r -> batch.any { it.clientOpId == r.clientOpId } } ?: return@map change
                 when (result.status) {
                     "ok" -> change.copy(state = ChangeState.SENT, code = null, result = result.result)
@@ -199,10 +236,29 @@ class OfflineQueue(
     /** «Aktuelle übernehmen» und «Verwerfen»: Die Änderung fällt weg, der Stand des Servers gilt. */
     fun discard(clientOpId: String) = update { all -> all.filterNot { it.clientOpId == clientOpId && it.state != ChangeState.WAITING } }
 
-    /** Räumt gesendete Änderungen aus der Liste, sobald die Person sie gesehen hat. */
-    fun clearSent() = update { all -> all.filterNot { it.state == ChangeState.SENT } }
+    /** Räumt gesendete Änderungen aus der Liste, sobald die Person sie gesehen hat; `only` begrenzt es auf diese `clientOpId`. */
+    fun clearSent(only: Set<String>? = null) = update { all -> all.filterNot { it.state == ChangeState.SENT && (only == null || it.clientOpId in only) } }
 
     private companion object {
         const val MAX_BATCH = 100
     }
+}
+
+private fun rowOf(change: QueuedChange): String? = (change.payload["id"] as? JsonPrimitive)?.contentOrNull
+
+/**
+ * Die nächsten wartenden Änderungen für eine Anfrage, höchstens `limit`. Zwei Änderungen an derselben Zeile gehören nie in dieselbe
+ * Anfrage: Die zweite braucht die Version, die die erste schreibt, und die kennt die App erst aus deren Antwort.
+ */
+internal fun nextBatch(changes: List<QueuedChange>, limit: Int): List<QueuedChange> {
+    val rows = mutableSetOf<String>()
+    val batch = mutableListOf<QueuedChange>()
+    for (change in changes) {
+        if (change.state != ChangeState.WAITING) continue
+        val row = rowOf(change)
+        if (row != null && !rows.add(row)) break
+        batch += change
+        if (batch.size == limit) break
+    }
+    return batch
 }

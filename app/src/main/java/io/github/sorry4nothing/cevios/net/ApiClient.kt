@@ -218,7 +218,7 @@ class ApiClient(
         val code = if (response.code == 403 && read != SECOND_FACTOR_CODE) null else read
         val retryAfter = if (response.code == 429) response.header(RETRY_AFTER)?.toIntOrNull()?.coerceIn(1, MAX_RETRY_AFTER) else null
         val conflict = if (code == VERSION_CONFLICT_CODE && body?.current != null) VersionConflict(body.current, body.differing) else null
-        return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter, conflict)
+        return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter, conflict).also { it.status = response.code }
     }
 
     private fun <T> evaluate(response: Response, decode: (Response) -> T): ApiResult<T> {

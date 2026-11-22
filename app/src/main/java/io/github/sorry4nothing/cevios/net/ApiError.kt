@@ -79,7 +79,11 @@ sealed interface ApiResult<out T> {
         val retryAfterSeconds: Int? = null,
         /** Nur bei `VERSION_KONFLIKT`: der aktuelle Stand der Zeile und die Felder, die jetzt anders stehen. */
         val conflict: VersionConflict? = null,
-    ) : ApiResult<Nothing>
+    ) : ApiResult<Nothing> {
+        /** Der HTTP-Status der Antwort; `null`, wenn es keine gab. Bewusst ausserhalb von `equals` und `copy`. */
+        var status: Int? = null
+            internal set
+    }
 }
 
 /** Gibt der Fehler an dieser Stelle einen genaueren Text: aus `from` wird `to`, alles andere bleibt (auch `code` und Wartezeit). */

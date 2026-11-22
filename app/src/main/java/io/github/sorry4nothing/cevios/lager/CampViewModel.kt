@@ -164,14 +164,18 @@ class CampViewModel(
                         is ApiResult.Ok -> _readable.value = base.value.types.toSet()
                     }
                     _online.value = true
-                    failures = 0
                     launch { refreshUnread(campId) }
                     launch { flushAndAnnounce(queue) }
+                    val openedAt = System.nanoTime()
                     val result = sync.listen(
                         onNews = { handlePull(campId, sync) },
                         onReload = { _changes.tryEmit(CampChange(sync.seq ?: 0, emptySet(), 0, reload = true)) },
                     )
+                    // Ein Strom, der gleich wieder endet, zählt als Fehler: Sonst wüchse die Pause nie und die App fragte im Takt von Sekunden.
+                    val lasted = (System.nanoTime() - openedAt) / 1_000_000 >= STREAM_OK_MS
+                    if (lasted) failures = 0
                     (result as? ListenResult.Failed)?.let { it.error to it.retryAfterSeconds }
+                        ?: if (lasted) null else ApiError.UNKNOWN to null
                 }
                 if (failure == null) {
                     delay(RECONNECT_MS)
@@ -228,5 +232,6 @@ class CampViewModel(
         const val RESEND_MS = 15_000L
         const val RECONNECT_MS = 2_000L
         const val MAX_BACKOFF_MS = 30_000L
+        const val STREAM_OK_MS = 10_000L
     }
 }

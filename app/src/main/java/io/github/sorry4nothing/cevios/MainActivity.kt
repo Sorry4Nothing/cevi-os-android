@@ -2,6 +2,7 @@ package io.github.sorry4nothing.cevios
 
 import io.github.sorry4nothing.cevios.ui.screenTransition
 import io.github.sorry4nothing.cevios.lager.AgendaScreen
+import io.github.sorry4nothing.cevios.push.OpenCampObject
 import io.github.sorry4nothing.cevios.lager.AndroidCommsTexts
 import io.github.sorry4nothing.cevios.lager.AndroidTaskTexts
 import io.github.sorry4nothing.cevios.lager.CampTarget
@@ -541,7 +542,7 @@ private fun MainContent(
         val openedCamp = (campDetail as? ApiResult.Ok)?.value?.takeIf { it.id == campId }
         val rights = TaskRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
         val meetingRights = MeetingRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        SideEffect { tasks.rights = rights; comms.rights = meetingRights }
+        SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights }
         // Wer die Konfliktlösung offen hat: ein Konflikt aus den Sitzungen oder der Kommunikation (ohne Warteschlange).
         val meetingConflict by meetings.writer.conflict.collectAsState()
         val commsConflict by comms.writer.conflict.collectAsState()
@@ -599,6 +600,17 @@ private fun MainContent(
             notificationsOpen -> Screen.Notifications
             changingPassword -> Screen.Password
             else -> Screen.Home
+        }
+        // Eine offene Liste braucht keinen Push zu ihrer eigenen Art (Pinnwand, Erwähnungen, Eingang).
+        val openPushTypes = when {
+            target == Screen.Mentions -> setOf("lager_erwaehnung")
+            target == Screen.Inbox -> setOf("lager_eingang")
+            target == Screen.Home && campArea && campId != null && destination == Destination.PINBOARD -> setOf("lager_pinnwand")
+            else -> emptySet()
+        }
+        DisposableEffect(openPushTypes) {
+            OpenCampObject.types = openPushTypes
+            onDispose { OpenCampObject.types = emptySet() }
         }
         val motion = rememberMotionEnabled()
         AnimatedContent(

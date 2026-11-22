@@ -48,6 +48,9 @@ class MeetingsViewModel(
 
     val writer = DirectWriter(viewModelScope) { texts.fieldLabels() }
 
+    /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie. Wer die Punkte für den nächsten Höck nicht lesen darf (Team), fragt sie nicht ab. */
+    var rights: MeetingRights = MeetingRights.of(CampRole.READ_ONLY, true)
+
     private val _meetings = MutableStateFlow<ApiResult<List<Meeting>>?>(null)
     val meetings: StateFlow<ApiResult<List<Meeting>>?> = _meetings.asStateFlow()
 
@@ -153,7 +156,7 @@ class MeetingsViewModel(
         val id = campId ?: return
         viewModelScope.launch(Background()) {
             val result = api.meeting(id, meetingId)
-            val next = (api.nextMeetingItems(id) as? ApiResult.Ok)?.value?.items.orEmpty()
+            val next = if (rights.readAll) (api.nextMeetingItems(id) as? ApiResult.Ok)?.value?.items.orEmpty() else emptyList()
             if (campId != id) return@launch
             _state.update { current ->
                 if (current?.id != meetingId) current

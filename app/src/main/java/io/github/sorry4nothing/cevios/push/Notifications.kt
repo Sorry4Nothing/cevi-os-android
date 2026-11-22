@@ -112,7 +112,16 @@ object OpenCampObject {
     @Volatile
     var id: String? = null
 
-    /** Ob ein Lager-Push mit `typ` und `id` nichts zeigen soll, weil die Person genau dieses Objekt liest. */
-    fun hides(type: String?, pushId: String?, open: String? = id): Boolean =
-        type != null && type in PushTarget.CAMP_TYPES && pushId != null && pushId == open
+    /**
+     * Die Push-Arten, deren Liste die Person gerade offen hat (zum Beispiel `lager_pinnwand`, solange die Pinnwand sichtbar ist):
+     * Ein neuer Eintrag erscheint dort ohnehin, ein Push dazu wäre doppelt.
+     */
+    @Volatile
+    var types: Set<String> = emptySet()
+
+    /** Ob ein Lager-Push mit `typ` und `id` nichts zeigen soll, weil die Person genau dieses Objekt oder dessen Liste liest. */
+    fun hides(type: String?, pushId: String?, open: String? = id, openTypes: Set<String> = types): Boolean {
+        if (type == null || type !in PushTarget.CAMP_TYPES) return false
+        return type in openTypes || (pushId != null && pushId == open)
+    }
 }

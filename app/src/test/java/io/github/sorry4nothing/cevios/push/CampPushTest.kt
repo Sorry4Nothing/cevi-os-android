@@ -45,4 +45,12 @@ class CampPushTest {
         assertFalse(OpenCampObject.hides("chat", id, open = id))
         assertFalse(OpenCampObject.hides("lager_aufgabe", null, open = id))
     }
+
+    @Test
+    fun aPushToAnOpenListShowsNothing() {
+        assertTrue(OpenCampObject.hides("lager_pinnwand", id, open = null, openTypes = setOf("lager_pinnwand")))
+        assertTrue(OpenCampObject.hides("lager_erwaehnung", null, open = null, openTypes = setOf("lager_erwaehnung")))
+        assertFalse(OpenCampObject.hides("lager_eingang", id, open = null, openTypes = setOf("lager_pinnwand")))
+        assertFalse(OpenCampObject.hides("chat", id, open = null, openTypes = setOf("chat")))
+    }
 }

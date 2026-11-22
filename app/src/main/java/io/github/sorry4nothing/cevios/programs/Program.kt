@@ -23,6 +23,15 @@ data class ProgramAgeGroup(
 @Serializable
 data class ProgramChild(val id: String, @SerialName("vorname") val firstName: String, val status: String? = null)
 
+/** Die Zusagen der eigenen Kinder in Zahlen; alles ausser «ja» und «nein» zählt als offen. */
+data class ChildCounts(val yes: Int, val no: Int, val open: Int)
+
+fun List<ProgramChild>.counts() = ChildCounts(
+    yes = count { it.status == "ja" },
+    no = count { it.status == "nein" },
+    open = count { it.status != "ja" && it.status != "nein" },
+)
+
 /** Listeneintrag und Detail der API. Die Felder ab `attendanceOpen` liefert nur das Detail. */
 @Serializable
 data class Program(

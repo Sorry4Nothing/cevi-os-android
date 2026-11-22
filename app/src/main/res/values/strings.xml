@@ -35,9 +35,25 @@
     <string name="message_author_leader">%1$s · SL</string>
     <string name="chat_preview_own">Du: %1$s</string>
     <string name="chat_preview_other">%1$s: %2$s</string>
+    <plurals name="children_yes">
+        <item quantity="one">%d Kind kommt</item>
+        <item quantity="other">%d Kinder kommen</item>
+    </plurals>
+    <plurals name="children_no">
+        <item quantity="one">%d Kind kommt nicht</item>
+        <item quantity="other">%d Kinder kommen nicht</item>
+    </plurals>
+    <plurals name="children_open">
+        <item quantity="one">Zusage für %d Kind offen</item>
+        <item quantity="other">Zusage für %d Kinder offen</item>
+    </plurals>
+    <!-- Noch im Widget, bis W1 ohne Kindernamen kommt. -->
     <string name="child_status_yes">%1$s kommt</string>
     <string name="child_status_no">%1$s kommt nicht</string>
     <string name="child_status_open">Zusage für %1$s offen</string>
+    <string name="own_yes">Du kommst</string>
+    <string name="own_no">Du kommst nicht</string>
+    <string name="own_open">Deine Zusage ist offen</string>
     <string name="message_program">Programm: %1$s</string>
     <string name="messages_older">Ältere Nachrichten laden</string>
     <string name="message_input">Nachricht</string>
@@ -148,8 +164,6 @@
     <string name="login_failed">Anmeldung nicht möglich. Bitte Benutzername und Passwort prüfen oder später nochmals versuchen. Sonst hilft die Leitung.</string>
     <string name="login_admin_only">Admins melden sich im Admin-Bereich an. In der App geht das nicht.</string>
     <string name="password_show">Passwort anzeigen</string>
-    <string name="password_eyebrow_first">Erster Login</string>
-    <string name="password_eyebrow">Konto</string>
     <string name="password_title_first">Eigenes Passwort wählen</string>
     <string name="password_title">Passwort ändern</string>
     <string name="password_intro_first">Du hast ein Startpasswort von der Abteilung bekommen. Wähle jetzt ein eigenes, das nur du kennst.</string>

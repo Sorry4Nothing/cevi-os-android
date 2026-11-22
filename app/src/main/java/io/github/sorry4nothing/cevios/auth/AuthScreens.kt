@@ -299,7 +299,6 @@ fun PasswordScreen(
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Header(
                 title = stringResource(if (first) R.string.password_title_first else R.string.password_title),
-                eyebrow = stringResource(if (first) R.string.password_eyebrow_first else R.string.password_eyebrow),
                 back = onBack?.let { HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_profile), it) },
                 titleStyle = MaterialTheme.typography.headlineMedium,
                 focusOnTitle = true,

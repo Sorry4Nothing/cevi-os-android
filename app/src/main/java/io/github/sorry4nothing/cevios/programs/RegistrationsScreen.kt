@@ -61,11 +61,11 @@ import io.github.sorry4nothing.cevios.ui.theme.cevi
 
 /**
  * Wer zu einem Programm ja, nein oder noch nichts gesagt hat, für Leitende, Stufenleitungen und Admins. Nur zum Ansehen: Eine
- * fehlende Antwort bleibt offen, niemand ändert sie hier (Entscheid des Auftraggebers). `eyebrow` nennt Programm und Tag.
+ * fehlende Antwort bleibt offen, niemand ändert sie hier (Entscheid des Auftraggebers). `subtitle` nennt das Programm.
  */
 @Composable
 fun RegistrationsScreen(
-    eyebrow: String?,
+    subtitle: String?,
     state: ApiResult<Registrations>?,
     onBack: () -> Unit,
     onRetry: () -> Unit,
@@ -73,7 +73,7 @@ fun RegistrationsScreen(
     Column(Modifier.fillMaxSize()) {
         Header(
             title = stringResource(R.string.registrations_title),
-            eyebrow = eyebrow,
+            subtitle = subtitle,
             back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_program), onBack),
             focusOnTitle = true,
         )

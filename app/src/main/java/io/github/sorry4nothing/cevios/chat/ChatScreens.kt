@@ -311,8 +311,7 @@ fun ChatConversationScreen(
             if (!compact) {
                 Header(
                     title = title,
-                    eyebrow = chat?.ageGroup?.name,
-                    eyebrowStages = listOfNotNull(chat?.ageGroup?.id),
+                    subtitle = chat?.ageGroup?.name,
                     back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_chat), onBack),
                     titleStyle = MaterialTheme.typography.headlineMedium,
                     focusOnTitle = true,

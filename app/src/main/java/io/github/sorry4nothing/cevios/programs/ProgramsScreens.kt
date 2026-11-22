@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -56,7 +57,6 @@ import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.focusRing
-import io.github.sorry4nothing.cevios.ui.StageLogo
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 import java.time.LocalTime
@@ -137,10 +137,16 @@ private fun DateColumn(day: Day, withLine: Boolean) {
     }
 }
 
+/** Die Gruppen des Programms für Chips; ohne Stufe gilt es für alle. */
+@Composable
+private fun groupNames(program: Program): List<String> =
+    if (program.allAgeGroups) listOf(stringResource(R.string.stage_all)) else program.ageGroups.map { it.name }
+
+/** Uhrzeit mit Symbol, Titel, Ort; darunter die Gruppen und der Stand der eigenen Zusagen als Chips (Zahl, nie Namen). */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
-    val ageGroups = if (program.allAgeGroups) stringResource(R.string.stage_all) else program.ageGroups.joinToString(", ") { it.name }
-    val headerLine = listOf(listTime(program), ageGroups).filter { it.isNotBlank() }.joinToString(" · ")
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         Modifier
             .fillMaxWidth()
@@ -151,33 +157,34 @@ private fun ProgramCard(program: Program, onOpen: (String) -> Unit) {
             .padding(horizontal = Spacing.s4, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-            program.ageGroups.forEach { StageLogo(it.id, size = 28.dp) }
-            Text(
-                headerLine,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
-                color = MaterialTheme.cevi.accent,
-            )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1), verticalAlignment = Alignment.CenterVertically) {
+            Icon(painterResource(R.drawable.ic_clock), contentDescription = null, tint = muted, modifier = Modifier.size(16.dp))
+            Text(listTime(program), style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), color = muted)
         }
         Text(program.title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 24.sp))
-        program.location?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        // Je eigenes Kind der Stand (Vorname und «kommt», «kommt nicht» oder «noch offen»); bei einem abgesagten Programm steht schon «Abgesagt» da.
-        if (!program.cancelled) program.children.forEach { ChildStatus(it) }
-        ProgramStatus(program, Modifier.padding(top = 6.dp))
+        program.location?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = muted) }
+        FlowRow(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            groupNames(program).forEach { StatusChip(ChipKind.AGE_GROUP, it) }
+            // Bei einem abgesagten Programm steht «Abgesagt» da, Zusagen sind dann ohne Bedeutung.
+            if (!program.cancelled) AnswerChips(program)
+            if (program.cancelled) StatusChip(ChipKind.NO, stringResource(R.string.status_cancelled))
+            if (program.inReview) StatusChip(ChipKind.REVIEW, stringResource(R.string.status_review))
+        }
     }
 }
 
-/** Der Stand eines eigenen Kindes auf der Karte: Symbol und Wort, nie nur Farbe. */
+/** Der Stand der eigenen Kinder in Zahlen («1 Kind kommt») und bei Leitenden der eigene («Du kommst»): Symbol und Wort, nie nur Farbe. */
 @Composable
-private fun ChildStatus(child: ProgramChild) {
-    val (icon, text) = when (child.status) {
-        "ja" -> R.drawable.ic_check to stringResource(R.string.child_status_yes, child.firstName)
-        "nein" -> R.drawable.ic_cross to stringResource(R.string.child_status_no, child.firstName)
-        else -> R.drawable.ic_question to stringResource(R.string.child_status_open, child.firstName)
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1), verticalAlignment = Alignment.CenterVertically) {
-        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun AnswerChips(program: Program) {
+    val counts = program.children.counts()
+    if (counts.yes > 0) StatusChip(ChipKind.YES, pluralStringResource(R.plurals.children_yes, counts.yes, counts.yes))
+    if (counts.no > 0) StatusChip(ChipKind.NO, pluralStringResource(R.plurals.children_no, counts.no, counts.no))
+    if (counts.open > 0) StatusChip(ChipKind.PENDING, pluralStringResource(R.plurals.children_open, counts.open, counts.open))
+    when (program.ownRegistration) {
+        null -> {}
+        "ja" -> StatusChip(ChipKind.YES, stringResource(R.string.own_yes))
+        "nein" -> StatusChip(ChipKind.NO, stringResource(R.string.own_no))
+        else -> StatusChip(ChipKind.PENDING, stringResource(R.string.own_open))
     }
 }
 
@@ -257,13 +264,12 @@ private fun ProgramContent(
     onAssign: () -> Unit,
     onRegistrations: () -> Unit,
 ) {
-    val ageGroups = if (program.allAgeGroups) stringResource(R.string.stage_all) else program.ageGroups.joinToString(", ") { it.name }
-    val date = program.startDay()?.let { "${weekdayShort(it)} ${dayAndMonth(it)}" }
+    val date = program.startDay()?.let { "${weekdayLong(it)}, ${dayAndMonth(it)}" }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Header(
             title = program.title,
-            eyebrow = listOfNotNull(ageGroups.ifBlank { null }, date).joinToString(" · "),
-            eyebrowStages = program.ageGroups.map { it.id },
+            subtitle = date,
+            groups = groupNames(program),
             back = back,
             titleStyle = MaterialTheme.typography.headlineMedium,
             focusOnTitle = true,

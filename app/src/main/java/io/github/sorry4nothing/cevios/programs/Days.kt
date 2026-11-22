@@ -36,6 +36,9 @@ fun groupByDay(programs: List<Program>): List<Day> {
 fun weekdayShort(date: LocalDate): String =
     date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.GERMAN).take(2).uppercase(Locale.GERMAN)
 
+/** «Samstag» */
+fun weekdayLong(date: LocalDate): String = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.GERMAN)
+
 /** «14. November» */
 fun dayAndMonth(date: LocalDate): String =
     "${date.dayOfMonth}. ${date.month.getDisplayName(TextStyle.FULL, Locale.GERMAN)}"

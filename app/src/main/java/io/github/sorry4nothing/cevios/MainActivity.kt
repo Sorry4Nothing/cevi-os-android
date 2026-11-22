@@ -419,10 +419,9 @@ private fun MainContent(
                 is Screen.Registrations -> {
                     val programId = screen.programId
                     BackHandler { viewingRegistrations = false }
-                    val date = assignedProgram?.startDay()?.let { "${weekdayShort(it)} ${it.dayOfMonth}.${it.monthValue}." }
                     MainScaffold(Destination.PROGRAMS, onDestination = { destination = it; openedProgram = null; viewingRegistrations = false }, unread = chatUnread) {
                         RegistrationsScreen(
-                            eyebrow = listOfNotNull(assignedProgram?.title, date).joinToString(" · ").ifBlank { null },
+                            subtitle = assignedProgram?.title,
                             state = programs.registrations.collectAsState().value,
                             onBack = { viewingRegistrations = false },
                             onRetry = { programs.loadRegistrations(programId) },

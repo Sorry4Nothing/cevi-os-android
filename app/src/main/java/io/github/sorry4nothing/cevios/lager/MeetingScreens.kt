@@ -1,6 +1,8 @@
 package io.github.sorry4nothing.cevios.lager
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -31,6 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -49,6 +54,7 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
+import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import kotlinx.serialization.json.JsonArray
@@ -482,18 +488,31 @@ private fun AgendaCard(
     val unknown = stringResource(R.string.mention_unknown)
     val decision = item.decision?.takeIf { it.isNotBlank() }?.let { renderMentions(it, names, unknown) }
     val done = item.status == AgendaStatus.DONE
-    val description = buildList {
+    // Die Karte ist kein ganzer Knopf, weil das Menü darin ein eigener Knopf ist: Titel und Verantwortliche öffnen den Editor.
+    val titleShape = MaterialTheme.shapes.small
+    val spoken = buildList {
         add(stringResource(R.string.agenda_number, number, item.title))
         who?.let { add(it) }
-        if (done) add(stringResource(R.string.agenda_done))
-        decision?.let { add(stringResource(R.string.agenda_decision, it)) }
     }.joinToString(", ")
-    InfoCard(description = description, onClick = if (rights.editMeetings && !reorder) onEdit else null, onClickLabel = stringResource(R.string.agenda_edit)) {
+    InfoCard {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.CenterVertically) {
-            Text(number.toString(), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(renderMentions(item.title, names, unknown), style = MaterialTheme.typography.titleMedium)
-                who?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Column(
+                Modifier
+                    .weight(1f)
+                    .heightIn(min = Sizes.touchTarget)
+                    .focusRing(titleShape)
+                    .clip(titleShape)
+                    .then(if (rights.editMeetings && !reorder) Modifier.clickable(onClickLabel = stringResource(R.string.agenda_edit), role = Role.Button, onClick = onEdit) else Modifier)
+                    .semantics(mergeDescendants = true) { contentDescription = spoken },
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.CenterVertically) {
+                    Text(number.toString(), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(renderMentions(item.title, names, unknown), style = MaterialTheme.typography.titleMedium)
+                        who?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                }
             }
             if (reorder) {
                 onUp?.let { RoundIcon(R.drawable.ic_chevron_up, stringResource(R.string.agenda_move_up, item.title), it) }

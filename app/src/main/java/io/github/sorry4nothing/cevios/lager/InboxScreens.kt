@@ -3,7 +3,9 @@ package io.github.sorry4nothing.cevios.lager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -31,7 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import io.github.sorry4nothing.cevios.R
@@ -52,6 +56,8 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
+import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
 private enum class InboxTab { INBOX, MINE }
@@ -232,11 +238,7 @@ private fun InboxCard(entry: InboxEntry, rights: MeetingRights, onAnswer: (Inbox
     // Bei einer anonymen Meldung steht nur «anonym» und der Tag, nie ein Name.
     val from = if (entry.anonymous) stringResource(R.string.inbox_anonymous) else entry.from?.display?.takeIf { it.isNotBlank() } ?: stringResource(R.string.inbox_unknown_sender)
     val meta = stringResource(R.string.inbox_meta, from, dayText(entry.createdOn))
-    val description = listOfNotNull(
-        stringResource(kindText(entry.kind)), meta, stringResource(statusText(entry.status)), entry.text,
-        entry.reply?.let { stringResource(R.string.inbox_reply_is, it) },
-    ).joinToString(", ")
-    InfoCard(description = description) {
+    InfoCard {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             StatusChip(statusChip(entry.status), stringResource(statusText(entry.status)))
             StatusChip(ChipKind.AGE_GROUP, stringResource(kindText(entry.kind)))
@@ -504,13 +506,21 @@ fun LagerNotificationsScreen(
                                     val text = newsText(entry.kind, task?.title)
                                     val time = newsTime(entry.createdAt)
                                     val target = campTargetFor(entry.kind, entry.objectType, entry.objectId)
-                                    InfoCard(
-                                        description = text + ", " + time + if (entry.read) "" else ", " + stringResource(R.string.notif_unread),
-                                        onClick = { if (!entry.read) vm.markRead(listOf(entry.id)); onOpenTarget(target) },
-                                        onClickLabel = stringResource(R.string.notif_open),
-                                    ) {
+                                    val opener = { if (!entry.read) vm.markRead(listOf(entry.id)); onOpenTarget(target) }
+                                    val spokenLine = text + ", " + time + if (entry.read) "" else ", " + stringResource(R.string.notif_unread)
+                                    val rowShape = MaterialTheme.shapes.small
+                                    InfoCard {
                                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
-                                            Column(Modifier.weight(1f)) {
+                                            Column(
+                                                Modifier
+                                                    .weight(1f)
+                                                    .heightIn(min = Sizes.touchTarget)
+                                                    .focusRing(rowShape)
+                                                    .clip(rowShape)
+                                                    .clickable(onClickLabel = stringResource(R.string.notif_open), role = Role.Button, onClick = opener)
+                                                    .semantics(mergeDescendants = true) { contentDescription = spokenLine },
+                                                verticalArrangement = Arrangement.Center,
+                                            ) {
                                                 Text(text, style = MaterialTheme.typography.titleMedium)
                                                 Text(time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }

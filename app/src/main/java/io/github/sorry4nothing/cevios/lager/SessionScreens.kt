@@ -130,7 +130,7 @@ fun MinutesScreen(
                                     Text(stringResource(R.string.minutes_none), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     if (rights.editMinutes) OutlinedPillButton(stringResource(R.string.minutes_link), { linking = true }, Modifier.fillMaxWidth())
                                 }
-                                else -> InfoCard(description = minutes.title + ", " + (minutes.file?.name ?: stringResource(R.string.minutes_file_gone))) {
+                                else -> InfoCard {
                                     Text(minutes.title, style = MaterialTheme.typography.titleMedium)
                                     Text(
                                         minutes.file?.name ?: stringResource(R.string.minutes_file_gone),
@@ -167,13 +167,14 @@ fun MinutesScreen(
                     item { SectionTitle(stringResource(R.string.minutes_decisions)) }
                     if (decisions.isEmpty()) item { Text(stringResource(R.string.minutes_decisions_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     items(decisions, key = { it.id }) { decision ->
-                        InfoCard(
-                            description = renderMentions(decision.text, names, unknown),
-                            onClick = if (rights.editMinutes) ({ decisionEdit = decision }) else null,
-                            onClickLabel = stringResource(R.string.decision_edit),
-                        ) {
+                        InfoCard {
                             Text(renderMentions(decision.text, names, unknown), style = MaterialTheme.typography.bodyLarge)
-                            if (rights.editMinutes) TextActionButton(stringResource(R.string.task_delete), { decisionDelete = decision })
+                            if (rights.editMinutes) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                                    TextActionButton(stringResource(R.string.decision_edit), { decisionEdit = decision })
+                                    TextActionButton(stringResource(R.string.task_delete), { decisionDelete = decision })
+                                }
+                            }
                         }
                     }
                     if (rights.editMinutes) item { OutlinedPillButton(stringResource(R.string.decision_add), { decisionAdd = true }, Modifier.fillMaxWidth(), icon = R.drawable.ic_plus) }
@@ -476,7 +477,7 @@ fun MentionsScreen(
                     items(result.value, key = { it.id }) { mention ->
                         val text = renderMentions(mention.title, names, unknown)
                         val source = stringResource(mentionSourceText(mention.sourceType), mentionDay(mention.createdAt))
-                        InfoCard(description = source + ", " + text + if (mention.done) ", " + stringResource(R.string.mention_done) else "") {
+                        InfoCard {
                             Text(source, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(text, style = MaterialTheme.typography.bodyLarge)
                             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {

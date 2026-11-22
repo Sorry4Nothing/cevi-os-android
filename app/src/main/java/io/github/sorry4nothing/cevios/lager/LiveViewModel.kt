@@ -532,15 +532,9 @@ class LiveViewModel(
             if (!silent && _emergency.value !is ApiResult.Ok) _emergency.value = null
             val result = api.emergency(id)
             if (campId != id) return@launch
-            when (result) {
-                is ApiResult.Ok -> {
-                    _emergency.value = ApiResult.Ok(EmergencyState(result.value, now()))
-                    _emergencyStale.value = false
-                }
-                is ApiResult.Failure -> {
-                    if (_emergency.value is ApiResult.Ok) _emergencyStale.value = true else _emergency.value = result
-                }
-            }
+            val (shown, stale) = LiveRules.emergencyAfter(_emergency.value, result, now())
+            _emergency.value = shown
+            _emergencyStale.value = stale
         }
     }
 

@@ -1,5 +1,6 @@
 package io.github.sorry4nothing.cevios.lager
 
+import io.github.sorry4nothing.cevios.net.ApiResult
 import java.net.URLEncoder
 import java.time.Instant
 import java.time.LocalDate
@@ -241,6 +242,16 @@ object LiveRules {
         address.kartenLink?.takeIf { it.startsWith("https://") }?.let { return it }
         val text = listOfNotNull(address.address, address.place).filter { it.isNotBlank() }.joinToString(", ")
         return text.takeIf { it.isNotBlank() }?.let { "geo:0,0?q=" + URLEncoder.encode(it, "UTF-8").replace("+", "%20") }
+    }
+
+    /**
+     * Was das Notfall-Fenster nach einer Anfrage zeigt und ob es veraltet ist: Ein neuer Stand ersetzt den alten; scheitert die Anfrage
+     * (kein Netz), bleibt der zuletzt geladene Stand stehen, solange es einen gibt. Nur ohne alten Stand erscheint der Fehler.
+     */
+    fun emergencyAfter(previous: ApiResult<EmergencyState>?, result: ApiResult<Emergency>, now: Instant): Pair<ApiResult<EmergencyState>, Boolean> = when {
+        result is ApiResult.Ok -> ApiResult.Ok(EmergencyState(result.value, now)) to false
+        previous is ApiResult.Ok -> previous to true
+        else -> (result as ApiResult.Failure) to false
     }
 
     /** Die Kontakte, die man anrufen kann (mit Nummer), in der Reihenfolge des Servers. */

@@ -62,5 +62,9 @@ class AndroidCommsTexts(private val context: Context) : CommsTexts {
         "mindestbesetzung" to context.getString(R.string.field_minimum),
         "nacht" to context.getString(R.string.field_night),
         "fahrerPersonId" to context.getString(R.string.field_driver),
+        "menge" to context.getString(R.string.shop_amount),
+        "einheit" to context.getString(R.string.shop_unit),
+        "einkaeuferPersonId" to context.getString(R.string.shop_buyer),
+        "tageschefPersonId" to context.getString(R.string.day_lead),
     )
 }

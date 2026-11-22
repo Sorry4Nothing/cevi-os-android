@@ -122,6 +122,10 @@ fun writeErrorRes(error: ActionError): Int = when (error.code) {
     "DIENST_VORHANDEN" -> R.string.error_duty_exists
     "LIMIT_ERREICHT", "ZU_VIELE_GRUPPEN" -> R.string.error_limit_reached
     "ERWAEHNUNG_UNGUELTIG", "ZU_VIELE_MARKEN" -> R.string.error_mention_invalid
+    "ANFRAGE_NOETIG" -> R.string.error_attendance_locked
+    "KEINE_ANFRAGE_NOETIG" -> R.string.error_attendance_open
+    "ANFRAGE_OFFEN" -> R.string.error_attendance_waiting
+    "SEITE_VORHANDEN" -> R.string.error_day_exists
     else -> when (error.error) {
         ApiError.NETWORK, ApiError.LAGER_CLOSED, ApiError.FORBIDDEN, ApiError.TOO_MANY_REQUESTS, ApiError.VERSION_CONFLICT, ApiError.NOT_FOUND -> error.error.text
         else -> R.string.task_error

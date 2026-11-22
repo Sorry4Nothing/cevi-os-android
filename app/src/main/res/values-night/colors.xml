@@ -16,4 +16,8 @@
     <color name="widget_no_text">#FF8E9A</color>
     <color name="widget_open_bg">#30302D</color>
     <color name="widget_open_text">#BEBEB6</color>
+    <color name="widget_warn_bg">#2C2513</color>
+    <color name="widget_warn_text">#F2C063</color>
+    <color name="widget_primary">#D50038</color>
+    <color name="widget_on_primary">#FFFFFF</color>
 </resources>

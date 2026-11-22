@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/chip_text"
+    android:layout_width="wrap_content"
+    android:layout_height="22dp"
+    android:layout_marginEnd="4dp"
+    android:background="@drawable/widget_chip_stage"
+    android:ellipsize="end"
+    android:gravity="center"
+    android:maxWidth="96dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:singleLine="true"
+    android:textColor="@color/widget_stage_text"
+    android:textSize="12sp"
+    android:textStyle="bold" />

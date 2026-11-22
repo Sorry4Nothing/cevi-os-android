@@ -76,7 +76,8 @@ import io.github.sorry4nothing.cevios.ui.tabTransition
 import io.github.sorry4nothing.cevios.security.LockOutcome
 import io.github.sorry4nothing.cevios.security.BiometricPrompter
 import io.github.sorry4nothing.cevios.security.AppLock
-import io.github.sorry4nothing.cevios.widget.ProgramsWidget
+import io.github.sorry4nothing.cevios.widget.WidgetProvider
+import io.github.sorry4nothing.cevios.widget.forgetWidgets
 import io.github.sorry4nothing.cevios.auth.LockedScreen
 import io.github.sorry4nothing.cevios.security.shouldRelock
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -158,6 +159,7 @@ import io.github.sorry4nothing.cevios.push.OpenChat
 import io.github.sorry4nothing.cevios.push.NotificationsScreen
 import io.github.sorry4nothing.cevios.push.PushApi
 import io.github.sorry4nothing.cevios.push.PushTarget
+import io.github.sorry4nothing.cevios.push.WidgetArea
 import io.github.sorry4nothing.cevios.push.PushToken
 import io.github.sorry4nothing.cevios.push.PushViewModel
 import io.github.sorry4nothing.cevios.lager.WriteErrorBanner
@@ -213,13 +215,13 @@ class MainActivity : FragmentActivity() {
     /** Das Widget lädt, solange die App im Vordergrund ist: Im Energiesparmodus hat nur sie dann Netz. */
     override fun onStart() {
         super.onStart()
-        ProgramsWidget.refresh(applicationContext)
+        WidgetProvider.refreshAll(applicationContext)
     }
 
     /** Anmelden und Abmelden betreffen das Widget; es braucht dafür kein Netz. */
     override fun onStop() {
         super.onStop()
-        ProgramsWidget.refresh(applicationContext)
+        WidgetProvider.refreshAll(applicationContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -245,7 +247,9 @@ class MainActivity : FragmentActivity() {
 @Composable
 private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
     val authApi = remember(client) { AuthApi(client) }
-    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, client::forgetSession, lock, client::hasSession) }
+    val widgetContext = LocalContext.current.applicationContext
+    // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets verschwinden.
+    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext) }, lock, client::hasSession) }
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()
@@ -417,7 +421,7 @@ private fun MainContent(
     val context = LocalContext.current
     val resolver = context.contentResolver
     val appContext = context.applicationContext
-    val programs = viewModel { ProgramsViewModel(programsApi) { ProgramsWidget.refresh(appContext) } }
+    val programs = viewModel { ProgramsViewModel(programsApi) { WidgetProvider.refreshAll(appContext) } }
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
     val camp = viewModel { CampViewModel(campApi) }
@@ -479,6 +483,16 @@ private fun MainContent(
             askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+    // Widget-Ziele im Lager: «Heute», «Meine Aufgaben» (Ansicht «Meine») und «Notfall».
+    var pendingArea by remember { mutableStateOf<WidgetArea?>(null) }
+    val applyCampArea: (WidgetArea) -> Unit = { area ->
+        when (area) {
+            WidgetArea.CAMP_TODAY -> liveArea = LiveArea.TODAY
+            WidgetArea.CAMP_EMERGENCY -> liveArea = LiveArea.EMERGENCY
+            WidgetArea.CAMP_TASKS -> { destination = Destination.TASKS; tasks.setView(TaskView.MINE) }
+            else -> Unit
+        }
+    }
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
@@ -487,6 +501,25 @@ private fun MainContent(
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
             is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
+            // Widgets: die Liste der Programme, die Chatliste oder eine Lager-Seite (das Lager kennt das Widget, sonst zeigt die Lagerwahl).
+            is PushTarget.Area -> {
+                openedChat = null; openedProgram = null
+                when (target.area) {
+                    WidgetArea.PROGRAMS -> { campArea = false; destination = Destination.PROGRAMS }
+                    WidgetArea.CHAT -> destination = Destination.CHAT
+                    else -> {
+                        campArea = true; queueOpen = false; conflictId = null
+                        target.campId?.let { campId = it }
+                        ressortsOpen = false; openedRessort = null; openedTask = null
+                        meetingsOpen = false; openedMeeting = null; minutesFor = null; modeFor = null
+                        mentionsOpen = false; inboxOpen = false; lagerNotificationsOpen = false; postEditorOpen = false; editedPost = null
+                        planArea = null; liveArea = null; liveDay = null
+                        destination = Destination.START
+                        // Wechselt das Lager, setzt der Effekt für `campId` alles zurück: Dann gilt die Seite erst danach.
+                        if (target.campId != null && target.campId != campId) pendingArea = target.area else applyCampArea(target.area)
+                    }
+                }
+            }
             // Das Lager des Objekts löst der Server auf; die Module öffnen später das Objekt selbst (Schnitte A1 bis A5).
             is PushTarget.Camp -> {
                 openedChat = null; openedProgram = null
@@ -587,6 +620,7 @@ private fun MainContent(
             planning.open(id)
             live.open(id)
             archive.open(id)
+            pendingArea?.let { applyCampArea(it); pendingArea = null }
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { camp.follow(id) }
         }
     }

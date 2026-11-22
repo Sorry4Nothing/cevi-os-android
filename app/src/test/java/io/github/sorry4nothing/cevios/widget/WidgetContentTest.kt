@@ -33,16 +33,4 @@ class WidgetContentTest {
         assertEquals(listOf("heute"), upcoming(listOf(allDay("heute", "2026-11-13", "2026-11-14")), now).map { it.id })
         assertEquals(emptyList<Program>(), upcoming(listOf(allDay("gestern", "2026-11-12", "2026-11-13")), now))
     }
-
-    @Test
-    fun dateLineShowsWeekdayDateAndSwissTime() {
-        val line = dateLine(timed("a", "2026-11-14T13:00:00Z", "2026-11-14T15:00:00Z"), "ganztägig")
-        assertEquals("SA 14.11. · 14:00", line)
-    }
-
-    @Test
-    fun dateLineUsesLabelForAllDayAndIsEmptyWithoutTime() {
-        assertEquals("SA 14.11. · ganztägig", dateLine(allDay("a", "2026-11-14", "2026-11-14"), "ganztägig"))
-        assertEquals("", dateLine(Program(id = "x", title = "x", status = "aktiv", allDay = false), "ganztägig"))
-    }
 }

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widgets (Entwurf W1 bis W6, WK, WC) -->
+    <string name="widget_name_programs">Nächstes Programm</string>
+    <string name="widget_name_calendar">Mein Kalender</string>
+    <string name="widget_name_camp">Lager heute</string>
+    <string name="widget_name_tasks">Meine Aufgaben</string>
+    <string name="widget_name_emergency">Notfall</string>
+    <string name="widget_name_chat">Chat</string>
+    <string name="widget_app_name">Cevi OS</string>
+
+    <string name="widget_desc_programs">Zeigt das nächste Programm deiner Stufe mit Zeit und Treffpunkt.</string>
+    <string name="widget_desc_calendar">Zeigt deine nächsten Termine aus allen deinen Gruppen.</string>
+    <string name="widget_desc_camp">Zeigt im Lager den Tag, deinen Dienst und was heute wichtig ist.</string>
+    <string name="widget_desc_tasks">Zeigt, wie viele Aufgaben überfällig sind, und deine nächsten Fristen.</string>
+    <string name="widget_desc_emergency">Öffnet mit einem Tipp die Notfall-Seite des Lagers, auch ohne Netz.</string>
+    <string name="widget_desc_chat">Zeigt, wie viele Nachrichten ungelesen sind, ohne Inhalt und ohne Namen.</string>
+
+    <!-- Zustände -->
+    <string name="widget_loading">Wird geladen</string>
+    <string name="widget_never_opened">Wird geladen, sobald die App geöffnet wird</string>
+    <string name="widget_offline_no_data">Ohne Netz. Die Daten erscheinen, sobald du wieder Netz hast.</string>
+    <string name="widget_signed_out">Zum Anzeigen in der App anmelden</string>
+    <string name="widget_locked">Zum Anzeigen die App öffnen</string>
+    <string name="widget_error">Etwas ist schiefgelaufen. Tippe, um die App zu öffnen.</string>
+    <string name="widget_no_camp">Kein Lager. Sobald dich die Lagerleitung hinzufügt, erscheint es hier.</string>
+    <string name="widget_empty_programs">Keine Programme in Sicht</string>
+    <string name="widget_empty_calendar">Keine Termine für dich</string>
+    <string name="widget_empty_camp">Heute nichts eingeteilt</string>
+    <string name="widget_empty_tasks">Keine offenen Aufgaben</string>
+    <string name="widget_empty_chat">Alles gelesen</string>
+    <string name="widget_stand">Stand %1$s</string>
+    <string name="widget_stand_offline">Ohne Netz. Stand %1$s.</string>
+    <string name="widget_stand_stale">Stand vor %1$d Std.</string>
+    <string name="widget_stand_stale_spoken">Stand vor %1$d Stunden.</string>
+
+    <!-- Inhalt -->
+    <string name="widget_status_open_one">1 Kind offen</string>
+    <string name="widget_status_open_many">%1$d Kinder offen</string>
+    <string name="widget_status_no_one">1 Kind hat abgesagt</string>
+    <string name="widget_status_no_many">%1$d Kinder haben abgesagt</string>
+    <string name="widget_status_all_yes">Alle Kinder haben zugesagt</string>
+    <string name="widget_status_you_open">Zusage offen</string>
+    <string name="widget_status_you_yes">Du kommst</string>
+    <string name="widget_status_you_no">Du kommst nicht</string>
+    <string name="widget_status_open_one_long">Zusage für 1 Kind offen</string>
+    <string name="widget_status_open_many_long">Zusage für %1$d Kinder offen</string>
+    <string name="widget_day_of">Tag %1$d von %2$d</string>
+    <string name="widget_camp_progress">Lagertag %1$d von %2$d</string>
+    <string name="widget_your_duty">Dein Dienst</string>
+    <string name="widget_important_today">Wichtig heute</string>
+    <string name="widget_duty_line">%1$s, %2$s</string>
+    <string name="widget_overdue">überfällig</string>
+    <string name="widget_unread">ungelesen</string>
+    <string name="widget_open_for_you">%1$d offen für dich</string>
+    <string name="widget_due">Frist %1$s</string>
+    <string name="widget_urgency_overdue">Überfällig</string>
+    <string name="widget_urgency_soon">Bald</string>
+    <string name="widget_urgency_later">Später</string>
+    <string name="widget_emergency_button">Notfall</string>
+    <string name="widget_emergency_hint">Öffnet Nummern und Lageradresse</string>
+    <string name="widget_emergency_offline">Funktioniert auch ohne Netz</string>
+    <plurals name="widget_chat_messages">
+        <item quantity="one">%1$d ungelesene Nachricht</item>
+        <item quantity="other">%1$d ungelesene Nachrichten</item>
+    </plurals>
+    <plurals name="widget_chat_chats">
+        <item quantity="one">in %1$d Chat</item>
+        <item quantity="other">in %1$d Chats</item>
+    </plurals>
+
+    <!-- Beschriftungen für den Screenreader: ganze Sätze -->
+    <string name="widget_a11y_program">Nächstes Programm: %1$s, %2$s%3$s.%4$s Tippen öffnet das Programm.</string>
+    <string name="widget_a11y_program_place">, Treffpunkt %1$s</string>
+    <string name="widget_a11y_calendar">Mein Kalender: %1$s. Nächster Termin: %2$s, %3$s%4$s.</string>
+    <plurals name="widget_a11y_calendar_count">
+        <item quantity="one">%1$d Termin</item>
+        <item quantity="other">%1$d Termine</item>
+    </plurals>
+    <string name="widget_a11y_camp">Lager heute: %1$s.%2$s</string>
+    <string name="widget_a11y_camp_duty"> Dein Dienst: %1$s.</string>
+    <string name="widget_a11y_tasks">Meine Aufgaben: %1$d überfällig.%2$s</string>
+    <string name="widget_a11y_tasks_next"> Nächste: %1$s, Frist %2$s.</string>
+    <string name="widget_a11y_emergency">Notfall. Tippen öffnet die Notfall-Seite.</string>
+    <plurals name="widget_a11y_chat">
+        <item quantity="one">Chat: %1$d ungelesene Nachricht.</item>
+        <item quantity="other">Chat: %1$d ungelesene Nachrichten.</item>
+    </plurals>
+    <string name="widget_a11y_chat_none">Chat: Alles gelesen.</string>
+    <string name="widget_a11y_row">%1$s. Tippen öffnet den Eintrag.</string>
+    <string name="widget_a11y_open">%1$s öffnen</string>
+
+    <!-- Konfiguration (WC1, WC2) -->
+    <string name="widget_config_stage_title">Stufe wählen</string>
+    <string name="widget_config_stage_hint">Welche Stufe soll das Widget zeigen? Du siehst nur Stufennamen, keine Namen von Kindern.</string>
+    <string name="widget_config_stage_option">Programme der Stufe %1$s</string>
+    <string name="widget_config_stage_single">Deine Kinder sind alle in derselben Stufe. Das Widget nimmt sie automatisch, du musst nichts wählen.</string>
+    <string name="widget_config_camp_title">Lager wählen</string>
+    <string name="widget_config_camp_hint">Welches Lager soll das Widget zeigen?</string>
+    <string name="widget_config_camp_single">Es ist nur ein Lager aktiv. Das Widget nimmt es automatisch, du musst nichts wählen.</string>
+    <string name="widget_config_loading">Auswahl wird geladen</string>
+    <string name="widget_config_error_title">Etwas ist schiefgelaufen</string>
+    <string name="widget_config_error_text">Das liegt nicht an dir. Versuche es in ein paar Minuten nochmals.</string>
+    <string name="widget_config_retry">Nochmals versuchen</string>
+    <string name="widget_config_add">Widget hinzufügen</string>
+    <string name="widget_config_cancel">Abbrechen</string>
+</resources>

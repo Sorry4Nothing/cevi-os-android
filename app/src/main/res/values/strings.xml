@@ -47,10 +47,6 @@
         <item quantity="one">Zusage für %d Kind offen</item>
         <item quantity="other">Zusage für %d Kinder offen</item>
     </plurals>
-    <!-- Noch im Widget, bis W1 ohne Kindernamen kommt. -->
-    <string name="child_status_yes">%1$s kommt</string>
-    <string name="child_status_no">%1$s kommt nicht</string>
-    <string name="child_status_open">Zusage für %1$s offen</string>
     <string name="own_yes">Du kommst</string>
     <string name="own_no">Du kommst nicht</string>
     <string name="own_open">Deine Zusage ist offen</string>
@@ -281,17 +277,6 @@
     <string name="registrations_empty_leaders">In den Stufen dieses Programms gibt es keine Leitenden.</string>
     <string name="registrations_chip_open">Offen</string>
 
-    <string name="widget_label">Nächste Programme</string>
-    <string name="widget_description">Die nächsten Programme und deine Zusage sowie die deiner Kinder</string>
-    <string name="widget_header">Cevi OS · Nächste Programme</string>
-    <string name="widget_empty">Keine Programme in Sicht</string>
-    <string name="widget_signed_out">Zum Anzeigen in der App anmelden</string>
-    <string name="widget_locked">Zum Anzeigen die App öffnen</string>
-    <string name="widget_loading">Wird geladen, sobald die App geöffnet wird</string>
-    <string name="widget_own_name">Du</string>
-    <string name="widget_own_yes">Du kommst</string>
-    <string name="widget_own_no">Du kommst nicht</string>
-    <string name="widget_own_open">Deine Zusage ist offen</string>
 
     <!-- Lager: Bereichswechsel und Dock -->
     <string name="tab_start">Start</string>

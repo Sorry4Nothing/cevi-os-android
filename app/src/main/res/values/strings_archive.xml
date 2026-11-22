@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lager, Schnitt A5: Ablage und Querschnitt (Entwurf T31, L33, L34, L36). Schweizer Schreibweise, «du», Buttons sind Verben. -->
+<resources>
+    <string name="field_keep">Fürs nächste Lager behalten</string>
+
+    <!-- Zeitplan (T31) -->
+    <string name="timeline_title">Zeitplan</string>
+    <string name="timeline_loading">Zeitplan wird geladen</string>
+    <string name="timeline_tab_list">Zeitplan</string>
+    <string name="timeline_tab_calendar">Kalender</string>
+    <string name="timeline_empty_title">Noch keine Meilensteine</string>
+    <string name="timeline_empty_text">Aufgaben mit Frist erscheinen hier.</string>
+    <string name="timeline_kind_milestone">Meilenstein</string>
+    <string name="timeline_kind_meeting">Höck</string>
+    <string name="timeline_kind_day">Lagertag</string>
+    <string name="timeline_kind_due">Aufgabe</string>
+    <string name="timeline_legend_due">Frist</string>
+    <string name="timeline_day_number">Tag %1$d</string>
+    <string name="timeline_due_line">bis %1$s</string>
+    <string name="timeline_due_line_ressort">bis %1$s, %2$s</string>
+    <string name="timeline_meeting_line">%1$s, %2$s</string>
+    <string name="timeline_row_spoken">%1$s, %2$s, %3$s</string>
+    <string name="timeline_previous_month">Vorheriger Monat</string>
+    <string name="timeline_next_month">Nächster Monat</string>
+    <string name="timeline_day_empty">An diesem Tag steht nichts an.</string>
+    <string name="timeline_cell_spoken">%1$s: %2$s</string>
+    <string name="timeline_proposal_title">Der Zeitplan ist unvollständig</string>
+    <string name="timeline_proposal_text">Es fehlen Lagertage oder Abschnitte des Tages. Der Vorschlag nimmt die Tage vom Beginn bis zum Ende des Lagers.</string>
+    <string name="timeline_proposal_action">Vorschlag übernehmen</string>
+    <string name="archive_notice_schedule_adopted">Die Lagertage und Abschnitte sind übernommen.</string>
+
+    <!-- Dokumente (L33) -->
+    <string name="docs_title">Dokumente</string>
+    <string name="docs_loading">Dokumente werden geladen</string>
+    <string name="docs_empty_title">Keine Dokumente</string>
+    <string name="docs_empty_text">Füge einen Link zu einer Datei hinzu.</string>
+    <string name="docs_empty_text_read">Hier erscheinen Dokumente, sobald die Leitung welche ablegt.</string>
+    <string name="docs_hint">Tippe ein Dokument, um es zu öffnen. Es öffnet sich dort, wo es liegt.</string>
+    <string name="docs_kind_pdf">PDF</string>
+    <string name="docs_kind_word">Word</string>
+    <string name="docs_kind_excel">Excel</string>
+    <string name="docs_kind_image">Bild</string>
+    <string name="docs_kind_link">Link</string>
+    <string name="docs_file_missing">Datei gelöscht</string>
+    <string name="docs_open_named">%1$s öffnen</string>
+    <string name="docs_actions_named">Aktionen für %1$s</string>
+    <string name="docs_add">Link hinzufügen</string>
+    <string name="docs_field_title">Titel</string>
+    <string name="docs_field_link">Link (https)</string>
+    <string name="docs_field_link_hint">https://</string>
+    <string name="docs_team_visible">Für das Team sichtbar</string>
+    <string name="docs_delete">Dokument löschen</string>
+    <string name="docs_delete_title">«%1$s» löschen?</string>
+    <string name="docs_delete_text">Nur der Eintrag verschwindet. Die Datei bleibt an ihrem Ort.</string>
+    <string name="archive_notice_document_added">Das Dokument ist hinzugefügt.</string>
+    <string name="archive_notice_document_deleted">Das Dokument ist gelöscht.</string>
+
+    <!-- Adressbuch (L34) -->
+    <string name="ab_title">Adressbuch</string>
+    <string name="ab_loading">Adressbuch wird geladen</string>
+    <string name="ab_leadership_only">Nur Lagerleitung</string>
+    <string name="ab_cleanup_note">Kontakte werden 180 Tage nach dem Lager gelöscht. Vorher erinnern wir dich.</string>
+    <string name="ab_empty_title">Keine Kontakte</string>
+    <string name="ab_empty_text">Füge den ersten Kontakt hinzu.</string>
+    <string name="ab_no_access">Das Adressbuch sieht nur die Lagerleitung.</string>
+    <string name="ab_keep">Fürs nächste Lager behalten</string>
+    <string name="ab_call">%1$s anrufen</string>
+    <string name="ab_email_line">E-Mail: %1$s</string>
+    <string name="ab_add">Kontakt hinzufügen</string>
+    <string name="ab_field_name">Name</string>
+    <string name="ab_field_role">Funktion</string>
+    <string name="ab_field_group">Gruppe</string>
+    <string name="ab_field_phone">Telefon</string>
+    <string name="ab_field_email">E-Mail</string>
+    <string name="ab_field_note">Notiz</string>
+    <string name="ab_actions_named">Aktionen für %1$s</string>
+    <string name="ab_delete">Kontakt löschen</string>
+    <string name="ab_delete_title">«%1$s» löschen?</string>
+    <string name="ab_delete_text">Der Kontakt verschwindet aus dem Adressbuch.</string>
+    <string name="archive_notice_contact_added">Der Kontakt ist hinzugefügt.</string>
+    <string name="archive_notice_contact_deleted">Der Kontakt ist gelöscht.</string>
+
+    <!-- Suche (L36) -->
+    <string name="search_title">Suche</string>
+    <string name="search_field">Suchen</string>
+    <string name="search_hint">Aufgaben, Protokolle, Personen</string>
+    <string name="search_submit">Suchen</string>
+    <string name="search_loading">Suche läuft</string>
+    <string name="search_start_text">Gib mindestens zwei Zeichen ein. Du findest nur, was du auch in den Listen siehst.</string>
+    <string name="search_empty_title">Keine Treffer</string>
+    <string name="search_empty_text">Prüfe die Schreibweise.</string>
+    <string name="search_open_named">%1$s öffnen</string>
+    <string name="search_type_aufgabe">Aufgaben</string>
+    <string name="search_type_hoeck">Höcks</string>
+    <string name="search_type_traktandum">Traktanden</string>
+    <string name="search_type_protokoll">Protokolle</string>
+    <string name="search_type_beschluss">Beschlüsse</string>
+    <string name="search_type_pinnwand">Pinnwand</string>
+    <string name="search_type_eingang">Eingang</string>
+    <string name="search_type_ressort">Ressorts</string>
+    <string name="search_type_tagesseite">Tagesseiten</string>
+    <string name="search_type_meilenstein">Meilensteine</string>
+    <string name="search_type_dokument">Dokumente</string>
+    <string name="search_type_info">Infos</string>
+    <string name="search_type_teilnehmer">Personen</string>
+    <string name="search_type_zimmer">Zimmer</string>
+    <string name="search_type_fahrt">Fahrten</string>
+    <string name="search_type_gruppe">Gruppen</string>
+    <string name="search_type_dienst">Dienste</string>
+    <string name="search_type_einkauf">Einkauf</string>
+    <string name="search_type_packliste">Packliste</string>
+    <string name="search_type_notfall">Notfall</string>
+    <string name="search_type_adressbuch">Adressbuch</string>
+    <string name="search_type_weiteres">Weiteres</string>
+
+    <!-- Ausdrucke -->
+    <string name="print_title">Ausdrucke</string>
+    <string name="print_text">Der Server erstellt das PDF. Du teilst es über die Systemauswahl, zum Beispiel zum Drucken.</string>
+    <string name="print_share_named">%1$s als PDF teilen</string>
+    <string name="print_working">Wird erstellt</string>
+    <string name="print_schichtplan">Schichtplan</string>
+    <string name="print_zimmerliste">Zimmerliste</string>
+    <string name="print_tuerschilder">Türschilder</string>
+    <string name="print_gruppenlisten">Gruppenlisten</string>
+    <string name="print_fahrtenliste">Fahrtenliste</string>
+    <string name="print_organigramm">Organigramm</string>
+    <string name="print_share_chooser">PDF teilen</string>
+</resources>

@@ -2,6 +2,11 @@ package io.github.sorry4nothing.cevios
 
 import io.github.sorry4nothing.cevios.ui.screenTransition
 import io.github.sorry4nothing.cevios.lager.AgendaScreen
+import io.github.sorry4nothing.cevios.lager.ArchiveApi
+import io.github.sorry4nothing.cevios.lager.ArchiveRights
+import io.github.sorry4nothing.cevios.lager.ArchiveViewModel
+import io.github.sorry4nothing.cevios.lager.SearchDestination
+import io.github.sorry4nothing.cevios.lager.sharePdf
 import io.github.sorry4nothing.cevios.push.OpenCampObject
 import io.github.sorry4nothing.cevios.lager.AndroidCommsTexts
 import io.github.sorry4nothing.cevios.lager.AndroidTaskTexts
@@ -311,7 +316,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                     val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
                     CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
                         MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), current.profile,
+                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), current.profile,
                             passwordSaved, form, imageForm, auth,
                             pushTarget, onPushTargetHandled,
                             onOpenPrivacy = openPrivacy,
@@ -380,6 +385,7 @@ private fun MainContent(
     commsApi: CommsApi,
     planningApi: PlanningApi,
     liveApi: LiveApi,
+    archiveApi: ArchiveApi,
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
@@ -406,6 +412,7 @@ private fun MainContent(
     val comms = viewModel { CommsViewModel(commsApi, camp, AndroidCommsTexts(appContext)) }
     val planning = viewModel { PlanningViewModel(planningApi, camp, AndroidCommsTexts(appContext), account.id) }
     val live = viewModel { LiveViewModel(liveApi, camp, AndroidCommsTexts(appContext), account.id) }
+    val archive = viewModel { ArchiveViewModel(archiveApi, meetingsApi, tasksApi, camp, AndroidCommsTexts(appContext)) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
@@ -495,6 +502,14 @@ private fun MainContent(
             meetings.calendarShared()
         }
     }
+    // Der Aushang, den der Server als PDF erzeugt hat, geht über die Systemauswahl weiter.
+    val sharedPdf by archive.pdf.collectAsState()
+    LaunchedEffect(sharedPdf) {
+        sharedPdf?.let { pdf ->
+            sharePdf(context, pdf.bytes, pdf.name)
+            archive.pdfShared()
+        }
+    }
     LaunchedEffect(openedRessort) { openedRessort?.let(tasks::openRessort) ?: tasks.closeRessort() }
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
@@ -527,6 +542,7 @@ private fun MainContent(
             comms.close()
             planning.close()
             live.close()
+            archive.close()
         } else {
             camp.open(id)
             tasks.open(id)
@@ -534,6 +550,7 @@ private fun MainContent(
             comms.open(id)
             planning.open(id)
             live.open(id)
+            archive.open(id)
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { camp.follow(id) }
         }
     }
@@ -576,14 +593,16 @@ private fun MainContent(
         val meetingRights = MeetingRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
         val planRights = PlanRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
         val liveRights = LiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights }
+        val archiveRights = ArchiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
         // Wer die Konfliktlösung offen hat: ein Konflikt aus den Sitzungen oder der Kommunikation (ohne Warteschlange).
         val meetingConflict by meetings.writer.conflict.collectAsState()
         val commsConflict by comms.writer.conflict.collectAsState()
         val planConflict by planning.writer.conflict.collectAsState()
         val liveConflict by live.writer.conflict.collectAsState()
+        val archiveConflict by archive.writer.conflict.collectAsState()
         val planPeople by planning.people.collectAsState()
-        val directConflict = meetingConflict ?: commsConflict ?: planConflict ?: liveConflict
+        val directConflict = meetingConflict ?: commsConflict ?: planConflict ?: liveConflict ?: archiveConflict
         val taskList = (tasks.tasks.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
         val memberList by meetings.members.collectAsState()
         // Namen für die Marken @{person:…} in Titeln und Texten: bekannte Personen aus Aufgaben und Mitgliedern.
@@ -815,7 +834,7 @@ private fun MainContent(
                     )
                 }
                 is Screen.Live -> {
-                    val leave = if (screen.area == LiveArea.DAY) ({ liveArea = LiveArea.TODAY; liveDay = null; live.closeDay() }) else ({ liveArea = null; live.dismissNotice() })
+                    val leave = if (screen.area == LiveArea.DAY) ({ liveArea = LiveArea.TODAY; liveDay = null; live.closeDay() }) else ({ liveArea = null; live.dismissNotice(); archive.dismissNotice(); archive.clearSearch() })
                     BackHandler(onBack = leave)
                     LiveScreen(
                         screen.area, liveDay,
@@ -825,8 +844,20 @@ private fun MainContent(
                             onOpenDay = { liveDay = it; liveArea = LiveArea.DAY },
                             onOpenTask = { openedTask = it },
                             onOpenShifts = { liveArea = null; planArea = PlanArea.SHIFTS },
+                            onOpenSearchHit = { hit ->
+                                archive.clearSearch()
+                                when (hit) {
+                                    is SearchDestination.Task -> openedTask = hit.id
+                                    is SearchDestination.Live -> liveArea = hit.area
+                                    is SearchDestination.Plan -> { liveArea = null; planArea = hit.area }
+                                    SearchDestination.Meetings -> { liveArea = null; meetingsOpen = true }
+                                    SearchDestination.Pinboard -> { liveArea = null; destination = Destination.PINBOARD }
+                                    SearchDestination.Inbox -> { liveArea = null; inboxOpen = true }
+                                    SearchDestination.Ressorts -> { liveArea = null; ressortsOpen = true }
+                                }
+                            },
                         ),
-                        tasks, taskList,
+                        tasks, taskList, archive, archiveRights,
                     )
                 }
                 is Screen.Plan -> {
@@ -1087,6 +1118,7 @@ private fun MainContent(
             )
             val plan = if (campId != null) {
                 listOfNotNull(
+                    MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE },
                     MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true },
                     MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS },
                     MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS },
@@ -1111,7 +1143,17 @@ private fun MainContent(
             } else {
                 emptyList()
             }
-            val files = if (campId != null) listOf(MoreEntry(R.string.infos_title, R.drawable.ic_info) { moreOpen = false; liveArea = LiveArea.INFOS }) else emptyList()
+            val files = if (campId != null) {
+                listOfNotNull(
+                    MoreEntry(R.string.infos_title, R.drawable.ic_info) { moreOpen = false; liveArea = LiveArea.INFOS },
+                    MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS },
+                    if (archiveRights.readAddressBook) MoreEntry(R.string.ab_title, R.drawable.ic_book) { moreOpen = false; liveArea = LiveArea.ADDRESSBOOK } else null,
+                    MoreEntry(R.string.print_title, R.drawable.ic_send) { moreOpen = false; liveArea = LiveArea.PRINTOUTS },
+                    MoreEntry(R.string.search_title, R.drawable.ic_search) { moreOpen = false; liveArea = LiveArea.SEARCH },
+                )
+            } else {
+                emptyList()
+            }
             MoreSheet(
                 listOfNotNull(
                     if (plan.isEmpty()) null else R.string.more_section_plan to plan,

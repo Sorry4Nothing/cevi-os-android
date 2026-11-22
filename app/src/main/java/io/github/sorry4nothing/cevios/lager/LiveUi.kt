@@ -27,8 +27,8 @@ import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
-/** Die Bildschirme von «Im Lager», die das Blatt «Mehr» und die Ansicht «Heute» öffnen; je einer ist ein Bildschirm. */
-enum class LiveArea { TODAY, DAY, ATTENDANCE, SHOPPING, PACKING, EMERGENCY, INFOS }
+/** Die Bildschirme von «Im Lager» und «Ablage und Querschnitt», die das Blatt «Mehr» und die Ansicht «Heute» öffnen; je einer ist ein Bildschirm. */
+enum class LiveArea { TODAY, DAY, ATTENDANCE, SHOPPING, PACKING, EMERGENCY, INFOS, TIMELINE, DOCUMENTS, ADDRESSBOOK, SEARCH, PRINTOUTS }
 
 /**
  * Alles, was die Bildschirme von «Im Lager» gemeinsam brauchen: das ViewModel, das Lager mit seinen Rechten, die Warteschlange für
@@ -52,11 +52,21 @@ class LiveNav(
     val onOpenDay: (String) -> Unit,
     val onOpenTask: (String) -> Unit,
     val onOpenShifts: () -> Unit,
+    val onOpenSearchHit: (SearchDestination) -> Unit,
 )
 
 /** Zeigt den Bildschirm zu einem Bereich von «Im Lager». `dayId` gehört zur Tagesseite. */
 @Composable
-fun LiveScreen(area: LiveArea, dayId: String?, frame: LiveFrame, nav: LiveNav, tasks: TasksViewModel, taskList: List<CampTask>) {
+fun LiveScreen(
+    area: LiveArea,
+    dayId: String?,
+    frame: LiveFrame,
+    nav: LiveNav,
+    tasks: TasksViewModel,
+    taskList: List<CampTask>,
+    archive: ArchiveViewModel,
+    archiveRights: ArchiveRights,
+) {
     when (area) {
         LiveArea.TODAY -> TodayScreen(frame, nav, taskList, tasks)
         LiveArea.DAY -> if (dayId != null) DayScreen(frame, nav, dayId, tasks)
@@ -65,6 +75,11 @@ fun LiveScreen(area: LiveArea, dayId: String?, frame: LiveFrame, nav: LiveNav, t
         LiveArea.PACKING -> PackingScreen(frame)
         LiveArea.EMERGENCY -> EmergencyScreen(frame)
         LiveArea.INFOS -> InfosScreen(frame)
+        LiveArea.TIMELINE -> TimelineScreen(frame, archive, nav.onOpenTask)
+        LiveArea.DOCUMENTS -> DocumentsScreen(frame, archive, archiveRights)
+        LiveArea.ADDRESSBOOK -> AddressBookScreen(frame, archive, archiveRights)
+        LiveArea.SEARCH -> SearchScreen(frame, archive, nav.onOpenSearchHit)
+        LiveArea.PRINTOUTS -> PrintoutsScreen(frame, archive)
     }
 }
 

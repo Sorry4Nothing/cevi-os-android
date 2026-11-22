@@ -1299,15 +1299,16 @@ private fun MainContent(
             )
             val plan = if (campId != null) {
                 listOfNotNull(
-                    MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE },
-                    MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true },
-                    MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS },
-                    MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS },
-                    MoreEntry(R.string.groups_title, R.drawable.ic_group) { moreOpen = false; planArea = PlanArea.GROUPS },
-                    MoreEntry(R.string.shifts_title, R.drawable.ic_list_check) { moreOpen = false; planArea = PlanArea.SHIFTS },
-                    MoreEntry(R.string.swaps_title, R.drawable.ic_refresh) { moreOpen = false; planArea = PlanArea.SWAPS },
-                    MoreEntry(R.string.count_title, R.drawable.ic_check) { moreOpen = false; planArea = PlanArea.COUNT },
-                    MoreEntry(R.string.participants_title, R.drawable.ic_profile) { moreOpen = false; planArea = PlanArea.PARTICIPANTS },
+                    // Jeder Eintrag steht nur, wenn das Lesen erlaubt ist (Rechte aus dem Lagerdetail); fehlt das Detail, fehlen sie alle.
+                    if (campPermissions.may("zeitplan.lesen")) MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE } else null,
+                    if (campPermissions.may("hoecks.lesen_alle", "hoecks.team_lesen")) MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.groups_title, R.drawable.ic_group) { moreOpen = false; planArea = PlanArea.GROUPS } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.shifts_title, R.drawable.ic_list_check) { moreOpen = false; planArea = PlanArea.SHIFTS } else null,
+                    if (campPermissions.may("diensttausch.anfragen", "diensttausch.entscheiden")) MoreEntry(R.string.swaps_title, R.drawable.ic_refresh) { moreOpen = false; planArea = PlanArea.SWAPS } else null,
+                    if (campPermissions.may("teilnehmer.lesen")) MoreEntry(R.string.count_title, R.drawable.ic_check) { moreOpen = false; planArea = PlanArea.COUNT } else null,
+                    if (campPermissions.may("teilnehmer.lesen")) MoreEntry(R.string.participants_title, R.drawable.ic_profile) { moreOpen = false; planArea = PlanArea.PARTICIPANTS } else null,
                     if (rights.readRessorts) MoreEntry(R.string.more_ressorts, R.drawable.ic_group) { moreOpen = false; ressortsOpen = true } else null,
                 )
             } else {
@@ -1318,16 +1319,16 @@ private fun MainContent(
                     MoreEntry(R.string.today_title, R.drawable.ic_home) { moreOpen = false; liveArea = LiveArea.TODAY },
                     if (liveRights.seesAttendance) MoreEntry(R.string.att_title, R.drawable.ic_check) { moreOpen = false; liveArea = LiveArea.ATTENDANCE } else null,
                     if (liveRights.readShopping) MoreEntry(R.string.shop_title, R.drawable.ic_list_check) { moreOpen = false; liveArea = LiveArea.SHOPPING } else null,
-                    MoreEntry(R.string.pack_title, R.drawable.ic_bring_along) { moreOpen = false; liveArea = LiveArea.PACKING },
-                    MoreEntry(R.string.emerg_title, R.drawable.ic_phone) { moreOpen = false; liveArea = LiveArea.EMERGENCY },
+                    if (campPermissions.may("packliste.lesen")) MoreEntry(R.string.pack_title, R.drawable.ic_bring_along) { moreOpen = false; liveArea = LiveArea.PACKING } else null,
+                    if (campPermissions.may("notfall.lesen")) MoreEntry(R.string.emerg_title, R.drawable.ic_phone) { moreOpen = false; liveArea = LiveArea.EMERGENCY } else null,
                 )
             } else {
                 emptyList()
             }
             val files = if (campId != null) {
                 listOfNotNull(
-                    MoreEntry(R.string.infos_title, R.drawable.ic_info) { moreOpen = false; liveArea = LiveArea.INFOS },
-                    MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS },
+                    if (campPermissions.may("infos.lesen")) MoreEntry(R.string.infos_title, R.drawable.ic_info) { moreOpen = false; liveArea = LiveArea.INFOS } else null,
+                    if (campPermissions.may("dokumente.lesen_alle", "dokumente.team_lesen")) MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS } else null,
                     if (archiveRights.readAddressBook) MoreEntry(R.string.ab_title, R.drawable.ic_book) { moreOpen = false; liveArea = LiveArea.ADDRESSBOOK } else null,
                     MoreEntry(R.string.print_title, R.drawable.ic_send) { moreOpen = false; liveArea = LiveArea.PRINTOUTS },
                     MoreEntry(R.string.search_title, R.drawable.ic_search) { moreOpen = false; liveArea = LiveArea.SEARCH },

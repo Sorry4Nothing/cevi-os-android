@@ -75,7 +75,7 @@
     <string name="rooms_delete_text">Die Zuordnungen gehen mit dem Zimmer. Die Personen sind danach nicht eingeteilt.</string>
     <string name="rooms_kind_room">Zimmer</string>
     <string name="rooms_kind_tent">Zelt</string>
-    <string name="rooms_fill">%1$d von %2$d Plätze belegt</string>
+    <string name="rooms_fill">%1$d von %2$d Plätzen belegt</string>
     <string name="rooms_overbooked">Überbelegt</string>
     <string name="rooms_nobody">Noch niemand eingeteilt.</string>
     <plurals name="rooms_open">

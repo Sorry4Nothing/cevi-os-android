@@ -7,17 +7,17 @@
     android:importantForAccessibility="no"
     android:orientation="vertical">
 
-    <View
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="18dp"
         android:layout_marginTop="10dp"
         android:background="@drawable/widget_bar" />
-    <View
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="12dp"
         android:layout_marginTop="10dp"
         android:background="@drawable/widget_bar" />
-    <View
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="12dp"
         android:layout_marginTop="10dp"

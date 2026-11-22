@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Eine Zeile: optionales Etikett, Titel, Zeit, Ort, Chips; ab «mittel» ein eigenes Ziel. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/row_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -71,7 +72,8 @@
                     android:layout_height="14dp"
                     android:importantForAccessibility="no"
                     android:src="@drawable/ic_pin"
-                    android:tint="@color/widget_muted" />
+                    android:tint="@color/widget_muted"
+                    tools:ignore="UseAppTint" />
 
                 <TextView
                     android:id="@+id/row_place_text"
@@ -112,6 +114,7 @@
             android:importantForAccessibility="no"
             android:src="@drawable/ic_chevron_right"
             android:tint="@color/widget_muted"
+            tools:ignore="UseAppTint"
             android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>

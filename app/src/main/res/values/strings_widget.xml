@@ -46,7 +46,6 @@
     <string name="widget_status_open_one_long">Zusage für 1 Kind offen</string>
     <string name="widget_status_open_many_long">Zusage für %1$d Kinder offen</string>
     <string name="widget_day_of">Tag %1$d von %2$d</string>
-    <string name="widget_camp_progress">Lagertag %1$d von %2$d</string>
     <string name="widget_your_duty">Dein Dienst</string>
     <string name="widget_important_today">Wichtig heute</string>
     <string name="widget_duty_line">%1$s, %2$s</string>

@@ -3,6 +3,7 @@ package io.github.sorry4nothing.cevios.push
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import io.github.sorry4nothing.cevios.net.ApiClient
+import io.github.sorry4nothing.cevios.widget.WidgetProvider
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -14,6 +15,9 @@ class PushService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val type = message.data["typ"]
         val id = message.data["id"]
+        // Ein Push stösst die Widgets an. Android ruft diese Methode nur für Datenpushes und bei offener App auf: Mitteilungen im
+        // Hintergrund zeigt das System selbst, ohne die App zu wecken.
+        WidgetProvider.refreshAll(applicationContext)
         if (OpenChat.hides(type, id) || OpenCampObject.hides(type, id)) return
         val notification = message.notification
         Notifications.show(applicationContext, notification?.title, notification?.body, notification?.channelId, type, id)

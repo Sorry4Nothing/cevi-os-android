@@ -150,7 +150,7 @@ class CampViewModel(
         coroutineScope {
             val sync = CampSync(api, campId)
             val queue = queueFor(campId)
-            launch {
+            val resend = launch {
                 while (true) {
                     delay(RESEND_MS)
                     if (queue.state.value.waiting > 0) flushAndAnnounce(queue)
@@ -179,11 +179,16 @@ class CampViewModel(
                 }
                 val (error, retryAfter) = failure
                 when (error) {
+                    // coroutineScope wartet auf seine Kinder: Ohne Abbruch liefe die Sendeschleife weiter und fragte ein verlorenes Lager ab.
                     ApiError.NOT_FOUND, ApiError.FORBIDDEN, ApiError.SECOND_FACTOR_MISSING -> {
                         _lostAccess.value = campId
+                        resend.cancel()
                         return@coroutineScope
                     }
-                    ApiError.NOT_SIGNED_IN -> return@coroutineScope
+                    ApiError.NOT_SIGNED_IN -> {
+                        resend.cancel()
+                        return@coroutineScope
+                    }
                     ApiError.NETWORK -> _online.value = false
                     else -> Unit
                 }

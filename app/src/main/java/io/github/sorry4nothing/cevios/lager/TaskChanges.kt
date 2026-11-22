@@ -1,5 +1,6 @@
 package io.github.sorry4nothing.cevios.lager
 
+import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -55,6 +56,56 @@ object TaskPayloads {
     fun fieldsOf(payload: JsonObject): Map<String, JsonElement> = payload.filterKeys { it != "id" && it != "version" }
 }
 
+/** Wohin eine Änderung an einer Aufgabe gegangen ist; `BLOCKED`: Die Anlage ist gerade unterwegs, die Änderung ist noch nirgends aufgenommen. */
+enum class ChangeRoute { ENQUEUED, REVISED, MERGED, BLOCKED }
+
+/**
+ * Schickt eine Änderung an einer Aufgabe in die Warteschlange. Wartet dort schon eine gleicher Art an derselben Aufgabe (zum
+ * Beispiel ein zweiter Tipp auf den Haken), wird sie angepasst statt verdoppelt; eine Aufgabe, die noch gar nicht angelegt ist,
+ * ändert die Anlage selbst. Ist die Anlage oder die gleiche Änderung gerade unterwegs, geht sie als eigene Änderung hinterher
+ * (`enqueue`); nur die Anlage selbst lässt sich dann nicht mehr ändern (`BLOCKED`, die Person bekommt es gesagt).
+ */
+fun routeTaskChange(queue: OfflineQueue, task: CampTask, type: String, payload: JsonObject, summary: String, enqueue: () -> Unit): ChangeRoute {
+    val waiting = queue.state.value.changes
+    val creating = task.queuedId?.let { ref -> waiting.firstOrNull { it.ref == ref && it.state == ChangeState.WAITING } }
+    if (creating != null) {
+        val done = if (type == TaskOps.DELETE) queue.cancel(creating.clientOpId)
+        else queue.revise(creating.clientOpId, JsonObject(creating.payload + TaskPayloads.fieldsOf(payload)), creating.summary)
+        return if (done) ChangeRoute.MERGED else ChangeRoute.BLOCKED
+    }
+    val same = waiting.firstOrNull { it.state == ChangeState.WAITING && it.type == type && it.payload["id"].text() == task.id }
+    if (same != null && queue.revise(same.clientOpId, JsonObject(same.payload + TaskPayloads.fieldsOf(payload)), summary)) return ChangeRoute.REVISED
+    enqueue()
+    return ChangeRoute.ENQUEUED
+}
+
+/**
+ * «Zusammenführen» legt die neue Zeile an und führt sie mit der vorhandenen Aufgabe zusammen. Scheitert der zweite Schritt, merkt
+ * sich diese Klasse die angelegte Aufgabe: Ein neuer Versuch führt nur noch zusammen, statt eine weitere Aufgabe anzulegen.
+ */
+class DuplicateMerge {
+    private var created: Pair<QuickItem, CampTask>? = null
+
+    /** Die für diese Zeile schon angelegte Aufgabe, falls ein früherer Versuch sie angelegt hat. */
+    fun createdFor(item: QuickItem): CampTask? = created?.takeIf { it.first == item }?.second
+
+    fun clear() {
+        created = null
+    }
+
+    suspend fun merge(
+        item: QuickItem,
+        create: suspend () -> ApiResult<CampTask>,
+        merge: suspend (CampTask) -> ApiResult<CampTask>,
+    ): ApiResult<CampTask> {
+        val task = createdFor(item) ?: when (val result = create()) {
+            is ApiResult.Failure -> return result
+            is ApiResult.Ok -> result.value.also { created = item to it }
+        }
+        return merge(task)
+    }
+}
+
 private fun JsonElement?.text(): String? = (this as? JsonPrimitive)?.takeIf { it !is JsonNull }?.contentOrNull
 
 /**
@@ -82,7 +133,9 @@ fun applyQueued(
                 val realId = change.result?.get("id").text()
                 // Hat der Server die Aufgabe schon in der Liste, steht sie dort; sonst zeigt die Liste die eigene.
                 if (realId == null || realId !in tasks) {
-                    created += payload.toTask("queued:${change.clientOpId}", people, ressorts).copy(pending = pending, queuedId = change.clientOpId)
+                    // Hat der Server die Anlage bestätigt, gilt die echte ID und Version: Eine weitere Änderung geht sonst an «queued:…» und scheitert.
+                    val version = change.result?.get("version")?.jsonPrimitive?.longOrNull ?: 0L
+                    created += payload.toTask(realId ?: "queued:${change.ref}", people, ressorts).copy(version = version, pending = pending, queuedId = change.ref)
                 }
             }
             TaskOps.STATUS -> id?.let { key ->

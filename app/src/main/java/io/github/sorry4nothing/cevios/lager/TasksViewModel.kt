@@ -177,6 +177,9 @@ class TasksViewModel(
     val reloads: StateFlow<Int> = _reloads.asStateFlow()
 
     private var quickJob: Job? = null
+    private var tasksRequested = 0
+    private var tasksApplied = 0
+    private val duplicateMerge = DuplicateMerge()
 
     init {
         viewModelScope.launch { camp.changes.collect(::onChange) }
@@ -206,6 +209,7 @@ class TasksViewModel(
         _undo.value = null
         _error.value = null
         _quick.value = QuickState()
+        duplicateMerge.clear()
         _quickOpen.value = false
         _detail.value = null
         _bundle.value = null
@@ -220,16 +224,21 @@ class TasksViewModel(
 
     private fun loadTasks(silent: Boolean) {
         val id = campId ?: return
+        val seq = ++tasksRequested
+        // Nur was vor der Anfrage gesendet war, steht sicher in der Antwort; später Gesendetes bleibt über der Liste.
+        val sentBefore = camp.queueFor(id).state.value.changes.filter { it.state == ChangeState.SENT }.map { it.clientOpId }.toSet()
         viewModelScope.launch(Background()) {
             if (!silent) rawTasks.value = null
             val result = api.listAll(id)
-            if (campId != id) return@launch
+            // Eine ältere Antwort, die nach einer neueren eintrifft, überschreibt sie nicht.
+            if (campId != id || seq < tasksApplied) return@launch
+            tasksApplied = seq
             // Eine stille Aktualisierung lässt den alten Stand stehen, wenn sie scheitert.
             if (result is ApiResult.Ok || !silent || rawTasks.value == null) rawTasks.value = result
             if (result is ApiResult.Ok) {
                 _reloads.update { it + 1 }
                 // Alles, was die Person gesendet hat, steht jetzt in der Liste; die Anzeige braucht die Ebene darüber nicht mehr.
-                camp.queueFor(id).clearSent()
+                camp.queueFor(id).clearSent(sentBefore)
             }
         }
     }
@@ -295,31 +304,21 @@ class TasksViewModel(
 
     private fun taskById(id: String) = currentTasks().firstOrNull { it.id == id }
 
-    /**
-     * Schickt eine Änderung an einer Aufgabe in die Warteschlange. Wartet dort schon eine gleicher Art an derselben Aufgabe (zum
-     * Beispiel ein zweiter Tipp auf den Haken), wird sie angepasst statt verdoppelt; eine Aufgabe, die noch gar nicht angelegt
-     * ist, ändert die Anlage selbst.
-     */
     private fun queueOp(task: CampTask, type: String, payload: JsonObject, summary: String) {
         val id = campId ?: return
-        val queue = camp.queueFor(id)
-        val waiting = queue.state.value.changes
-        val creating = task.queuedId?.let { qid -> waiting.firstOrNull { it.clientOpId == qid && it.state == ChangeState.WAITING } }
-        if (creating != null) {
-            // Die Aufgabe gibt es beim Server noch nicht: Die Änderung gehört in ihre Anlage (oder hebt sie auf).
-            if (type == TaskOps.DELETE) queue.cancel(creating.clientOpId)
-            else queue.revise(creating.clientOpId, JsonObject(creating.payload + TaskPayloads.fieldsOf(payload)), creating.summary)
-            return
+        val route = routeTaskChange(camp.queueFor(id), task, type, payload, summary) { camp.enqueue(id, type, payload, summary, texts.fieldLabels()) }
+        when (route) {
+            ChangeRoute.REVISED -> camp.sendNow(id)
+            // Die Anlage ist unterwegs: Nichts geht still verloren, die Person bekommt es gesagt und wiederholt, sobald die Aufgabe da ist.
+            ChangeRoute.BLOCKED -> _error.value = ActionError(ApiError.UNKNOWN, { retryQueueOp(task, type, payload, summary) }, CREATING_CODE)
+            ChangeRoute.ENQUEUED, ChangeRoute.MERGED -> Unit
         }
-        val same = waiting.firstOrNull { it.state == ChangeState.WAITING && it.type == type && it.payload["id"]?.jsonPrimitive?.content == task.id }
-        if (same != null) {
-            val merged = JsonObject(same.payload + TaskPayloads.fieldsOf(payload))
-            if (queue.revise(same.clientOpId, merged, summary)) {
-                camp.sendNow(id)
-                return
-            }
-        }
-        camp.enqueue(id, type, payload, summary, texts.fieldLabels())
+    }
+
+    /** Wiederholt eine blockierte Änderung an der Aufgabe, wie sie jetzt dasteht (nach der Anlage hat sie eine echte ID und Version). */
+    private fun retryQueueOp(task: CampTask, type: String, payload: JsonObject, summary: String) {
+        val now = currentTasks().firstOrNull { it.queuedId != null && it.queuedId == task.queuedId } ?: return
+        queueOp(now, type, JsonObject(payload + ("id" to JsonPrimitive(now.id)) + ("version" to JsonPrimitive(now.version))), summary)
     }
 
     private fun changeFields(task: CampTask, fields: Map<String, JsonElement>) =
@@ -541,6 +540,7 @@ class TasksViewModel(
 
     fun closeQuick() {
         quickJob?.cancel()
+        duplicateMerge.clear()
         _quickOpen.value = false
         _quick.value = QuickState()
     }
@@ -620,6 +620,11 @@ class TasksViewModel(
                     is ApiResult.Failure -> Unit
                 }
             }
+            // Die Person hat den Text unterdessen geändert: Die Zeilen von vorhin gelten nicht mehr.
+            if (_quick.value.text != state.text) {
+                _quick.update { it.copy(saving = false) }
+                return@launch
+            }
             createAll(state.items, merge = null)
         }
     }
@@ -637,20 +642,24 @@ class TasksViewModel(
         val item = state.items.getOrNull(ask.index) ?: return
         _quick.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
-            when (val created = api.create(id, quickPayload(item))) {
-                is ApiResult.Failure -> _quick.update { it.copy(saving = false, error = created.error) }
-                is ApiResult.Ok -> when (val merged = api.merge(id, ask.existing.id, MergeBody(ask.existing.version, created.value.id, created.value.version))) {
-                    is ApiResult.Failure -> _quick.update { it.copy(saving = false, error = merged.error) }
-                    is ApiResult.Ok -> createAll(state.items.filterIndexed { i, _ -> i != ask.index }, merge = merged.value)
-                }
+            val result = duplicateMerge.merge(
+                item,
+                create = { api.create(id, quickPayload(item)) },
+                merge = { created -> api.merge(id, ask.existing.id, MergeBody(ask.existing.version, created.id, created.version)) },
+            )
+            when (result) {
+                is ApiResult.Failure -> _quick.update { it.copy(saving = false, error = result.error) }
+                is ApiResult.Ok -> createAll(state.items.filterIndexed { i, _ -> i != ask.index }, merge = result.value)
             }
         }
     }
 
     private fun createAll(items: List<QuickItem>, merge: CampTask?) {
         val id = campId ?: return
-        items.forEach { camp.enqueue(id, TaskOps.CREATE, quickPayload(it), texts.created(it.title), texts.fieldLabels()) }
-        if (merge != null) loadTasks(silent = true)
+        // Eine Zeile, die ein gescheiterter «Zusammenführen»-Versuch schon angelegt hat, legt die Warteschlange nicht noch einmal an.
+        val already = items.count { duplicateMerge.createdFor(it) != null }
+        items.filter { duplicateMerge.createdFor(it) == null }.forEach { camp.enqueue(id, TaskOps.CREATE, quickPayload(it), texts.created(it.title), texts.fieldLabels()) }
+        if (merge != null || already > 0) loadTasks(silent = true)
         closeQuick()
     }
 
@@ -760,6 +769,9 @@ class TasksViewModel(
 
     companion object {
         private const val RECOGNIZE_DELAY_MS = 500L
+
+        /** `ActionError.code`, wenn eine Änderung an einer Aufgabe wartet, deren Anlage gerade unterwegs ist. */
+        const val CREATING_CODE = "ANLAGE_LAEUFT"
 
         /** Aus dem Vorschlag des Servers eine Zeile: Findet er genau eine Person oder ein Ressort, gilt sie; sonst wählt die Person. */
         fun quickItem(suggestion: QuickSuggestion): QuickItem {

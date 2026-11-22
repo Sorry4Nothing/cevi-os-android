@@ -468,6 +468,7 @@
     <string name="task_apply">Übernehmen</string>
     <string name="task_add">Hinzufügen</string>
     <string name="task_error">Das hat nicht geklappt. Deine Eingabe ist noch da. Versuche es nochmals.</string>
+    <string name="task_error_creating">Die Aufgabe wird gerade angelegt. Versuche es gleich nochmals.</string>
     <string name="task_ressorts_loading">Die Ressorts werden geladen.</string>
 
     <plurals name="task_selected">

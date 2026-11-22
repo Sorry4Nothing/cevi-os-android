@@ -123,7 +123,7 @@ fun TasksScreen(
             }
             error?.let { failure ->
                 ActionBanner(
-                    NoticeKind.ERROR, stringResource(R.string.task_error),
+                    NoticeKind.ERROR, stringResource(if (failure.code == TasksViewModel.CREATING_CODE) R.string.task_error_creating else R.string.task_error),
                     failure.retry?.let { stringResource(R.string.retry) }, failure.retry?.let { retry -> { vm.dismissError(); retry() } },
                     vm::dismissError,
                 )

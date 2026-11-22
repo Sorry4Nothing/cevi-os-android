@@ -479,14 +479,6 @@ class PlanningViewModel(
             _notice.value = PlanNotice.COUNT_RESET
             loadCount(silent = true)
         }
-
-    /** Alle Teilnehmenden der geladenen Abzählliste mit einem Tipp setzen (für die gefilterte Sicht). */
-    fun checkAll(checked: Boolean) {
-        val page = (_count.value as? ApiResult.Ok)?.value ?: return
-        val targets = page.entries.filter { it.checked != checked }
-        if (targets.isEmpty()) return
-        send({ checkAll(checked) }, { api.setChecked(it, targets.mapNotNull { e -> e.teilnehmerId }, targets.mapNotNull { e -> e.personId }, checked) }) { loadCount(silent = true) }
-    }
 }
 
 private fun nullableString(value: String?): JsonElement = value?.takeIf { it.isNotBlank() }?.let { JsonPrimitive(it.trim()) } ?: JsonNull

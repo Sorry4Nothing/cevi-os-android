@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lager, Schnitt A3: Einteilung (Entwurf L20 bis L25, T23). Schweizer Schreibweise, «du», Buttons sind Verben. -->
+<resources>
+    <!-- Allgemein -->
+    <string name="filter_all">Alle</string>
+    <string name="plan_loading">Wird geladen</string>
+    <string name="plan_loading_preview">Vorschau wird geladen</string>
+    <string name="plan_saving">Wird gespeichert</string>
+    <string name="plan_preview">Vorschau ansehen</string>
+    <plurals name="plan_people_count">
+        <item quantity="one">%d Person</item>
+        <item quantity="other">%d Personen</item>
+    </plurals>
+    <string name="error_seats">Gib eine Zahl von 1 bis 1000 ein.</string>
+    <string name="error_trip_seats">Gib die Plätze für Mitfahrende ein, von 1 bis 99.</string>
+    <string name="error_minimum">Gib eine Zahl von 1 bis 20 ein.</string>
+
+    <!-- Hinweise nach einer Aktion -->
+    <string name="plan_notice_swap_accepted">Tausch angenommen. Der Schichtplan ist angepasst.</string>
+    <string name="plan_notice_swap_declined">Anfrage abgelehnt. Der Schichtplan bleibt, wie er ist.</string>
+    <string name="plan_notice_swap_requested">Anfrage gesendet. Die Lagerleitung entscheidet.</string>
+    <string name="plan_notice_swap_withdrawn">Anfrage zurückgezogen.</string>
+    <string name="plan_notice_count_reset">Liste zurückgesetzt.</string>
+    <string name="plan_notice_mix_applied">Gruppen gemischt und übernommen.</string>
+    <string name="plan_notice_suggestion_applied">Vorschlag übernommen. Die leeren Dienste sind gefüllt.</string>
+    <string name="plan_notice_imported">Personen übernommen.</string>
+
+    <!-- Teilnehmende -->
+    <string name="participants_title">Teilnehmende</string>
+    <string name="participants_loading">Teilnehmende werden geladen</string>
+    <string name="participants_empty_title">Noch keine Teilnehmenden</string>
+    <string name="participants_empty_text">Die Lagerleitung erfasst Personen oder importiert sie aus einer Tabelle.</string>
+    <string name="participants_add">Person hinzufügen</string>
+    <string name="participants_edit">Person ändern</string>
+    <string name="participants_delete">Person löschen</string>
+    <string name="participants_delete_title">«%s» löschen?</string>
+    <string name="participants_delete_text">Die Person verschwindet aus allen Listen. Das lässt sich in der App nicht zurücknehmen.</string>
+    <string name="participants_exclude">Nicht dabei</string>
+    <string name="participants_include">Wieder dabei</string>
+    <string name="participants_excluded">Nicht dabei</string>
+    <string name="participants_actions">Aktionen öffnen</string>
+    <string name="participants_first_name">Vorname</string>
+    <string name="participants_last_name">Nachname</string>
+    <string name="participants_stage">Stufe (freiwillig)</string>
+    <string name="participants_cevi_name">Cevi-Name (freiwillig)</string>
+    <string name="participants_cevi_name_hint">So steht die Person auf Aushängen. Ohne Cevi-Name gilt der Vorname.</string>
+    <string name="participants_import">Aus Text importieren</string>
+    <string name="participants_import_hint">Füge Zeilen aus einer Tabelle ein: Vorname, Nachname, Stufe, Cevi-Name. Stufe und Cevi-Name sind freiwillig. Zuerst siehst du eine Vorschau.</string>
+    <string name="participants_import_field">Personen</string>
+    <plurals name="participants_import_new">
+        <item quantity="one">%d neue Person</item>
+        <item quantity="other">%d neue Personen</item>
+    </plurals>
+    <string name="participants_import_failure">Zeile %1$d: %2$s</string>
+    <string name="participants_import_duplicate">Zeile %1$d wird übersprungen: %2$s</string>
+    <string name="participants_import_known">schon im Lager</string>
+    <string name="participants_import_twice">steht weiter oben schon</string>
+    <string name="import_error_few_columns">Es fehlen Spalten.</string>
+    <string name="import_error_many_columns">Es hat zu viele Spalten.</string>
+    <string name="import_error_first_name">Der Vorname fehlt.</string>
+    <string name="import_error_last_name">Der Nachname fehlt.</string>
+    <string name="import_error_too_long">Ein Eintrag ist zu lang.</string>
+    <string name="import_error_characters">Die Zeile enthält ungültige Zeichen.</string>
+
+    <!-- Zimmer und Zelte (L20) -->
+    <string name="rooms_title">Zimmer und Zelte</string>
+    <string name="rooms_loading">Zimmer werden geladen</string>
+    <string name="rooms_empty_title">Noch keine Zimmer</string>
+    <string name="rooms_empty_text">Lege Zimmer und Zelte an und teile die Personen ein.</string>
+    <string name="rooms_empty_team">Du bist noch keinem Zimmer zugeteilt.</string>
+    <string name="rooms_add">Zimmer anlegen</string>
+    <string name="rooms_edit">Zimmer ändern</string>
+    <string name="rooms_delete">Zimmer löschen</string>
+    <string name="rooms_delete_title">«%s» löschen?</string>
+    <string name="rooms_delete_text">Die Zuordnungen gehen mit dem Zimmer. Die Personen sind danach nicht eingeteilt.</string>
+    <string name="rooms_kind_room">Zimmer</string>
+    <string name="rooms_kind_tent">Zelt</string>
+    <string name="rooms_fill">%1$d von %2$d Plätze belegt</string>
+    <string name="rooms_overbooked">Überbelegt</string>
+    <string name="rooms_nobody">Noch niemand eingeteilt.</string>
+    <plurals name="rooms_open">
+        <item quantity="one">Nicht eingeteilt: %d Person</item>
+        <item quantity="other">Nicht eingeteilt: %d Personen</item>
+    </plurals>
+    <string name="rooms_assign">Person zuweisen</string>
+    <string name="rooms_assign_confirm">Einteilen</string>
+    <string name="rooms_tab_participants">Teilnehmende</string>
+    <string name="rooms_tab_team">Team</string>
+    <string name="rooms_pick_room">Zimmer wählen</string>
+    <string name="rooms_nobody_open">Alle sind eingeteilt.</string>
+    <string name="rooms_member_actions">Aktionen öffnen</string>
+    <string name="rooms_take_out">Aus dem Zimmer nehmen</string>
+    <string name="rooms_move">Verschieben nach …</string>
+    <string name="rooms_move_title">%s verschieben nach</string>
+    <string name="rooms_field_name">Name</string>
+    <string name="rooms_field_seats">Plätze</string>
+    <string name="rooms_field_note">Notiz (freiwillig)</string>
+
+    <!-- Fahrten (L21) -->
+    <string name="trips_title">Fahrten</string>
+    <string name="trips_loading">Fahrten werden geladen</string>
+    <string name="trips_empty_title">Noch keine Fahrten</string>
+    <string name="trips_empty_text">Lege Hin- und Rückfahrt an.</string>
+    <string name="trips_empty_team">Du sitzt noch in keiner Fahrt.</string>
+    <string name="trips_add">Fahrt anlegen</string>
+    <string name="trips_edit">Fahrt ändern</string>
+    <string name="trips_delete">Fahrt löschen</string>
+    <string name="trips_delete_title">Fahrt löschen?</string>
+    <string name="trips_delete_text">Die Mitfahrenden sind danach in dieser Richtung ohne Fahrt.</string>
+    <string name="trips_there">Hinfahrt</string>
+    <string name="trips_back">Rückfahrt</string>
+    <string name="trips_car">Auto %s</string>
+    <string name="trips_pt">ÖV-Gruppe %s</string>
+    <string name="trips_kind_car">Auto</string>
+    <string name="trips_kind_pt">ÖV-Gruppe</string>
+    <string name="trips_fill">%1$d von %2$d Plätzen belegt</string>
+    <plurals name="trips_people">
+        <item quantity="one">%d Person</item>
+        <item quantity="other">%d Personen</item>
+    </plurals>
+    <string name="trips_departure">Abfahrt %s</string>
+    <string name="trips_from">ab %s</string>
+    <string name="trips_to">nach %s</string>
+    <string name="trips_meeting_point">Treffpunkt %s</string>
+    <string name="trips_open_timetable">Fahrplan öffnen</string>
+    <string name="trips_assign">Person zuweisen</string>
+    <string name="trips_take_out">Aus der Fahrt nehmen</string>
+    <string name="trips_pick_trip">Fahrt wählen</string>
+    <string name="trips_show_without">Anzeigen</string>
+    <string name="trips_without_there">Ohne Fahrt, Hinfahrt</string>
+    <string name="trips_without_back">Ohne Fahrt, Rückfahrt</string>
+    <plurals name="trips_without">
+        <item quantity="one">%d Person ohne Fahrt</item>
+        <item quantity="other">%d Personen ohne Fahrt</item>
+    </plurals>
+    <string name="trips_field_name">Name (freiwillig)</string>
+    <string name="trips_field_driver">Fahrer</string>
+    <string name="trips_no_driver">Kein Fahrer</string>
+    <string name="trips_field_seats">Plätze für Mitfahrende</string>
+    <string name="trips_field_seats_hint">Ohne den Fahrer.</string>
+    <string name="trips_field_date">Datum wählen</string>
+    <string name="trips_field_time">Abfahrt (Zeit)</string>
+    <string name="trips_field_from">Von</string>
+    <string name="trips_field_to">Nach</string>
+    <string name="trips_field_point">Treffpunkt</string>
+    <string name="trips_field_link">Link zum Fahrplan</string>
+    <string name="trips_field_link_hint">Nur https. Die App öffnet ihn im Browser.</string>
+
+    <!-- Programmgruppen (L22) -->
+    <string name="groups_title">Programmgruppen</string>
+    <string name="groups_loading">Gruppen werden geladen</string>
+    <string name="groups_empty_title">Noch keine Gruppen</string>
+    <string name="groups_empty_text">Lege Programmgruppen an oder lass sie mischen.</string>
+    <string name="groups_empty_team">Die Lagerleitung hat noch keine Gruppen angelegt.</string>
+    <string name="groups_add">Gruppe anlegen</string>
+    <string name="groups_edit">Gruppe ändern</string>
+    <string name="groups_delete">Gruppe löschen</string>
+    <string name="groups_delete_title">«%s» löschen?</string>
+    <string name="groups_delete_text">Alle in der Gruppe sind danach in keiner Gruppe.</string>
+    <string name="groups_field_name">Name</string>
+    <plurals name="groups_children">
+        <item quantity="one">%d Kind</item>
+        <item quantity="other">%d Kinder</item>
+    </plurals>
+    <string name="groups_leadership">Leitung: %s</string>
+    <string name="groups_members">Mitglieder: %s</string>
+    <string name="groups_role_leader">Leitung</string>
+    <string name="groups_role_member">Mitglied</string>
+    <string name="groups_show_members">Zusammensetzung anzeigen</string>
+    <string name="groups_hide_members">Zusammensetzung verbergen</string>
+    <string name="groups_assign">Personen zuweisen</string>
+    <string name="groups_assign_title">Zu «%s» zuweisen</string>
+    <string name="groups_assign_confirm">Zuweisen</string>
+    <string name="groups_tab_children">Kinder</string>
+    <string name="groups_tab_leaders">Leitende</string>
+    <string name="groups_nobody_children">Es gibt keine Kinder zum Einteilen.</string>
+    <string name="groups_nobody_known">Es sind noch keine Personen bekannt. Sie erscheinen, sobald sie irgendwo im Lager eingetragen sind.</string>
+    <string name="groups_no_group">in keiner Gruppe</string>
+    <string name="groups_now_in">jetzt in %s</string>
+    <string name="groups_take_out">Aus der Gruppe nehmen</string>
+    <plurals name="groups_without">
+        <item quantity="one">Ohne Gruppe: %d Kind</item>
+        <item quantity="other">Ohne Gruppe: %d Kinder</item>
+    </plurals>
+    <plurals name="groups_excluded">
+        <item quantity="one">Nicht dabei: %d Kind</item>
+        <item quantity="other">Nicht dabei: %d Kinder</item>
+    </plurals>
+    <string name="groups_show_excluded">Abgewählte ansehen</string>
+    <string name="groups_excluded_title">Nicht dabei</string>
+    <string name="groups_excluded_none">Niemand ist abgewählt.</string>
+    <string name="groups_mix_title">Automatisch mischen</string>
+    <string name="groups_mix_text">Verteilt die Kinder nach Stufe gleichmässig auf die Gruppen. Du siehst zuerst eine Vorschau.</string>
+    <string name="groups_mix_count">Zahl der Gruppen</string>
+    <string name="groups_mix_count_hint">Von 2 bis 20.</string>
+    <string name="groups_preview_title">Vorschau</string>
+    <string name="groups_preview_text">So würden die Kinder verteilt. «Übernehmen» ersetzt die bisherige Einteilung der Kinder. Leitende bleiben.</string>
+
+    <!-- Schichtplan (T23) -->
+    <string name="shifts_title">Schichtplan</string>
+    <string name="shifts_loading">Schichtplan wird geladen</string>
+    <string name="shifts_empty_title">Schichtplan ist leer</string>
+    <string name="shifts_empty_text">Lege Dienste an und teile Personen ein.</string>
+    <string name="shifts_empty_team">Die Lagerleitung hat noch keine Dienste angelegt.</string>
+    <string name="shifts_no_days_title">Noch keine Lagertage</string>
+    <string name="shifts_no_days_text">Der Zeitplan hat noch keine Lagertage. Ohne Tage gibt es keinen Schichtplan.</string>
+    <string name="shifts_more">Weitere Aktionen</string>
+    <string name="shifts_add_duty">Dienst anlegen</string>
+    <string name="shifts_edit_duty">Dienst ändern</string>
+    <string name="shifts_delete_duty">Dienst löschen</string>
+    <string name="shifts_delete_title">«%s» löschen?</string>
+    <string name="shifts_delete_text">Alle Schichten dieses Dienstes gehen mit ihm.</string>
+    <string name="shifts_field_name">Name</string>
+    <string name="shifts_field_section">Abschnitt des Tages</string>
+    <string name="shifts_no_sections">Der Zeitplan hat keine Abschnitte. Ohne Abschnitt lässt sich kein Dienst anlegen.</string>
+    <string name="shifts_field_minimum">Mindestbesetzung</string>
+    <string name="shifts_field_minimum_hint">Personen je Tag, von 1 bis 20.</string>
+    <string name="shifts_field_night">Nachtwache</string>
+    <string name="shifts_you">du</string>
+    <string name="shifts_nobody">niemand eingeteilt</string>
+    <string name="shifts_full">voll besetzt</string>
+    <plurals name="shifts_free">
+        <item quantity="one">noch ein Platz frei</item>
+        <item quantity="other">noch %d Plätze frei</item>
+    </plurals>
+    <string name="shifts_cell_spoken">%1$s, %2$s, %3$s, %4$s</string>
+    <string name="shifts_empty_cell">leer</string>
+    <string name="shifts_count">%1$d von %2$d</string>
+    <string name="shifts_open">Dienst öffnen</string>
+    <plurals name="shifts_gaps">
+        <item quantity="one">%d Dienst nicht voll besetzt</item>
+        <item quantity="other">%d Dienste nicht voll besetzt</item>
+    </plurals>
+    <string name="shifts_legend">Hervorgehoben sind deine Dienste. «1 von 2» heisst: ein Platz ist noch frei.</string>
+    <string name="shifts_distribution">Verteilung</string>
+    <plurals name="shifts_stat">
+        <item quantity="one">%1$s, %2$d Dienst</item>
+        <item quantity="other">%1$s, %2$d Dienste</item>
+    </plurals>
+    <plurals name="shifts_stat_nights">
+        <item quantity="one">davon %d Nachtwache</item>
+        <item quantity="other">davon %d Nachtwachen</item>
+    </plurals>
+    <string name="shifts_fill_title">Leere Dienste füllen</string>
+    <string name="shifts_fill_text">Schlägt Personen nach Anwesenheit vor, ohne Doppeldienste und ohne zwei Nachtwachen hintereinander. Du siehst zuerst eine Vorschau und übernimmst sie mit «Übernehmen».</string>
+    <string name="shifts_fill_participants">Auch Teilnehmende einteilen</string>
+    <string name="shifts_fill_open">Auch wer noch nicht anwesend eingetragen ist</string>
+    <string name="shifts_suggestion_title">Vorschlag für die leeren Dienste</string>
+    <plurals name="shifts_suggestion_new">
+        <item quantity="one">%d neue Schicht</item>
+        <item quantity="other">%d neue Schichten</item>
+    </plurals>
+    <plurals name="shifts_suggestion_unfilled">
+        <item quantity="one">%d Platz bleibt unbesetzt, weil sich niemand findet.</item>
+        <item quantity="other">%d Plätze bleiben unbesetzt, weil sich niemand findet.</item>
+    </plurals>
+    <string name="shifts_suggestion_truncated">Der Vorschlag ist gekürzt. Nach dem Übernehmen kannst du einen zweiten Lauf machen.</string>
+    <string name="shifts_suggestion_stat">%1$s: %2$d neu, %3$d insgesamt</string>
+    <string name="shifts_sheet_title">%1$s, %2$s</string>
+    <string name="shifts_minimum">Mindestbesetzung: %d</string>
+    <string name="shifts_request_swap">Tausch anfragen</string>
+    <string name="shifts_pick_person">Person wählen</string>
+    <string name="shifts_participant">Teilnehmende</string>
+
+    <!-- Diensttausch (L24) -->
+    <string name="swaps_title">Diensttausch</string>
+    <string name="swaps_loading">Anfragen werden geladen</string>
+    <string name="swaps_empty_title">Keine Anfragen</string>
+    <string name="swaps_empty_text">Diensttausch-Anfragen erscheinen hier.</string>
+    <string name="swaps_empty_own">Du hast keine Anfragen gestellt. Einen Tausch fragst du im Schichtplan bei deiner Schicht an.</string>
+    <string name="swaps_to_plan">Zum Schichtplan</string>
+    <string name="swaps_someone">jemand</string>
+    <string name="swaps_unknown_shift">einen Dienst</string>
+    <string name="swaps_sentence_swap">%1$s möchte %2$s mit %3$s tauschen</string>
+    <string name="swaps_sentence_person">%1$s möchte %2$s an %3$s abgeben</string>
+    <string name="swaps_sentence_give">%1$s möchte %2$s abgeben</string>
+    <string name="swaps_status_open">Offen</string>
+    <string name="swaps_status_accepted">Angenommen</string>
+    <string name="swaps_status_declined">Abgelehnt</string>
+    <string name="swaps_status_withdrawn">Zurückgezogen</string>
+    <string name="swaps_by">von %s</string>
+    <string name="swaps_accept">Annehmen</string>
+    <string name="swaps_decline">Ablehnen</string>
+    <string name="swaps_withdraw">Zurückziehen</string>
+    <string name="swaps_who_takes">Wer übernimmt die Schicht?</string>
+    <string name="swaps_request_title">Tausch anfragen: %1$s, %2$s</string>
+    <string name="swaps_request_hint">Die Lagerleitung entscheidet. Ob die Wunschperson zustimmt, klärst du selbst mit ihr.</string>
+    <string name="swaps_form_give">Abgeben</string>
+    <string name="swaps_form_person">An eine Person</string>
+    <string name="swaps_form_swap">Tauschen</string>
+    <string name="swaps_swap_option">%1$s, %2$s, %3$s</string>
+    <string name="swaps_no_swappable">Es gibt keine Schicht einer anderen Person zum Tauschen.</string>
+    <string name="swaps_note">Notiz (freiwillig)</string>
+    <string name="swaps_send">Anfrage senden</string>
+
+    <!-- Abzählliste (L25) -->
+    <string name="count_title">Abzählen</string>
+    <string name="count_loading">Liste wird geladen</string>
+    <string name="count_empty_title">Keine Personen</string>
+    <string name="count_empty_text">Sobald Personen im Lager sind, kannst du sie abzählen.</string>
+    <string name="count_summary">%1$d von %2$d abgezählt, für alle sichtbar</string>
+    <string name="count_kind_children">Teilnehmende</string>
+    <string name="count_kind_team">Team</string>
+    <string name="count_no_match">Niemand passt zu diesem Filter.</string>
+    <string name="count_filter_reset">Filter zurücksetzen</string>
+    <string name="count_reset">Zurücksetzen</string>
+    <string name="count_reset_title">Abzählliste zurücksetzen?</string>
+    <string name="count_reset_text">Alle Haken verschwinden, für alle. Niemand wird gelöscht.</string>
+
+    <!-- Feldnamen im Konfliktbildschirm -->
+    <string name="field_name">Name</string>
+    <string name="field_seats">Plätze</string>
+    <string name="field_first_name">Vorname</string>
+    <string name="field_last_name">Nachname</string>
+    <string name="field_stage">Stufe</string>
+    <string name="field_cevi_name">Cevi-Name</string>
+    <string name="field_meeting_point">Treffpunkt</string>
+    <string name="field_from">Von</string>
+    <string name="field_to">Nach</string>
+    <string name="field_link">Link</string>
+    <string name="field_minimum">Mindestbesetzung</string>
+    <string name="field_night">Nachtwache</string>
+    <string name="field_driver">Fahrer</string>
+
+    <!-- Fehler des Servers in Worten -->
+    <string name="error_already_seated">Die Person ist schon eingeteilt. Nimm sie zuerst heraus oder verschiebe sie.</string>
+    <string name="error_already_in_trip">Die Person sitzt in dieser Richtung schon in einer Fahrt.</string>
+    <string name="error_excluded">Die Person ist abgewählt («nicht dabei») und kann nicht eingeteilt werden.</string>
+    <string name="error_absent">Die Person ist in diesem Abschnitt als abwesend eingetragen.</string>
+    <string name="error_double_booked">Die Person hat in diesem Abschnitt am selben Tag schon einen anderen Dienst.</string>
+    <string name="error_swap_open">Für diese Schicht läuft schon eine Anfrage.</string>
+    <string name="error_not_your_shift">Das ist nicht deine Schicht.</string>
+    <string name="error_swap_decided">Die Anfrage ist schon entschieden.</string>
+    <string name="error_shift_changed">Die Schichten stehen nicht mehr wie bei der Anfrage. Du kannst die Anfrage ablehnen.</string>
+    <string name="error_person_unavailable">Die Person kann die Schicht nicht übernehmen.</string>
+    <string name="error_swap_invalid">Mit dieser Person oder Schicht geht der Tausch nicht.</string>
+    <string name="error_duty_exists">Einen Dienst mit diesem Namen gibt es in diesem Abschnitt schon.</string>
+    <string name="error_limit_reached">Mehr gibt es davon nicht. Das Limit ist erreicht.</string>
+</resources>

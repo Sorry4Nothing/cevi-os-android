@@ -108,6 +108,19 @@ fun writeErrorRes(error: ActionError): Int = when (error.code) {
     "ZEITFENSTER_UNGUELTIG" -> R.string.error_window_invalid
     "DATEI_UNBEKANNT", "UNGUELTIGER_LINK", "LINK_UNGUELTIG", "HOST_NICHT_ERLAUBT" -> R.string.error_file_link
     "KEIN_MITGLIED" -> R.string.error_not_member
+    "SCHON_EINGETEILT" -> R.string.error_already_seated
+    "BEREITS_IN_FAHRT" -> R.string.error_already_in_trip
+    "ABGEWAEHLT" -> R.string.error_excluded
+    "ABWESEND" -> R.string.error_absent
+    "DOPPELBELEGT" -> R.string.error_double_booked
+    "ANFRAGE_OFFEN" -> R.string.error_swap_open
+    "NICHT_DEINE_SCHICHT", "NICHT_DEINE_ANFRAGE" -> R.string.error_not_your_shift
+    "BEREITS_ENTSCHIEDEN" -> R.string.error_swap_decided
+    "SCHICHT_GEAENDERT" -> R.string.error_shift_changed
+    "PERSON_NICHT_VERFUEGBAR" -> R.string.error_person_unavailable
+    "MIT_SCHICHT_UNGUELTIG", "MIT_PERSON_UNGUELTIG" -> R.string.error_swap_invalid
+    "DIENST_VORHANDEN" -> R.string.error_duty_exists
+    "LIMIT_ERREICHT", "ZU_VIELE_GRUPPEN" -> R.string.error_limit_reached
     "ERWAEHNUNG_UNGUELTIG", "ZU_VIELE_MARKEN" -> R.string.error_mention_invalid
     else -> when (error.error) {
         ApiError.NETWORK, ApiError.LAGER_CLOSED, ApiError.FORBIDDEN, ApiError.TOO_MANY_REQUESTS, ApiError.VERSION_CONFLICT, ApiError.NOT_FOUND -> error.error.text

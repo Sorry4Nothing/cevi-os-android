@@ -18,9 +18,14 @@ fun shareCalendarFile(context: Context, bytes: ByteArray) = shareFile(context, b
  */
 fun sharePdf(context: Context, bytes: ByteArray, name: String) = shareFile(context, bytes, "$name.pdf", "application/pdf")
 
+/** Abmelden und Sitzungsende: Geteilte Dateien (Aushänge mit Namen aus dem Lager) bleiben nicht im Cache liegen. */
+fun clearSharedFiles(context: Context) {
+    File(context.cacheDir, "shared").listFiles()?.forEach { it.delete() }
+}
+
 private fun shareFile(context: Context, bytes: ByteArray, fileName: String, type: String) {
+    clearSharedFiles(context)
     val folder = File(context.cacheDir, "shared").apply { mkdirs() }
-    folder.listFiles()?.forEach { it.delete() }
     val file = File(folder, fileName).apply { writeBytes(bytes) }
     val uri = FileProvider.getUriForFile(context, context.packageName + ".files", file)
     val send = Intent(Intent.ACTION_SEND).apply {

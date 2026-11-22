@@ -41,6 +41,7 @@ import io.github.sorry4nothing.cevios.lager.PostEditorScreen
 import io.github.sorry4nothing.cevios.lager.TaskRules
 import io.github.sorry4nothing.cevios.lager.campTargetFor
 import io.github.sorry4nothing.cevios.lager.todayInCamp
+import io.github.sorry4nothing.cevios.lager.clearSharedFiles
 import io.github.sorry4nothing.cevios.lager.shareCalendarFile
 import io.github.sorry4nothing.cevios.lager.CampApi
 import io.github.sorry4nothing.cevios.lager.CampRole
@@ -250,8 +251,8 @@ class MainActivity : FragmentActivity() {
 private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
     val authApi = remember(client) { AuthApi(client) }
     val widgetContext = LocalContext.current.applicationContext
-    // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets verschwinden.
-    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext) }, lock, client::hasSession) }
+    // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets und geteilte Dateien im Cache verschwinden.
+    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext) }, lock, client::hasSession) }
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()

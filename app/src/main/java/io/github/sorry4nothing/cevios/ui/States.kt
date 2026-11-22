@@ -169,7 +169,7 @@ fun EmptyState(@DrawableRes icon: Int, title: String, text: String, onRefresh: (
 /** Ein Balken des Skeletts: grau, ohne Animation (das Design legt keinen Schimmer fest). */
 @Composable
 private fun Bar(barWidth: Int, barHeight: Int, modifier: Modifier = Modifier) {
-    Box(modifier.width(barWidth.dp).height(barHeight.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(8.dp)))
+    Box(modifier.width(barWidth.dp).height(barHeight.dp).background(MaterialTheme.cevi.skeleton, RoundedCornerShape(8.dp)))
 }
 
 /**

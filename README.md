@@ -12,8 +12,8 @@ Pilot-Version 0.9.0 (Vorabversion) als signierte APK im [GitHub-Release](https:/
 
 Aussehen und Bildschirme der App kommen aus zwei Entwürfen des Auftraggebers. Sie sind die verbindliche Vorlage; weicht der Code ab, gilt der Entwurf (Änderungen zuerst dort):
 
-- **Design System «Cevi App»** (Farben, Schrift, Bausteine)
-- **Bildschirme «Cevi App Screens»** (Nacht und Tag, alle Zustände)
+- **Design System «Cevi OS Android 2»** (Farbwelt Cevi-Website: Farben, Schrift, Bausteine)
+- **Bildschirme «Cevi Lager Android»** (Tag und Nacht, alle Zustände)
 
 Die Entwürfe sind nicht öffentlich; Zugang gibt der Auftraggeber.
 

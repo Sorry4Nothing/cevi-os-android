@@ -485,11 +485,11 @@ fun WelcomeScreen(
                     Box(
                         Modifier
                             .size(24.dp)
-                            .background(if (acknowledged) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
+                            .background(if (acknowledged) MaterialTheme.cevi.accent else MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
                             .border(if (acknowledged) 0.dp else 1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (acknowledged) Icon(painterResource(R.drawable.ic_check), null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
+                        if (acknowledged) Icon(painterResource(R.drawable.ic_check), null, tint = MaterialTheme.cevi.onAccent, modifier = Modifier.size(16.dp))
                     }
                     Text(stringResource(R.string.welcome_privacy_check), style = MaterialTheme.typography.bodyMedium)
                 }

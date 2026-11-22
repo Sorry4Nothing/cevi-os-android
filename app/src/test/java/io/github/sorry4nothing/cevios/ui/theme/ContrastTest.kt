@@ -50,6 +50,7 @@ class ContrastTest {
     fun textOnColorSurfaces() = allThemes { p, t ->
         assertContrast("on-primary auf primary", p.scheme.onPrimary, p.scheme.primary, 4.5, t)
         assertContrast("on-secondary auf secondary", p.scheme.onSecondary, p.scheme.secondary, 4.5, t)
+        assertContrast("on-accent auf accent", p.extra.onAccent, p.extra.accent, 4.5, t)
         assertContrast("on-secondary-muted auf secondary", p.extra.onSecondaryMuted, p.scheme.secondary, 4.5, t)
         assertContrast("on-secondary-container auf secondary-container", p.scheme.onSecondaryContainer, p.scheme.secondaryContainer, 4.5, t)
         assertContrast("on-success-container auf success-container", p.extra.onSuccessContainer, p.extra.successContainer, 4.5, t)

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- surface (Tag) aus dem Design -->
-    <color name="window_background">#F7F7FC</color>
-    <!-- Widget (Tag): Werte aus dem Design System -->
+    <color name="window_background">#F2F5F8</color>
+    <!-- Widget (Tag): Werte aus dem Design System «Cevi OS Android 2» -->
     <color name="widget_card">#FFFFFF</color>
-    <color name="widget_border">#E2E2EC</color>
-    <color name="widget_text">#141412</color>
-    <color name="widget_muted">#5C5C57</color>
-    <color name="widget_accent">#323394</color>
-    <color name="widget_stage_bg">#ECECF8</color>
-    <color name="widget_stage_text">#323394</color>
+    <color name="widget_border">#C9D5E1</color>
+    <color name="widget_text">#1A1A1A</color>
+    <color name="widget_muted">#4D4D4D</color>
+    <color name="widget_accent">#013974</color>
+    <color name="widget_stage_bg">#E3F2F6</color>
+    <color name="widget_stage_text">#1D6274</color>
     <color name="widget_yes_bg">#E7F4EC</color>
     <color name="widget_yes_text">#17703A</color>
     <color name="widget_no_bg">#FCE9EC</color>
     <color name="widget_no_text">#9E1B2C</color>
-    <color name="widget_open_bg">#ECECF8</color>
-    <color name="widget_open_text">#5C5C57</color>
+    <color name="widget_open_bg">#D5DFE9</color>
+    <color name="widget_open_text">#4D4D4D</color>
 </resources>

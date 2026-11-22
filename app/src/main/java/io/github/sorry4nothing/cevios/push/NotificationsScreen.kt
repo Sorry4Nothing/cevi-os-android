@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -147,6 +148,13 @@ internal fun SwitchRow(
             checked = checked,
             onCheckedChange = null,
             enabled = enabled,
+            // «An» zeigt `accent` (Design System), nicht das Rot von `primary`.
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MaterialTheme.cevi.accent,
+                checkedThumbColor = MaterialTheme.cevi.onAccent,
+                checkedBorderColor = MaterialTheme.cevi.accent,
+                checkedIconColor = MaterialTheme.cevi.accent,
+            ),
             thumbContent = if (checked) {
                 { Icon(painterResource(R.drawable.ic_check), contentDescription = null, modifier = Modifier.size(16.dp)) }
             } else {

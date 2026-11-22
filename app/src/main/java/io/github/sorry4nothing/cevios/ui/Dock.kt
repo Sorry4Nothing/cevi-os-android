@@ -47,6 +47,7 @@ import io.github.sorry4nothing.cevios.chat.unreadBadgeText
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.WideBreakpoint
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
+import io.github.sorry4nothing.cevios.ui.theme.cevi
 
 /** Die Hauptziele des Docks. */
 enum class Destination(@StringRes val text: Int, @DrawableRes val icon: Int) {
@@ -105,7 +106,7 @@ private fun Dock(active: Destination, onDestination: (Destination) -> Unit, unre
 /** Ein Ziel über die ganze Fläche (mindestens 48 dp): aktiv Cevi-Blau mit weissem Wort, inaktiv ruhig. Das Wort steht immer da. */
 @Composable
 private fun DockDestination(destination: Destination, active: Boolean, onDestination: (Destination) -> Unit, unread: Int, modifier: Modifier) {
-    val color = if (active) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+    val color = if (active) MaterialTheme.cevi.onAccent else MaterialTheme.colorScheme.onSurfaceVariant
     // Der Zähler gehört dem Chat; die Zahl steht für den Screenreader als Zustand am Reiter.
     val badge = if (destination == Destination.CHAT) unreadBadgeText(unread) else null
     val unreadText = if (badge != null) pluralStringResource(R.plurals.unread_messages, unread, unread) else null
@@ -113,7 +114,7 @@ private fun DockDestination(destination: Destination, active: Boolean, onDestina
         modifier
             .focusRing(DestinationShape)
             .clip(DestinationShape)
-            .then(if (active) Modifier.background(MaterialTheme.colorScheme.secondary) else Modifier)
+            .then(if (active) Modifier.background(MaterialTheme.cevi.accent) else Modifier)
             .selectable(selected = active, role = Role.Tab, onClick = { onDestination(destination) })
             .semantics { unreadText?.let { stateDescription = it } },
         horizontalAlignment = Alignment.CenterHorizontally,

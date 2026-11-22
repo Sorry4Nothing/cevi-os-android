@@ -30,6 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -38,6 +40,9 @@ import io.github.sorry4nothing.cevios.auth.FormState
 import io.github.sorry4nothing.cevios.auth.SettingsCard
 import io.github.sorry4nothing.cevios.auth.SettingsDivider
 import io.github.sorry4nothing.cevios.auth.formErrorText
+import io.github.sorry4nothing.cevios.lager.NOTIFICATION_KINDS
+import io.github.sorry4nothing.cevios.lager.notificationKindText
+import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.ui.Header
 import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
@@ -63,6 +68,12 @@ fun NotificationsScreen(
     onPrograms: (Boolean) -> Unit,
     onRegistrations: (Boolean) -> Unit,
     onBack: () -> Unit,
+    /** Die Schalter der Lager-Arten (`GET /api/v1/ich/lager-benachrichtigungen`); `null`, solange sie laden. */
+    lager: ApiResult<Map<String, Boolean>>? = null,
+    onLager: (kind: String, active: Boolean) -> Unit = { _, _ -> },
+    onLagerRetry: () -> Unit = {},
+    /** Fehler beim Speichern eines Lager-Schalters. */
+    lagerBanner: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
     // Nach den Einstellungen des Systems kommt die Person zurück: dann gilt der neue Stand.
@@ -109,12 +120,49 @@ fun NotificationsScreen(
             }
             SlowHint(form.running)
             formErrorText(form)?.let { NoticeBanner(NoticeKind.ERROR, it) }
+            LagerSwitches(lager, onLager, onLagerRetry, lagerBanner)
             Text(
                 stringResource(R.string.notifications_privacy),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 6.dp),
             )
+        }
+    }
+}
+
+/**
+ * Die Arten der Lager-Benachrichtigungen (Entwurf A7), dieselben Schalter wie im Lager unter «Benachrichtigungen». Sie gelten für
+ * alle Lager der Person, in der Liste und als Push. Ein Fehler hier stört die Schalter oben nicht: Es fehlt nur dieser Abschnitt.
+ */
+@Composable
+private fun LagerSwitches(
+    lager: ApiResult<Map<String, Boolean>>?,
+    onChange: (String, Boolean) -> Unit,
+    onRetry: () -> Unit,
+    banner: @Composable () -> Unit,
+) {
+    Text(
+        stringResource(R.string.notifications_lager_title),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 6.dp, top = Spacing.s2).semantics { heading() },
+    )
+    when (lager) {
+        null -> Text(stringResource(R.string.notif_loading), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp))
+        is ApiResult.Failure -> {
+            NoticeBanner(NoticeKind.ERROR, stringResource(R.string.notifications_lager_failed))
+            OutlinedPillButton(stringResource(R.string.retry), onRetry, Modifier.fillMaxWidth())
+        }
+        is ApiResult.Ok -> {
+            Text(stringResource(R.string.notif_settings_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp))
+            banner()
+            SettingsCard {
+                NOTIFICATION_KINDS.forEachIndexed { index, kind ->
+                    if (index > 0) SettingsDivider()
+                    SwitchRow(R.drawable.ic_bell, stringResource(notificationKindText(kind)), null, lager.value[kind] ?: true, enabled = true) { onChange(kind, it) }
+                }
+            }
         }
     }
 }

@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lager, Schnitt A4: Im Lager (Entwurf L4, L26 bis L30, L32). Schweizer Schreibweise, «du», Buttons sind Verben. -->
+<resources>
+    <string name="more_section_live">Im Lager</string>
+    <string name="more_section_files">Ablage</string>
+    <string name="back_to_today">Zurück zu Heute</string>
+
+    <string name="error_attendance_locked">Dieses Feld ist schon bestätigt oder die Frist ist abgelaufen. Stelle eine Anfrage.</string>
+    <string name="error_attendance_open">Dieses Feld kannst du direkt ändern. Speichere es.</string>
+    <string name="error_attendance_waiting">Für dieses Feld wartet schon eine Anfrage.</string>
+    <string name="error_day_exists">Für diesen Tag gibt es schon eine Seite. Lade die Ansicht neu.</string>
+
+    <!-- Heute (L4) -->
+    <string name="today_title">Heute</string>
+    <string name="today_subtitle">Tag %1$d von %2$d, %3$s</string>
+    <string name="today_loading">Heute wird geladen</string>
+    <string name="today_before_title">Das Lager hat noch nicht begonnen</string>
+    <string name="today_before_text">Ab dem %1$s stehen hier Dienste und Wichtiges des Tages.</string>
+    <string name="today_empty_title">Heute nichts eingeteilt</string>
+    <string name="today_empty_text">Du hast heute keinen Dienst. Schau in den Schichtplan.</string>
+    <string name="today_open_shifts">Schichtplan öffnen</string>
+    <string name="today_duty">Dein Dienst</string>
+    <string name="today_duty_unknown">Dienst</string>
+    <string name="today_important">Wichtig heute</string>
+    <string name="today_due">Fällig</string>
+    <string name="today_attendance">Anwesenheit heute</string>
+    <string name="today_open_day">Tagesseite öffnen</string>
+    <string name="today_weather_warning">Wetterwarnung: %1$s</string>
+    <string name="weather_temps">%1$d° / %2$d°</string>
+    <string name="weather_rain_amount">Regen %1$d mm</string>
+
+    <!-- Eigene To-dos -->
+    <string name="todo_title">Meine To-dos</string>
+    <string name="todo_add">To-do hinzufügen</string>
+    <string name="todo_label">To-do</string>
+    <string name="todo_empty">Du hast keine eigenen To-dos. Nur du siehst sie.</string>
+    <string name="todo_delete_named">To-do «%1$s» löschen</string>
+
+    <!-- Tagesseite (L27) -->
+    <string name="day_title">Tag %1$d</string>
+    <string name="day_title_plain">Tagesseite</string>
+    <string name="day_loading">Tag wird geladen</string>
+    <string name="day_empty_title">Noch nichts für diesen Tag</string>
+    <string name="day_empty_text">Trage Tageschef und Wichtiges ein.</string>
+    <string name="day_empty_text_read">Hier steht noch nichts.</string>
+    <string name="day_edit">Tag bearbeiten</string>
+    <string name="day_lead">Tageschef</string>
+    <string name="day_lead_line">Tageschef: %1$s</string>
+    <string name="day_lead_change">Tageschef ändern</string>
+    <string name="day_lead_nobody">Niemand</string>
+    <string name="day_note">Notiz</string>
+    <string name="day_note_change">Notiz ändern</string>
+    <string name="day_important">Wichtig</string>
+    <string name="day_ideas">Ideen</string>
+    <string name="day_pictures">Fotos</string>
+    <string name="day_open_picture">Foto öffnen</string>
+    <string name="day_add_important">Wichtiges hinzufügen</string>
+    <string name="day_add_idea">Idee hinzufügen</string>
+    <string name="day_block_change">Text ändern</string>
+    <string name="day_block_actions">Aktionen für den Eintrag</string>
+    <string name="day_block_delete_title">Eintrag löschen?</string>
+    <string name="day_push_task">In den nächsten Tag schieben</string>
+    <string name="day_previous">Voriger Tag</string>
+    <string name="day_next">Nächster Tag</string>
+
+    <!-- Anwesenheit (L26) -->
+    <string name="att_title">Anwesenheit</string>
+    <string name="att_subtitle">Deine Zeile</string>
+    <string name="att_loading">Anwesenheit wird geladen</string>
+    <string name="att_present">Da</string>
+    <string name="att_absent">Frei</string>
+    <string name="att_open">Offen</string>
+    <string name="att_whole_day">Ganzer Tag</string>
+    <string name="att_hint">Tippe ein Feld, um zwischen Da, Frei und Offen zu wechseln.</string>
+    <string name="att_cell_change">Wert wechseln</string>
+    <string name="att_changed">noch nicht gespeichert</string>
+    <string name="att_request_waiting">Anfrage wartet</string>
+    <string name="att_discard">Änderungen verwerfen</string>
+    <string name="att_deadline_until">Du trägst dich bis %1$s direkt ein. Danach geht es nur noch mit einer Anfrage.</string>
+    <string name="att_deadline_passed">Die Frist ist seit %1$s abgelaufen. Änderungen gehen nur noch mit einer Anfrage.</string>
+    <string name="att_deadline_value">Frist für das Team: %1$s</string>
+    <string name="att_deadline_none">Keine Frist für das Team</string>
+    <string name="att_deadline_change">Frist ändern</string>
+    <string name="att_deadline_clear">Frist aufheben</string>
+    <string name="att_request_needed_title">Anfrage an die Lagerleitung nötig</string>
+    <string name="att_request_needed_text">Du änderst eine Zusage, die schon bestätigt ist. Die Lagerleitung muss zustimmen.</string>
+    <string name="att_request_send">Anfrage senden</string>
+    <string name="att_request_title">Anfrage senden</string>
+    <string name="att_request_note">Bemerkung (freiwillig)</string>
+    <string name="att_my_requests">Deine Anfragen</string>
+    <string name="att_request_line">Änderung auf «%1$s»</string>
+    <string name="att_status_open">Wartet</string>
+    <string name="att_status_accepted">Angenommen</string>
+    <string name="att_status_declined">Abgelehnt</string>
+    <string name="att_requests_title">Anfragen des Teams</string>
+    <string name="att_requests_empty">Keine offenen Anfragen.</string>
+    <string name="att_requests_line">%1$s möchte «%2$s»</string>
+    <string name="att_person_unknown">Eine Person</string>
+    <string name="att_accept">Annehmen</string>
+    <string name="att_decline">Ablehnen</string>
+    <string name="att_accept_all">Alle %1$d annehmen</string>
+    <string name="att_decline_all">Alle %1$d ablehnen</string>
+    <string name="att_summary_title">Zusammenfassung</string>
+    <string name="att_summary_line">%1$s: %2$d da, %3$d frei, %4$d offen</string>
+    <string name="att_no_days_title">Noch keine Lagertage</string>
+    <string name="att_no_days_text">Die Lagerleitung legt Lagertage und Abschnitte im Zeitplan an.</string>
+    <string name="att_notice_saved">Deine Anwesenheit ist gespeichert.</string>
+    <string name="att_notice_request_sent">Die Anfrage ist bei der Lagerleitung.</string>
+    <string name="att_notice_accepted">Die Anfragen sind angenommen.</string>
+    <string name="att_notice_declined">Die Anfragen sind abgelehnt.</string>
+    <string name="att_notice_deadline_set">Die Frist ist gesetzt.</string>
+    <string name="att_notice_deadline_cleared">Die Frist ist aufgehoben.</string>
+    <string name="att_notice_reloaded">Einige Felder brauchen jetzt eine Anfrage. Der Stand ist neu geladen.</string>
+
+    <!-- Einkaufsliste (L28) -->
+    <string name="shop_title">Einkaufsliste</string>
+    <string name="shop_loading">Einkaufsliste wird geladen</string>
+    <string name="shop_empty_title">Die Liste ist leer</string>
+    <string name="shop_empty_text">Füge den ersten Artikel hinzu.</string>
+    <string name="shop_add">Artikel hinzufügen</string>
+    <string name="shop_change">Artikel ändern</string>
+    <string name="shop_only_mine">Nur was ich einkaufe</string>
+    <string name="shop_none_mine">Du kaufst gerade nichts ein.</string>
+    <string name="shop_buys">%1$s kauft ein</string>
+    <string name="shop_summed">zusammengezählt aus %1$d Einträgen</string>
+    <string name="shop_copy">Als Text kopieren</string>
+    <string name="shop_copied">Die Liste ist kopiert. Sie enthält nur die offenen Artikel.</string>
+    <string name="shop_added">%1$s hinzugefügt.</string>
+    <string name="shop_actions_named">Aktionen für %1$s</string>
+    <string name="shop_delete_title">%1$s löschen?</string>
+    <string name="shop_delete_text">Der Artikel verschwindet von der Liste.</string>
+    <string name="shop_name">Artikel</string>
+    <string name="shop_name_missing">Gib einen Artikel ein.</string>
+    <string name="shop_amount">Menge</string>
+    <string name="shop_amount_invalid">Gib eine Zahl ein, zum Beispiel 1,5.</string>
+    <string name="shop_unit">Einheit</string>
+    <string name="shop_buyer">Wer kauft ein?</string>
+    <string name="shop_buyer_nobody">Niemand</string>
+    <string name="shop_buyer_me">Ich</string>
+    <string name="shop_group_produce">Früchte und Gemüse</string>
+    <string name="shop_group_bread">Brot</string>
+    <string name="shop_group_dairy">Milch und Käse</string>
+    <string name="shop_group_meat">Fleisch und Fisch</string>
+    <string name="shop_group_pantry">Trockenes</string>
+    <string name="shop_group_drinks">Getränke</string>
+    <string name="shop_group_household">Haushalt</string>
+    <string name="shop_group_other">Diverses</string>
+
+    <!-- Packliste (L29) -->
+    <string name="pack_title">Packliste</string>
+    <string name="pack_loading">Packliste wird geladen</string>
+    <string name="pack_empty_title">Noch keine Punkte</string>
+    <string name="pack_empty_text">Die Lagerleitung trägt die Packliste ein. Du kannst eigene Punkte ergänzen.</string>
+    <string name="pack_count">%1$d von %2$d gepackt</string>
+    <string name="pack_leadership_only">nur Lagerleitung</string>
+    <string name="pack_add_own">Eigenen Punkt hinzufügen</string>
+    <string name="pack_add_save">Hinzufügen</string>
+    <string name="pack_own_text">Punkt</string>
+    <string name="pack_own_section_label">Abschnitt</string>
+    <string name="pack_own_section">Eigene Punkte</string>
+    <string name="pack_remove">Aus meiner Liste nehmen</string>
+    <string name="pack_restore">Zurückholen</string>
+    <string name="pack_show_removed">Entfernte Punkte anzeigen (%1$d)</string>
+    <string name="pack_hide_removed">Entfernte Punkte ausblenden (%1$d)</string>
+    <string name="pack_removed_title">Entfernte Punkte</string>
+    <string name="pack_actions_named">Aktionen für %1$s</string>
+
+    <!-- Notfall (L30) -->
+    <string name="emerg_title">Notfall</string>
+    <string name="emerg_loading">Notfall-Seite wird geladen</string>
+    <string name="emerg_failed">Die Kontakte konnten nicht geladen werden. Die Notrufnummern stehen unten.</string>
+    <string name="emerg_stale">Stand %1$s. Diese Nummern hat die App im Arbeitsspeicher. Sie bleiben, bis du die App schliesst.</string>
+    <string name="emerg_list">Notfall-Liste</string>
+    <string name="emerg_address">Lageradresse</string>
+    <string name="emerg_route">Route öffnen</string>
+    <string name="emerg_call">Anrufen</string>
+    <string name="emerg_call_named">%1$s, %2$s, %3$s, anrufen</string>
+    <string name="emerg_rescue">Rettung</string>
+    <string name="emerg_ambulance">Sanität</string>
+    <string name="emerg_rega">Rega</string>
+    <string name="emerg_rescue_flight">Rettungshelikopter</string>
+
+    <!-- Infos (L32) -->
+    <string name="infos_title">Infos</string>
+    <string name="infos_loading">Infos werden geladen</string>
+    <string name="infos_empty_title">Noch keine Infos</string>
+    <string name="infos_empty_text">Trage Lagerhaus, Regeln und Tagesablauf ein.</string>
+    <string name="infos_empty_text_read">Die Lagerleitung trägt hier Infos ein.</string>
+    <string name="infos_add">Abschnitt hinzufügen</string>
+    <string name="infos_change">Abschnitt ändern</string>
+    <string name="infos_reorder">Reihenfolge ändern</string>
+    <string name="infos_reorder_hint">Nutze «Nach oben» und «Nach unten», um die Abschnitte zu ordnen.</string>
+    <string name="infos_reorder_done">Fertig</string>
+    <string name="infos_up_named">%1$s nach oben</string>
+    <string name="infos_down_named">%1$s nach unten</string>
+    <string name="infos_actions_named">Aktionen für %1$s</string>
+    <string name="infos_open_link">%1$s öffnen</string>
+    <string name="infos_delete_title">%1$s löschen?</string>
+    <string name="infos_delete_text">Der Abschnitt verschwindet für alle im Lager.</string>
+    <string name="infos_field_title">Titel</string>
+    <string name="infos_field_text">Text</string>
+
+    <!-- Mein Bereich (L3) -->
+    <string name="team_my_area">Mein Bereich</string>
+    <string name="start_open_today">Heute öffnen</string>
+    <string name="team_my_duties">Meine Dienste</string>
+    <string name="team_duty_line">%1$s, %2$s</string>
+    <string name="team_pack_row">%1$d von %2$d gepackt</string>
+</resources>

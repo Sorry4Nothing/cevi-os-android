@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Profil: Gruppen und Kalenderlink -->
+    <string name="profile_groups_title">Meine Gruppen</string>
+    <string name="group_type_stufe">Stufe</string>
+    <string name="group_type_funktion">Funktion</string>
+    <string name="group_type_team">Team</string>
+    <string name="group_type_lager">Lager</string>
+    <string name="group_chip">%1$s %2$s</string>
+    <string name="profile_groups_none">Du hast noch keine Gruppe.</string>
+    <string name="profile_groups_hint">Du siehst die Termine deiner Gruppen. Ändern kann das die Abteilungsleitung.</string>
+    <string name="role_function_admin">Abteilungsleitung</string>
+    <string name="role_function_leader">Stufenleitung</string>
+    <string name="role_function_leading">Leitung</string>
+
+    <string name="cal_link_title">Mein Kalender-Link</string>
+    <string name="cal_link_text">Abonniere nur deine Termine in Handy oder Outlook. Der Link gehört nur dir.</string>
+    <string name="cal_link_loading">Link wird geladen</string>
+    <string name="cal_link_none">Du hast noch keinen Link.</string>
+    <string name="cal_link_active">Dein Link ist aktiv und endet auf «%1$s». Er wird dir nur einmal angezeigt.</string>
+    <string name="cal_link_create">Link erzeugen</string>
+    <string name="cal_link_copy">Link kopieren</string>
+    <string name="cal_link_copied">Link kopiert.</string>
+    <string name="cal_link_renew">Link neu erzeugen</string>
+    <string name="cal_link_renew_hint">Der alte Link funktioniert nach «Link neu erzeugen» nicht mehr.</string>
+    <string name="cal_link_fresh">Neuer Link: Kopiere ihn jetzt. Später zeigt ihn die App nicht mehr. Gib ihn nicht weiter.</string>
+    <string name="cal_link_revoke">Link widerrufen</string>
+    <string name="cal_link_saving">Link wird erzeugt</string>
+    <string name="cal_link_failed">Das hat nicht geklappt. Versuche es nochmals.</string>
+    <string name="cal_link_clipboard_label">Kalender-Link</string>
+
+    <!-- Termin vorschlagen -->
+    <string name="proposal_row">Termin vorschlagen</string>
+    <string name="proposal_title">Termin vorschlagen</string>
+    <string name="back_to_proposal">Zurück zu Profil</string>
+    <string name="proposal_info">Die Abteilungsleitung prüft deinen Vorschlag. Erst nach der Freigabe erscheint er im Kalender.</string>
+    <string name="proposal_loading">Formular wird geladen</string>
+    <string name="proposal_denied_title">Kein Zugriff</string>
+    <string name="proposal_denied_text">Termine vorschlagen dürfen Leitende und Personen mit einer Funktion oder einem Team. Frag die Abteilungsleitung.</string>
+    <string name="proposal_field_title">Titel</string>
+    <string name="proposal_field_all_day">Ganztägig</string>
+    <string name="proposal_field_date">Datum</string>
+    <string name="proposal_field_last_day">Letzter Tag</string>
+    <string name="proposal_field_from">Von</string>
+    <string name="proposal_field_to">Bis</string>
+    <string name="proposal_field_time_hint">Zeit, zum Beispiel 14:00</string>
+    <string name="proposal_field_place">Ort (freiwillig)</string>
+    <string name="proposal_field_groups">Gruppen</string>
+    <string name="proposal_field_description">Beschreibung (freiwillig)</string>
+    <string name="proposal_pick_date">Datum wählen</string>
+    <string name="proposal_no_date">Nicht gewählt</string>
+    <string name="proposal_send">Vorschlag senden</string>
+    <string name="proposal_sending">Vorschlag wird gesendet</string>
+    <string name="proposal_sent">Gesendet. Du erfährst es, sobald die Leitung entschieden hat.</string>
+    <string name="proposal_undo">Rückgängig</string>
+    <string name="proposal_undone">Dein Vorschlag ist zurückgezogen.</string>
+    <string name="proposal_check">Bitte prüfe die markierten Angaben.</string>
+    <string name="proposal_error_title">Gib einen Titel ein.</string>
+    <string name="proposal_error_day">Wähle ein Datum.</string>
+    <string name="proposal_error_time">Gib die Zeit so ein: 14:00.</string>
+    <string name="proposal_error_order">Das Ende muss nach dem Beginn liegen.</string>
+    <string name="proposal_error_past">Der Termin darf nicht in der Vergangenheit liegen.</string>
+    <string name="proposal_error_tags">Wähle mindestens eine Gruppe.</string>
+    <string name="proposal_failed">Das hat nicht geklappt. Deine Eingabe ist noch da. Versuche es nochmals.</string>
+    <string name="proposal_limit">Du hast schon 10 offene Vorschläge. Warte auf den Entscheid der Leitung oder ziehe einen zurück.</string>
+    <string name="proposal_mine">Deine Vorschläge</string>
+    <string name="proposal_mine_empty">Du hast noch keinen Termin vorgeschlagen.</string>
+    <string name="proposal_status_open">Offen</string>
+    <string name="proposal_status_approved">Freigegeben</string>
+    <string name="proposal_status_rejected">Abgelehnt</string>
+    <string name="proposal_status_entered">In Outlook eingetragen</string>
+    <string name="proposal_reason">Begründung: %1$s</string>
+    <string name="proposal_withdraw">Zurückziehen</string>
+    <string name="proposal_withdraw_label">Vorschlag «%1$s» zurückziehen</string>
+    <string name="proposal_all_day_word">ganztägig</string>
+
+    <!-- Anlass-Anmeldung -->
+    <string name="anlass_title">Anmeldung %1$s</string>
+    <string name="anlass_loading">Anmeldung wird geladen</string>
+    <string name="back_to_event">Zurück zum Termin</string>
+    <string name="anlass_account">Aus deinem Konto</string>
+    <string name="anlass_account_hint">Stimmt etwas nicht? Ändere es im Profil.</string>
+    <string name="anlass_extra">Zusätzliche Angaben</string>
+    <string name="anlass_no_health">Bitte keine Gesundheitsdaten eintragen.</string>
+    <string name="anlass_optional">%1$s (freiwillig)</string>
+    <string name="anlass_yes">Ja</string>
+    <string name="anlass_no">Nein</string>
+    <string name="anlass_error_choice">Wähle eine Antwort.</string>
+    <string name="anlass_error_text">Fülle das Feld aus.</string>
+    <string name="anlass_check">Bitte prüfe die markierten Angaben.</string>
+    <string name="anlass_submit">Anmelden</string>
+    <string name="anlass_submit_change">Änderung speichern</string>
+    <string name="anlass_unregister">Abmelden</string>
+    <string name="anlass_registered">Angemeldet</string>
+    <string name="anlass_saving">Anmeldung wird gesendet</string>
+    <string name="anlass_done_registered">%1$s ist angemeldet.</string>
+    <string name="anlass_done_changed">Die Änderung ist gespeichert.</string>
+    <string name="anlass_done_unregistered">%1$s ist abgemeldet.</string>
+    <string name="anlass_failed">Das hat nicht geklappt. Deine Eingabe ist noch da. Versuche es nochmals.</string>
+    <string name="anlass_rejected">Der Server hat die Angaben abgelehnt. Prüfe sie und versuche es nochmals.</string>
+    <string name="anlass_closed_title">Anmeldung geschlossen</string>
+    <string name="anlass_closed_text">Die Anmeldung ist geschlossen. Frag die Leitung.</string>
+    <string name="anlass_no_participants_title">Niemand zum Anmelden</string>
+    <string name="anlass_no_participants_text">Für diesen Anlass melden Eltern ihr Kind an. Auf deinem Konto ist kein Kind hinterlegt.</string>
+    <string name="anlass_deadline">Anmeldeschluss: %1$s</string>
+
+    <!-- Benachrichtigungen -->
+    <string name="notifications_lager_title">Lager</string>
+    <string name="notifications_lager_failed">Die Schalter für das Lager sind nicht geladen. Versuche es nochmals.</string>
+
+    <!-- Push-Ziel -->
+    <string name="channel_termine">Termine</string>
+</resources>

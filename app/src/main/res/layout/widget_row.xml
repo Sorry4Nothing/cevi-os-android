@@ -1,67 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Eine Zeile: optionales Etikett, Titel, Zeit, Ort, Chips; ab «mittel» ein eigenes Ziel. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/row_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical"
     android:orientation="vertical">
 
-    <!-- Ab dem zweiten Programm sichtbar (Design: Linie zwischen den Programmen). -->
     <FrameLayout
         android:id="@+id/row_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
         android:background="@color/widget_border"
+        android:importantForAccessibility="no"
         android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/row_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:textColor="@color/widget_text"
-        android:textSize="15sp"
-        android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:minHeight="48dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/row_stage"
-            android:layout_width="wrap_content"
-            android:layout_height="20dp"
-            android:background="@drawable/widget_chip_stage"
-            android:gravity="center"
-            android:maxWidth="110dp"
-            android:paddingStart="7dp"
-            android:paddingEnd="7dp"
-            android:singleLine="true"
-            android:textColor="@color/widget_stage_text"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/row_time"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:singleLine="true"
-            android:textColor="@color/widget_accent"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+        android:importantForAccessibility="noHideDescendants"
+        android:orientation="horizontal"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
 
         <LinearLayout
-            android:id="@+id/row_chips"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal" />
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/row_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textColor="@color/widget_muted"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/row_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@color/widget_text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/row_line"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@color/widget_accent"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:id="@+id/row_place"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_pin"
+                    android:tint="@color/widget_muted"
+                    tools:ignore="UseAppTint" />
+
+                <TextView
+                    android:id="@+id/row_place_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:singleLine="true"
+                    android:textColor="@color/widget_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/row_groups"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/row_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/row_chevron"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="4dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_chevron_right"
+            android:tint="@color/widget_muted"
+            tools:ignore="UseAppTint"
+            android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>

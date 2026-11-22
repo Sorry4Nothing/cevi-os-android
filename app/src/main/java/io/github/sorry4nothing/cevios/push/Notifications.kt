@@ -2,6 +2,7 @@ package io.github.sorry4nothing.cevios.push
 
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
+import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -19,21 +20,40 @@ object Notifications {
     const val PROGRAMS_CHANNEL = "programme"
     const val MESSAGES_CHANNEL = "mitteilungen"
 
+    /** Entscheide zu Terminvorschlägen (termin_entscheid). */
+    const val TERMS_CHANNEL = "termine"
+
+    /** Die Kanäle des Lagers (Namen und Zuordnung der `typ`-Werte stehen im Vertrag bei `LagerPushTyp`), je Gruppe stummschaltbar. */
+    const val CAMP_TASKS_CHANNEL = "lager_aufgaben"
+    const val CAMP_MESSAGES_CHANNEL = "lager_mitteilungen"
+    const val CAMP_PLANNING_CHANNEL = "lager_einteilung"
+    private const val CAMP_GROUP = "lager"
+
     private const val PREFS = "push"
     private const val ASKED = "permission_asked"
 
     fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannelGroup(NotificationChannelGroup(CAMP_GROUP, context.getString(R.string.channel_group_camp)))
         manager.createNotificationChannels(
             listOf(
                 NotificationChannel(CHAT_CHANNEL, context.getString(R.string.channel_chat), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(PROGRAMS_CHANNEL, context.getString(R.string.channel_programs), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(MESSAGES_CHANNEL, context.getString(R.string.channel_messages), NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(TERMS_CHANNEL, context.getString(R.string.channel_termine), NotificationManager.IMPORTANCE_DEFAULT),
+                campChannel(CAMP_TASKS_CHANNEL, context.getString(R.string.channel_camp_tasks)),
+                campChannel(CAMP_MESSAGES_CHANNEL, context.getString(R.string.channel_camp_messages)),
+                campChannel(CAMP_PLANNING_CHANNEL, context.getString(R.string.channel_camp_planning)),
             ),
         )
     }
 
-    private val CHANNELS = setOf(CHAT_CHANNEL, PROGRAMS_CHANNEL, MESSAGES_CHANNEL)
+    private fun campChannel(id: String, name: String) =
+        NotificationChannel(id, name, NotificationManager.IMPORTANCE_DEFAULT).apply { group = CAMP_GROUP }
+
+    private val CHANNELS = setOf(
+        CHAT_CHANNEL, PROGRAMS_CHANNEL, MESSAGES_CHANNEL, TERMS_CHANNEL, CAMP_TASKS_CHANNEL, CAMP_MESSAGES_CHANNEL, CAMP_PLANNING_CHANNEL,
+    )
 
     /** Der Kanal aus dem Push, wenn die App ihn kennt, sonst «Mitteilungen». Der Inhalt kommt von aussen. */
     fun channelOf(channel: String?): String = channel?.takeIf { it in CHANNELS } ?: MESSAGES_CHANNEL
@@ -86,4 +106,26 @@ object OpenChat {
 
     /** Ob ein Push mit `typ` und `id` nichts zeigen soll, weil die Person genau diesen Chat liest. */
     fun hides(type: String?, pushId: String?, open: String? = id): Boolean = type == "chat" && pushId != null && pushId == open
+}
+
+/**
+ * Das Objekt im Lager (Aufgabe, Beitrag, …), das die Person gerade offen hat; `null`, wenn keines offen ist. Ein Push zu diesem
+ * Objekt zeigt nichts. Die Bildschirme der Module setzen die ID beim Öffnen und löschen sie beim Schliessen.
+ */
+object OpenCampObject {
+    @Volatile
+    var id: String? = null
+
+    /**
+     * Die Push-Arten, deren Liste die Person gerade offen hat (zum Beispiel `lager_pinnwand`, solange die Pinnwand sichtbar ist):
+     * Ein neuer Eintrag erscheint dort ohnehin, ein Push dazu wäre doppelt.
+     */
+    @Volatile
+    var types: Set<String> = emptySet()
+
+    /** Ob ein Lager-Push mit `typ` und `id` nichts zeigen soll, weil die Person genau dieses Objekt oder dessen Liste liest. */
+    fun hides(type: String?, pushId: String?, open: String? = id, openTypes: Set<String> = types): Boolean {
+        if (type == null || type !in PushTarget.CAMP_TYPES) return false
+        return type in openTypes || (pushId != null && pushId == open)
+    }
 }

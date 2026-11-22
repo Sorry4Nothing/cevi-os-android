@@ -5,17 +5,44 @@ import io.github.sorry4nothing.cevios.contacts.ContactList
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.serialization.Serializable
+import java.net.URLEncoder
 import java.time.LocalDate
 
 @Serializable
 private data class RsvpRequest(val status: String)
 
-class ProgramsApi(private val api: ApiClient) {
-    /** Programme, die das Fenster `from` bis `until` (Schweizer Kalendertage, inklusive) berühren. */
-    suspend fun list(from: LocalDate, until: LocalDate): ApiResult<ProgramList> =
-        api.get("/api/v1/programme?von=$from&bis=$until")
+private const val PAGE_SIZE = 100
 
-    suspend fun read(id: String): ApiResult<Program> = api.get("/api/v1/programme/$id")
+/** Schutz vor einer Endlosschleife: Mit 100 Terminen je Seite sind 20 Seiten weit mehr als ein halbes Jahr. */
+private const val MAX_PAGES = 20
+
+class ProgramsApi(private val api: ApiClient) {
+    /**
+     * «Mein Kalender»: die Termine, die das Fenster `from` bis `until` (Schweizer Kalendertage, inklusive) berühren und die die
+     * Person sieht. Der Server liefert sie seitenweise; die App holt alle Seiten (höchstens [MAX_PAGES]) und gibt eine Liste zurück.
+     */
+    suspend fun list(from: LocalDate, until: LocalDate): ApiResult<ProgramList> {
+        val all = mutableListOf<Program>()
+        var after = ""
+        repeat(MAX_PAGES) {
+            when (val page = api.get<ProgramPage>("/api/v1/termine/mein?von=$from&bis=$until&limit=$PAGE_SIZE$after")) {
+                is ApiResult.Failure -> return page
+                is ApiResult.Ok -> {
+                    all += page.value.programs
+                    val next = page.value.next
+                    if (!page.value.more || next == null) return ApiResult.Ok(ProgramList(all))
+                    after = "&nach=" + URLEncoder.encode(next, "UTF-8")
+                }
+            }
+        }
+        return ApiResult.Ok(ProgramList(all))
+    }
+
+    /** Ein Termin aus «Mein Kalender» mit Treffpunkt, Mitnehmen und den eigenen Kindern. */
+    suspend fun read(id: String): ApiResult<Program> = api.get("/api/v1/termine/$id")
+
+    /** Der ältere Stand des Programms (mit Stufen und Sichtbarkeit): nur für die Zuordnung, die der Vertrag noch anbietet. */
+    suspend fun readAssignable(id: String): ApiResult<Program> = api.get("/api/v1/programme/$id")
 
     /** Meldet ein eigenes Kind an («ja») oder ab («nein»); eine frühere Antwort wird überschrieben. */
     suspend fun setAttendance(id: String, childId: String, attending: Boolean): ApiResult<Unit> =

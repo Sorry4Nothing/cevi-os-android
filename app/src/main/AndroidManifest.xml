@@ -47,7 +47,7 @@
         <receiver
             android:name=".widget.ProgramsWidget"
             android:exported="false"
-            android:label="@string/widget_label">
+            android:label="@string/widget_name_programs">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -55,6 +55,72 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/programs_widget_info" />
         </receiver>
+        <receiver
+            android:name=".widget.CalendarWidget"
+            android:exported="false"
+            android:label="@string/widget_name_calendar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/calendar_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.CampTodayWidget"
+            android:exported="false"
+            android:label="@string/widget_name_camp">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/camp_today_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.TasksWidget"
+            android:exported="false"
+            android:label="@string/widget_name_tasks">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/tasks_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.EmergencyWidget"
+            android:exported="false"
+            android:label="@string/widget_name_emergency">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/emergency_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.ChatWidget"
+            android:exported="false"
+            android:label="@string/widget_name_chat">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/chat_widget_info" />
+        </receiver>
+        <!-- Auswahl beim Hinzufügen eines Widgets (W1 Stufe, W3 Lager); das System ruft sie auf, darum exportiert. -->
+        <activity
+            android:name=".widget.WidgetConfigActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.CeviOS"
+            tools:ignore="LockedOrientationActivity,DiscouragedApi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".MainActivity"
             android:theme="@style/Theme.CeviOS.Starting"
@@ -68,6 +134,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Nur für «Höck als Kalendereintrag teilen»: Die Datei liegt kurz im Cache und geht über die Systemauswahl weiter. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

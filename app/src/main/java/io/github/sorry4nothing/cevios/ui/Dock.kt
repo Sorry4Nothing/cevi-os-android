@@ -49,11 +49,26 @@ import io.github.sorry4nothing.cevios.ui.theme.WideBreakpoint
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 
-/** Die Hauptziele des Docks. */
+/**
+ * Die Ziele der beiden Docks. Die Reihenfolge ist die Richtung des Übergangs: Wer weiter hinten liegt, schiebt von rechts herein.
+ * Im Bereich Programme gilt [PROGRAM], im Lager [CAMP]; der Chat ist in beiden derselbe.
+ */
 enum class Destination(@StringRes val text: Int, @DrawableRes val icon: Int) {
+    START(R.string.tab_start, R.drawable.ic_home),
+    TASKS(R.string.tab_tasks, R.drawable.ic_list_check),
+    PINBOARD(R.string.tab_pinboard, R.drawable.ic_pin),
     PROGRAMS(R.string.tab_programs, R.drawable.ic_calendar),
     CHAT(R.string.tab_chat, R.drawable.ic_chat),
     PROFILE(R.string.tab_profile, R.drawable.ic_profile),
+    MORE(R.string.tab_more, R.drawable.ic_more_horizontal),
+    ;
+
+    companion object {
+        val PROGRAM = listOf(PROGRAMS, CHAT, PROFILE)
+
+        /** Im Lager kommen die Ziele der Module dazu, sobald es sie gibt (Einteilung und «Im Lager» mit A3 und A4). */
+        val CAMP = listOf(START, TASKS, PINBOARD, CHAT, MORE)
+    }
 }
 
 private val DockShape = RoundedCornerShape(24.dp)
@@ -64,11 +79,17 @@ private val DestinationShape = RoundedCornerShape(18.dp)
  * Das Dock sitzt unter dem Inhalt, nichts scrollt dahinter durch.
  */
 @Composable
-fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, unread: Int = 0, content: @Composable () -> Unit) {
+fun MainScaffold(
+    active: Destination?,
+    onDestination: (Destination) -> Unit,
+    unread: Int = 0,
+    destinations: List<Destination> = Destination.PROGRAM,
+    content: @Composable () -> Unit,
+) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         if (maxWidth >= WideBreakpoint) {
             Row(Modifier.fillMaxSize().padding(start = Spacing.s3)) {
-                Dock(active, onDestination, unread, vertical = true, Modifier.padding(vertical = Spacing.s3).widthIn(min = Sizes.dockWidth).width(IntrinsicSize.Max))
+                Dock(active, destinations, onDestination, unread, vertical = true, Modifier.padding(vertical = Spacing.s3).widthIn(min = Sizes.dockWidth).width(IntrinsicSize.Max))
                 Spacer(Modifier.width(Spacing.s4))
                 content()
             }
@@ -76,7 +97,7 @@ fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, unre
             Column(Modifier.fillMaxSize()) {
                 Column(Modifier.weight(1f)) { content() }
                 Dock(
-                    active, onDestination, unread, vertical = false,
+                    active, destinations, onDestination, unread, vertical = false,
                     Modifier.padding(start = Spacing.s3, end = Spacing.s3, top = Spacing.s2, bottom = Spacing.s3),
                 )
             }
@@ -85,7 +106,7 @@ fun MainScaffold(active: Destination, onDestination: (Destination) -> Unit, unre
 }
 
 @Composable
-private fun Dock(active: Destination, onDestination: (Destination) -> Unit, unread: Int, vertical: Boolean, modifier: Modifier) {
+private fun Dock(active: Destination?, destinations: List<Destination>, onDestination: (Destination) -> Unit, unread: Int, vertical: Boolean, modifier: Modifier) {
     val shell = modifier
         .clip(DockShape)
         .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -94,11 +115,11 @@ private fun Dock(active: Destination, onDestination: (Destination) -> Unit, unre
         .selectableGroup()
     if (vertical) {
         Column(shell, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Destination.entries.forEach { DockDestination(it, it == active, onDestination, unread, Modifier.fillMaxWidth().heightIn(min = 64.dp)) }
+            destinations.forEach { DockDestination(it, it == active, onDestination, unread, Modifier.fillMaxWidth().heightIn(min = 64.dp)) }
         }
     } else {
         Row(shell.heightIn(min = Sizes.footer).height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Destination.entries.forEach { DockDestination(it, it == active, onDestination, unread, Modifier.weight(1f).fillMaxHeight()) }
+            destinations.forEach { DockDestination(it, it == active, onDestination, unread, Modifier.weight(1f).fillMaxHeight()) }
         }
     }
 }

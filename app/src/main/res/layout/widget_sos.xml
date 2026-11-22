@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notfall-Knopf (W5): grosse tippbare Fläche, Wort und Symbol; nie Nummern oder Adresse. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/sos_button"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_marginTop="2dp"
+    android:layout_weight="1"
+    android:background="@drawable/widget_sos"
+    android:gravity="center"
+    android:minHeight="48dp"
+    android:orientation="vertical">
+
+    <ImageView
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_warning"
+        android:tint="@color/widget_on_primary"
+        tools:ignore="UseAppTint" />
+
+    <TextView
+        android:id="@+id/sos_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:singleLine="true"
+        android:textColor="@color/widget_on_primary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/sos_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textColor="@color/widget_on_primary"
+        android:textSize="12sp"
+        android:visibility="gone" />
+</LinearLayout>

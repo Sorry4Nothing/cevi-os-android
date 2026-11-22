@@ -28,6 +28,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.termine.eventDeadlineText
 import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.contacts.ContactCard
 import io.github.sorry4nothing.cevios.contacts.ContactList
@@ -138,12 +144,16 @@ private fun DateColumn(day: Day, withLine: Boolean) {
     }
 }
 
-@Composable
-private fun groupChips(program: Program): List<GroupChip> = groupChips(program, stringResource(R.string.stage_all))
-
-/** Die Gruppen des Programms für Chips: eine Stufe je Chip mit ihrer ID für das Logo; ohne Stufe gilt es für alle (ein Chip ohne ID). */
-internal fun groupChips(program: Program, allLabel: String): List<GroupChip> =
-    if (program.allAgeGroups) listOf(GroupChip(allLabel)) else program.ageGroups.map { GroupChip(it.name, it.id) }
+/**
+ * Die Gruppen des Termins für Chips: je eine Kategorie (nur die eigenen), bei einer Stufe mit der ID für das Logo, falls es eins gibt.
+ * Der ältere Stand der Programme nennt Stufen statt Kategorien. Einen Chip «Alle Stufen» oder «Nicht zugeordnet» gibt es nicht mehr.
+ */
+internal fun groupChips(program: Program): List<GroupChip> =
+    if (program.tags.isNotEmpty()) {
+        program.tags.map { GroupChip(it.name, it.id.takeIf { _ -> it.type == "stufe" }) }
+    } else {
+        program.ageGroups.map { GroupChip(it.name, it.id) }
+    }
 
 /** Uhrzeit mit Symbol, Titel, Ort; darunter die Gruppen und der Stand der eigenen Zusagen als Chips (Zahl, nie Namen). */
 @OptIn(ExperimentalLayoutApi::class)
@@ -234,6 +244,7 @@ fun ProgramDetailScreen(
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
     onRegistrations: () -> Unit,
+    onEvent: (String) -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -248,7 +259,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, contacts, account, back, onChild, onLeader, onAssign, onRegistrations)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, contacts, account, back, onChild, onLeader, onAssign, onRegistrations, onEvent)
         }
     }
 }
@@ -266,25 +277,64 @@ private fun ProgramContent(
     onLeader: (attending: Boolean) -> Unit,
     onAssign: () -> Unit,
     onRegistrations: () -> Unit,
+    onEvent: (String) -> Unit,
 ) {
     val date = program.startDay()?.let { "${weekdayLong(it)}, ${dayAndMonth(it)}" }
+    val context = LocalContext.current
+    var noCalendar by remember(program.id) { mutableStateOf(false) }
+    // Ohne lesbare Zeit gibt es nichts einzutragen: Der Knopf fehlt.
+    val addAction = program.calendarEntry()?.let {
+        HeaderButton(R.drawable.ic_calendar_plus, stringResource(R.string.program_add_to_calendar)) { noCalendar = !addToCalendar(context, program) }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Header(
             title = program.title,
             subtitle = date,
             groups = groupChips(program),
             back = back,
+            action = addAction,
             titleStyle = MaterialTheme.typography.headlineMedium,
             focusOnTitle = true,
         )
         Column(Modifier.padding(horizontal = Spacing.s5), verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+            if (noCalendar) NoticeBanner(NoticeKind.ERROR, stringResource(R.string.program_no_calendar_app))
             ProgramStatus(program)
             Tiles(program)
             Facts(program)
+            program.event?.let { EventCard(it, program.cancelled, onEvent) }
             RegistrationSection(program, rsvp, account, onChild, onLeader)
             ContactSection(program, contacts)
             LeaderSection(program, canAssign, canSeeRegistrations, onAssign, onRegistrations)
             Box(Modifier.height(Spacing.s4))
+        }
+    }
+}
+
+/** Der Anlass zum Termin: Stand der Anmeldung als Chip (Symbol und Wort) und der Weg zum Formular. */
+@Composable
+private fun EventCard(event: ProgramEvent, cancelled: Boolean, onOpen: (String) -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerLow, CARD)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CARD)
+            .padding(horizontal = 14.dp, vertical = Spacing.s3),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+    ) {
+        Text(stringResource(R.string.event_section), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+        when {
+            event.registered -> StatusChip(ChipKind.YES, stringResource(R.string.event_registered))
+            event.open && !cancelled -> StatusChip(ChipKind.PENDING, stringResource(R.string.event_not_registered))
+            else -> StatusChip(ChipKind.NO, stringResource(R.string.event_closed))
+        }
+        event.deadline?.let { Text(stringResource(R.string.event_deadline, eventDeadlineText(it)), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        // Wer angemeldet ist, sieht und ändert die Anmeldung; wer nicht kann, hat keinen Knopf.
+        if (event.registered || (event.open && !cancelled)) {
+            OutlinedPillButton(
+                stringResource(if (event.registered) R.string.event_show else R.string.event_register),
+                { onOpen(event.id) },
+                Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -373,7 +423,7 @@ private fun Tile(label: String, time: String?, location: String?, modifier: Modi
 @Composable
 private fun Facts(program: Program) {
     val rows = listOf(
-        Triple(R.drawable.ic_location, R.string.fact_location, program.googleLocation?.takeIf { it.isNotBlank() }),
+        Triple(R.drawable.ic_location, R.string.fact_location, program.calendarLocation),
         Triple(R.drawable.ic_bring_along, R.string.section_bring_along, program.bringAlong?.takeIf { it.isNotBlank() }),
     ).filter { it.third != null }
     if (rows.isEmpty()) return

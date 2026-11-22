@@ -1,13 +1,85 @@
 package io.github.sorry4nothing.cevios
 
 import io.github.sorry4nothing.cevios.ui.screenTransition
+import io.github.sorry4nothing.cevios.lager.AgendaScreen
+import io.github.sorry4nothing.cevios.lager.ArchiveApi
+import io.github.sorry4nothing.cevios.lager.ArchiveRights
+import io.github.sorry4nothing.cevios.lager.ArchiveViewModel
+import io.github.sorry4nothing.cevios.lager.SearchDestination
+import io.github.sorry4nothing.cevios.lager.sharePdf
+import io.github.sorry4nothing.cevios.push.OpenCampObject
+import io.github.sorry4nothing.cevios.lager.AndroidCommsTexts
+import io.github.sorry4nothing.cevios.lager.AndroidTaskTexts
+import io.github.sorry4nothing.cevios.lager.CampTarget
+import io.github.sorry4nothing.cevios.lager.CommsApi
+import io.github.sorry4nothing.cevios.lager.CommsViewModel
+import io.github.sorry4nothing.cevios.lager.InboxScreen
+import io.github.sorry4nothing.cevios.lager.LagerNotificationsScreen
+import io.github.sorry4nothing.cevios.lager.MeetingListScreen
+import io.github.sorry4nothing.cevios.lager.MeetingModeScreen
+import io.github.sorry4nothing.cevios.lager.MeetingRights
+import io.github.sorry4nothing.cevios.lager.MeetingRules
+import io.github.sorry4nothing.cevios.lager.MeetingsApi
+import io.github.sorry4nothing.cevios.lager.LiveApi
+import io.github.sorry4nothing.cevios.lager.LiveArea
+import io.github.sorry4nothing.cevios.lager.LiveFrame
+import io.github.sorry4nothing.cevios.lager.LiveNav
+import io.github.sorry4nothing.cevios.lager.LiveRights
+import io.github.sorry4nothing.cevios.lager.LiveScreen
+import io.github.sorry4nothing.cevios.lager.LiveViewModel
+import io.github.sorry4nothing.cevios.lager.PlanArea
+import io.github.sorry4nothing.cevios.lager.PlanRights
+import io.github.sorry4nothing.cevios.lager.PlanScreen
+import io.github.sorry4nothing.cevios.lager.PlanningApi
+import io.github.sorry4nothing.cevios.lager.PlanningViewModel
+import io.github.sorry4nothing.cevios.lager.RessortPerson
+import io.github.sorry4nothing.cevios.lager.MeetingsViewModel
+import io.github.sorry4nothing.cevios.lager.MentionsScreen
+import io.github.sorry4nothing.cevios.lager.MinutesScreen
+import io.github.sorry4nothing.cevios.lager.PinboardScreen
+import io.github.sorry4nothing.cevios.lager.PostEditorScreen
+import io.github.sorry4nothing.cevios.lager.TaskRules
+import io.github.sorry4nothing.cevios.lager.campTargetFor
+import io.github.sorry4nothing.cevios.lager.todayInCamp
+import io.github.sorry4nothing.cevios.lager.clearSharedFiles
+import io.github.sorry4nothing.cevios.lager.shareCalendarFile
+import io.github.sorry4nothing.cevios.lager.CampApi
+import io.github.sorry4nothing.cevios.lager.CampRole
+import io.github.sorry4nothing.cevios.lager.LeadershipStart
+import io.github.sorry4nothing.cevios.lager.RessortListScreen
+import io.github.sorry4nothing.cevios.lager.RessortScreen
+import io.github.sorry4nothing.cevios.lager.QuickCaptureSheet
+import io.github.sorry4nothing.cevios.lager.StartFab
+import io.github.sorry4nothing.cevios.lager.TaskDetailScreen
+import io.github.sorry4nothing.cevios.lager.TaskPerson
+import io.github.sorry4nothing.cevios.lager.TaskRights
+import io.github.sorry4nothing.cevios.lager.TaskView
+import io.github.sorry4nothing.cevios.lager.TasksApi
+import io.github.sorry4nothing.cevios.lager.TasksScreen
+import io.github.sorry4nothing.cevios.lager.TasksViewModel
+import io.github.sorry4nothing.cevios.lager.TeamStart
+import io.github.sorry4nothing.cevios.lager.CampInfo
+import io.github.sorry4nothing.cevios.lager.CampListScreen
+import io.github.sorry4nothing.cevios.lager.CampStartScreen
+import io.github.sorry4nothing.cevios.lager.CampViewModel
+import io.github.sorry4nothing.cevios.lager.ChangeState
+import io.github.sorry4nothing.cevios.lager.ConflictScreen
+import io.github.sorry4nothing.cevios.lager.ModeMenu
+import io.github.sorry4nothing.cevios.lager.MoreEntry
+import io.github.sorry4nothing.cevios.lager.MoreSheet
+import io.github.sorry4nothing.cevios.lager.QueueScreen
+import io.github.sorry4nothing.cevios.lager.QueueState
+import io.github.sorry4nothing.cevios.ui.LocalModeSwitch
+import io.github.sorry4nothing.cevios.ui.ModeSwitch
 import io.github.sorry4nothing.cevios.ui.rememberMotionEnabled
 import io.github.sorry4nothing.cevios.ui.loginTransition
 import io.github.sorry4nothing.cevios.ui.tabTransition
 import io.github.sorry4nothing.cevios.security.LockOutcome
 import io.github.sorry4nothing.cevios.security.BiometricPrompter
 import io.github.sorry4nothing.cevios.security.AppLock
-import io.github.sorry4nothing.cevios.widget.ProgramsWidget
+import io.github.sorry4nothing.cevios.widget.WidgetPreviews
+import io.github.sorry4nothing.cevios.widget.WidgetProvider
+import io.github.sorry4nothing.cevios.widget.forgetWidgets
 import io.github.sorry4nothing.cevios.auth.LockedScreen
 import io.github.sorry4nothing.cevios.security.shouldRelock
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -40,6 +112,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -49,6 +122,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -87,8 +161,20 @@ import io.github.sorry4nothing.cevios.push.OpenChat
 import io.github.sorry4nothing.cevios.push.NotificationsScreen
 import io.github.sorry4nothing.cevios.push.PushApi
 import io.github.sorry4nothing.cevios.push.PushTarget
+import io.github.sorry4nothing.cevios.push.WidgetArea
 import io.github.sorry4nothing.cevios.push.PushToken
 import io.github.sorry4nothing.cevios.push.PushViewModel
+import io.github.sorry4nothing.cevios.lager.WriteErrorBanner
+import io.github.sorry4nothing.cevios.termine.CalendarLinkSection
+import io.github.sorry4nothing.cevios.termine.CalendarLinkViewModel
+import io.github.sorry4nothing.cevios.termine.EventScreen
+import io.github.sorry4nothing.cevios.termine.EventViewModel
+import io.github.sorry4nothing.cevios.termine.GroupsSection
+import io.github.sorry4nothing.cevios.termine.ProposalScreen
+import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
+import io.github.sorry4nothing.cevios.termine.TermineApi
+import io.github.sorry4nothing.cevios.auth.SettingsCard
+import io.github.sorry4nothing.cevios.auth.SettingsRow
 import io.github.sorry4nothing.cevios.programs.AssignmentRules
 import io.github.sorry4nothing.cevios.programs.AssignmentScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
@@ -131,13 +217,13 @@ class MainActivity : FragmentActivity() {
     /** Das Widget lädt, solange die App im Vordergrund ist: Im Energiesparmodus hat nur sie dann Netz. */
     override fun onStart() {
         super.onStart()
-        ProgramsWidget.refresh(applicationContext)
+        WidgetProvider.refreshAll(applicationContext)
     }
 
     /** Anmelden und Abmelden betreffen das Widget; es braucht dafür kein Netz. */
     override fun onStop() {
         super.onStop()
-        ProgramsWidget.refresh(applicationContext)
+        WidgetProvider.refreshAll(applicationContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -150,6 +236,7 @@ class MainActivity : FragmentActivity() {
             getSystemService(LocaleManager::class.java).applicationLocales = LocaleList.forLanguageTags("de")
         }
         Notifications.createChannels(applicationContext)
+        WidgetPreviews.publish(applicationContext)
         // Nach Drehen oder Prozess-Ende gilt der Push nicht noch einmal: Das Intent ist dann dasselbe wie beim ersten Start.
         if (savedInstanceState == null) pushTarget = targetOf(intent)
         val client = ApiClient.create(applicationContext)
@@ -163,7 +250,9 @@ class MainActivity : FragmentActivity() {
 @Composable
 private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
     val authApi = remember(client) { AuthApi(client) }
-    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, client::forgetSession, lock, client::hasSession) }
+    val widgetContext = LocalContext.current.applicationContext
+    // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets und geteilte Dateien im Cache verschwinden.
+    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext) }, lock, client::hasSession) }
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()
@@ -245,7 +334,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                     val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
                     CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
                         MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), current.profile,
+                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
                             passwordSaved, form, imageForm, auth,
                             pushTarget, onPushTargetHandled,
                             onOpenPrivacy = openPrivacy,
@@ -283,8 +372,26 @@ private sealed interface Screen {
     data class CropImage(val uri: Uri) : Screen { override val depth = 1 }
     data class Program(val programId: String) : Screen { override val depth = 1 }
     data class Chat(val chatId: String) : Screen { override val depth = 1 }
+    data object Queue : Screen { override val depth = 1 }
+    data class Task(val taskId: String) : Screen { override val depth = 1 }
+    data object Ressorts : Screen { override val depth = 1 }
+    data object Meetings : Screen { override val depth = 1 }
+    data class Agenda(val meetingId: String) : Screen { override val depth = 2 }
+    data class Minutes(val meetingId: String) : Screen { override val depth = 3 }
+    data class MeetingMode(val meetingId: String) : Screen { override val depth = 3 }
+    data object Mentions : Screen { override val depth = 1 }
+    data class Plan(val area: PlanArea) : Screen { override val depth = 1 }
+    data class Live(val area: LiveArea) : Screen { override val depth = if (area == LiveArea.DAY) 2 else 1 }
+    data object Inbox : Screen { override val depth = 1 }
+    data object LagerNotifications : Screen { override val depth = 1 }
+    data class PostEditor(val postId: String?) : Screen { override val depth = 2 }
+    data object DirectConflict : Screen { override val depth = 4 }
+    data class RessortPage(val ressortId: String) : Screen { override val depth = 2 }
+    data class Conflict(val changeId: String) : Screen { override val depth = 2 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
     data class Assign(val programId: String) : Screen { override val depth = 2 }
+    data class Event(val eventId: String) : Screen { override val depth = 2 }
+    data object Proposal : Screen { override val depth = 1 }
 }
 
 @Composable
@@ -292,6 +399,14 @@ private fun MainContent(
     programsApi: ProgramsApi,
     chatApi: ChatApi,
     pushApi: PushApi,
+    campApi: CampApi,
+    tasksApi: TasksApi,
+    meetingsApi: MeetingsApi,
+    commsApi: CommsApi,
+    planningApi: PlanningApi,
+    liveApi: LiveApi,
+    archiveApi: ArchiveApi,
+    termineApi: TermineApi,
     account: Profile,
     passwordSaved: Boolean,
     form: FormState,
@@ -309,13 +424,51 @@ private fun MainContent(
     val context = LocalContext.current
     val resolver = context.contentResolver
     val appContext = context.applicationContext
-    val programs = viewModel { ProgramsViewModel(programsApi) { ProgramsWidget.refresh(appContext) } }
+    val programs = viewModel { ProgramsViewModel(programsApi) { WidgetProvider.refreshAll(appContext) } }
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
+    val camp = viewModel { CampViewModel(campApi) }
+    val tasks = viewModel { TasksViewModel(tasksApi, camp, TaskPerson(account.id, account.name, account.ceviName), AndroidTaskTexts(appContext)) }
+    val meetings = viewModel { MeetingsViewModel(meetingsApi, camp, AndroidCommsTexts(appContext)) }
+    val comms = viewModel { CommsViewModel(commsApi, camp, AndroidCommsTexts(appContext)) }
+    val planning = viewModel { PlanningViewModel(planningApi, camp, AndroidCommsTexts(appContext), account.id) }
+    val live = viewModel { LiveViewModel(liveApi, camp, AndroidCommsTexts(appContext), account.id) }
+    val archive = viewModel { ArchiveViewModel(archiveApi, meetingsApi, tasksApi, camp, AndroidCommsTexts(appContext)) }
+    val calendarLink = viewModel { CalendarLinkViewModel(termineApi) }
+    val proposals = viewModel { ProposalsViewModel(termineApi) }
+    val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
     var destination by rememberSaveable { mutableStateOf(Destination.PROGRAMS) }
+    // Bereich Lager: `campArea` schaltet das Dock um, `campId` ist das offene Lager (ohne eins zeigt Start die Lagerwahl).
+    var campArea by rememberSaveable { mutableStateOf(false) }
+    var campId by rememberSaveable { mutableStateOf<String?>(null) }
+    var modeMenuOpen by rememberSaveable { mutableStateOf(false) }
+    var moreOpen by rememberSaveable { mutableStateOf(false) }
+    var queueOpen by rememberSaveable { mutableStateOf(false) }
+    var conflictId by rememberSaveable { mutableStateOf<String?>(null) }
+    var openedTask by rememberSaveable { mutableStateOf<String?>(null) }
+    var ressortsOpen by rememberSaveable { mutableStateOf(false) }
+    var openedRessort by rememberSaveable { mutableStateOf<String?>(null) }
+    // Sitzungen und Kommunikation: je ein Bildschirm, der offene Höck und der bearbeitete Beitrag.
+    var meetingsOpen by rememberSaveable { mutableStateOf(false) }
+    var openedMeeting by rememberSaveable { mutableStateOf<String?>(null) }
+    var minutesFor by rememberSaveable { mutableStateOf<String?>(null) }
+    var modeFor by rememberSaveable { mutableStateOf<String?>(null) }
+    var mentionsOpen by rememberSaveable { mutableStateOf(false) }
+    // Einteilung: ein Bildschirm je Bereich (Teilnehmende, Zimmer, Fahrten, Gruppen, Schichtplan, Diensttausch, Abzählen).
+    var planArea by rememberSaveable { mutableStateOf<PlanArea?>(null) }
+    // Im Lager: ein Bildschirm je Bereich (Heute, Tagesseite, Anwesenheit, Einkauf, Packliste, Notfall, Infos).
+    var liveArea by rememberSaveable { mutableStateOf<LiveArea?>(null) }
+    var liveDay by rememberSaveable { mutableStateOf<String?>(null) }
+    var inboxOpen by rememberSaveable { mutableStateOf(false) }
+    var lagerNotificationsOpen by rememberSaveable { mutableStateOf(false) }
+    var postEditorOpen by rememberSaveable { mutableStateOf(false) }
+    var editedPost by rememberSaveable { mutableStateOf<String?>(null) }
     var openedProgram by rememberSaveable { mutableStateOf<String?>(null) }
+    // Termine: die Anmeldung zu einem Anlass (ID des Anlasses) und «Termin vorschlagen».
+    var openedEvent by rememberSaveable { mutableStateOf<String?>(null) }
+    var proposalOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var assigning by rememberSaveable { mutableStateOf(false) }
@@ -333,19 +486,106 @@ private fun MainContent(
             askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+    // Widget-Ziele im Lager: «Heute», «Meine Aufgaben» (Ansicht «Meine») und «Notfall».
+    var pendingArea by remember { mutableStateOf<WidgetArea?>(null) }
+    val applyCampArea: (WidgetArea) -> Unit = { area ->
+        when (area) {
+            WidgetArea.CAMP_TODAY -> liveArea = LiveArea.TODAY
+            WidgetArea.CAMP_EMERGENCY -> liveArea = LiveArea.EMERGENCY
+            WidgetArea.CAMP_TASKS -> { destination = Destination.TASKS; tasks.setView(TaskView.MINE) }
+            else -> Unit
+        }
+    }
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false
+        notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false
         when (target) {
+            is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
-            is PushTarget.Program -> { destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
+            is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
+            // Widgets: die Liste der Programme, die Chatliste oder eine Lager-Seite (das Lager kennt das Widget, sonst zeigt die Lagerwahl).
+            is PushTarget.Area -> {
+                openedChat = null; openedProgram = null
+                when (target.area) {
+                    WidgetArea.PROGRAMS -> { campArea = false; destination = Destination.PROGRAMS }
+                    WidgetArea.CHAT -> destination = Destination.CHAT
+                    else -> {
+                        campArea = true; queueOpen = false; conflictId = null
+                        target.campId?.let { campId = it }
+                        ressortsOpen = false; openedRessort = null; openedTask = null
+                        meetingsOpen = false; openedMeeting = null; minutesFor = null; modeFor = null
+                        mentionsOpen = false; inboxOpen = false; lagerNotificationsOpen = false; postEditorOpen = false; editedPost = null
+                        planArea = null; liveArea = null; liveDay = null
+                        destination = Destination.START
+                        // Wechselt das Lager, setzt der Effekt für `campId` alles zurück: Dann gilt die Seite erst danach.
+                        if (target.campId != null && target.campId != campId) pendingArea = target.area else applyCampArea(target.area)
+                    }
+                }
+            }
+            // Das Lager des Objekts löst der Server auf; die Module öffnen später das Objekt selbst (Schnitte A1 bis A5).
+            is PushTarget.Camp -> {
+                openedChat = null; openedProgram = null
+                camp.resolvePush(target.type, target.id) { found ->
+                    campArea = true; campId = found.campId; queueOpen = false; conflictId = null
+                    ressortsOpen = false; openedRessort = null
+                    meetingsOpen = false; openedMeeting = null; minutesFor = null; modeFor = null
+                    mentionsOpen = false; inboxOpen = false; lagerNotificationsOpen = false; postEditorOpen = false; editedPost = null
+                    planArea = null; liveArea = null; liveDay = null
+                    destination = Destination.START
+                    openedTask = null
+                    // Das Ziel baut die App aus `typ` und `id`; es gilt auch beim Kaltstart (der Push kommt dann hier an).
+                    when (val goal = campTargetFor(target.type, found.objectType, found.objectId)) {
+                        is CampTarget.Task -> { destination = Destination.TASKS; openedTask = goal.id }
+                        CampTarget.Mentions -> mentionsOpen = true
+                        CampTarget.Pinboard -> destination = Destination.PINBOARD
+                        CampTarget.Inbox -> inboxOpen = true
+                        CampTarget.Notifications -> lagerNotificationsOpen = true
+                        CampTarget.Swaps -> planArea = PlanArea.SWAPS
+                        CampTarget.Attendance -> liveArea = LiveArea.ATTENDANCE
+                        CampTarget.Start -> Unit
+                    }
+                }
+            }
         }
         onPushTargetHandled()
     }
+    LaunchedEffect(openedTask) { openedTask?.let(tasks::openTask) ?: tasks.closeTask() }
+    // Der Kalendereintrag eines Höcks, den der Server erzeugt hat, geht über die Systemauswahl weiter.
+    val calendarFile by meetings.calendar.collectAsState()
+    LaunchedEffect(calendarFile) {
+        calendarFile?.let { bytes ->
+            shareCalendarFile(context, bytes)
+            meetings.calendarShared()
+        }
+    }
+    // Der Aushang, den der Server als PDF erzeugt hat, geht über die Systemauswahl weiter.
+    val sharedPdf by archive.pdf.collectAsState()
+    LaunchedEffect(sharedPdf) {
+        sharedPdf?.let { pdf ->
+            sharePdf(context, pdf.bytes, pdf.name)
+            archive.pdfShared()
+        }
+    }
+    LaunchedEffect(openedRessort) { openedRessort?.let(tasks::openRessort) ?: tasks.closeRessort() }
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
-    LaunchedEffect(assigning) { if (assigning) programs.loadAgeGroups() }
+    LaunchedEffect(openedEvent) { openedEvent?.let(eventForm::load) }
+    LaunchedEffect(notificationsOpen) { if (notificationsOpen) comms.loadSettings() }
+    LaunchedEffect(proposalOpen) {
+        if (proposalOpen) {
+            proposals.reloadOptions()
+            proposals.loadMine()
+        }
+    }
+    // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
+    LaunchedEffect(destination) {
+        if (destination == Destination.PROFILE) {
+            calendarLink.load()
+            proposals.loadOptions()
+        }
+    }
+    LaunchedEffect(assigning, openedProgram) { if (assigning) openedProgram?.let(programs::loadAssignment) }
     LaunchedEffect(viewingRegistrations, openedProgram) {
         val id = openedProgram
         if (viewingRegistrations && id != null) programs.loadRegistrations(id)
@@ -360,6 +600,35 @@ private fun MainContent(
         onDispose { OpenChat.id = null }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // Das offene Lager lädt sein Detail und bleibt im Vordergrund aktuell (Ereignisstrom, Feed, Warteschlange).
+    LaunchedEffect(campId) {
+        val id = campId
+        openedTask = null; ressortsOpen = false; openedRessort = null
+        meetingsOpen = false; openedMeeting = null; minutesFor = null; modeFor = null
+        mentionsOpen = false; inboxOpen = false; lagerNotificationsOpen = false; postEditorOpen = false; editedPost = null
+        planArea = null; liveArea = null; liveDay = null
+        if (id == null) {
+            camp.close()
+            tasks.close()
+            meetings.close()
+            comms.close()
+            planning.close()
+            live.close()
+            archive.close()
+        } else {
+            camp.open(id)
+            tasks.open(id)
+            meetings.open(id)
+            comms.open(id)
+            planning.open(id)
+            live.open(id)
+            archive.open(id)
+            pendingArea?.let { applyCampArea(it); pendingArea = null }
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { camp.follow(id) }
+        }
+    }
+    // Die Lagerliste und die Zähler lesen still neu, wenn der Bereich wechselt.
+    LaunchedEffect(campArea) { camp.refreshCamps() }
     // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
     // fragt sie nur, solange sie sichtbar ist.
     LaunchedEffect(destination, openedChat, phoneOpen) {
@@ -385,9 +654,87 @@ private fun MainContent(
         val chatUnread = (chat.list.collectAsState().value as? ApiResult.Ok)?.value?.chats?.sumOf { it.unread } ?: 0
         val tabState = rememberSaveableStateHolder()
         val cropping = croppingImage
+        val camps = (camp.camps.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
+        val campUnread by camp.unread.collectAsState()
+        val queueState = campId?.let { camp.queueFor(it).state.collectAsState().value } ?: QueueState()
+        val online by camp.online.collectAsState()
+        val lostAccess by camp.lostAccess.collectAsState()
+        val campDetail = camp.detail.collectAsState().value.let { if (lostAccess != null && lostAccess == campId) ApiResult.Failure(ApiError.FORBIDDEN) else it }
+        val conflict = conflictId?.let { id -> queueState.changes.firstOrNull { it.clientOpId == id && it.state == ChangeState.CONFLICT } }
+        val openedCamp = (campDetail as? ApiResult.Ok)?.value?.takeIf { it.id == campId }
+        val rights = TaskRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        val meetingRights = MeetingRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        val planRights = PlanRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        val liveRights = LiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        val archiveRights = ArchiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
+        // Wer die Konfliktlösung offen hat: ein Konflikt aus den Sitzungen oder der Kommunikation (ohne Warteschlange).
+        val meetingConflict by meetings.writer.conflict.collectAsState()
+        val commsConflict by comms.writer.conflict.collectAsState()
+        val planConflict by planning.writer.conflict.collectAsState()
+        val liveConflict by live.writer.conflict.collectAsState()
+        val archiveConflict by archive.writer.conflict.collectAsState()
+        val planPeople by planning.people.collectAsState()
+        val directConflict = meetingConflict ?: commsConflict ?: planConflict ?: liveConflict ?: archiveConflict
+        val taskList = (tasks.tasks.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
+        val memberList by meetings.members.collectAsState()
+        // Namen für die Marken @{person:…} in Titeln und Texten: bekannte Personen aus Aufgaben und Mitgliedern.
+        val personNames = remember(taskList, memberList) {
+            buildMap {
+                TaskRules.people(taskList, tasks.self).forEach { put(it.id, it.display) }
+                memberList.forEach { put(it.id, it.display) }
+            }
+        }
+        // Konten, die andere Module schon kennen, ergänzen die Auswahl in der Einteilung (es gibt keine Route mit allen Mitgliedern).
+        LaunchedEffect(taskList, memberList) {
+            planning.setExtraPeople(
+                TaskRules.people(taskList, tasks.self).map { RessortPerson(it.id, it.name, it.ceviName) } +
+                    memberList.map { RessortPerson(it.id, it.name, it.ceviName) },
+            )
+        }
+        val modeSwitch = if (camps.isEmpty()) null else {
+            val programs = stringResource(R.string.mode_area_programs)
+            val lager = stringResource(R.string.mode_area_camp)
+            if (campArea) {
+                ModeSwitch(openedCamp?.title ?: stringResource(R.string.camps_title), programs, news = false) { modeMenuOpen = true }
+            } else {
+                ModeSwitch(stringResource(R.string.department), lager, news = campUnread.values.any { it > 0 }) { modeMenuOpen = true }
+            }
+        }
+        // Ein Ziel aus einer Benachrichtigung, «Neu für dich» oder einem Push: derselbe Weg überall.
+        val openTarget: (CampTarget) -> Unit = { goal ->
+            when (goal) {
+                is CampTarget.Task -> openedTask = goal.id
+                CampTarget.Mentions -> mentionsOpen = true
+                CampTarget.Pinboard -> { lagerNotificationsOpen = false; destination = Destination.PINBOARD }
+                CampTarget.Inbox -> inboxOpen = true
+                CampTarget.Notifications -> lagerNotificationsOpen = true
+                CampTarget.Swaps -> { lagerNotificationsOpen = false; planArea = PlanArea.SWAPS }
+                CampTarget.Attendance -> { lagerNotificationsOpen = false; liveArea = LiveArea.ATTENDANCE }
+                CampTarget.Start -> { lagerNotificationsOpen = false; destination = Destination.START }
+            }
+        }
         val target = when {
             cropping != null -> Screen.CropImage(cropping)
-            programId != null && assigning && assignedProgram != null -> Screen.Assign(programId)
+            campArea && campId != null && directConflict != null -> Screen.DirectConflict
+            conflict != null -> Screen.Conflict(conflict.clientOpId)
+            queueOpen && campArea && campId != null -> Screen.Queue
+            campArea && campId != null && planArea != null -> Screen.Plan(planArea!!)
+            campArea && campId != null && openedRessort != null -> Screen.RessortPage(openedRessort!!)
+            campArea && campId != null && openedTask != null -> Screen.Task(openedTask!!)
+            campArea && campId != null && liveArea != null -> Screen.Live(liveArea!!)
+            campArea && campId != null && ressortsOpen -> Screen.Ressorts
+            campArea && campId != null && postEditorOpen -> Screen.PostEditor(editedPost)
+            campArea && campId != null && modeFor != null -> Screen.MeetingMode(modeFor!!)
+            campArea && campId != null && minutesFor != null -> Screen.Minutes(minutesFor!!)
+            campArea && campId != null && openedMeeting != null -> Screen.Agenda(openedMeeting!!)
+            campArea && campId != null && meetingsOpen -> Screen.Meetings
+            campArea && campId != null && mentionsOpen -> Screen.Mentions
+            campArea && campId != null && inboxOpen -> Screen.Inbox
+            campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
+            openedEvent != null -> Screen.Event(openedEvent!!)
+            proposalOpen -> Screen.Proposal
+            programId != null && assigning -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
             chatId != null -> Screen.Chat(chatId)
@@ -395,6 +742,20 @@ private fun MainContent(
             notificationsOpen -> Screen.Notifications
             changingPassword -> Screen.Password
             else -> Screen.Home
+        }
+        // Eine offene Liste braucht keinen Push zu ihrer eigenen Art (Pinnwand, Erwähnungen, Eingang).
+        val openPushTypes = when {
+            target == Screen.Mentions -> setOf("lager_erwaehnung")
+            target == Screen.Inbox -> setOf("lager_eingang")
+            // Nur die Leitung sieht Entscheide im Feed; wer nur die eigenen Anfragen sieht, bekommt den Push weiterhin.
+            target == Screen.Plan(PlanArea.SWAPS) && planRights.decideSwap -> setOf("lager_einteilung")
+            target == Screen.Live(LiveArea.ATTENDANCE) -> setOf("lager_anwesenheit")
+            target == Screen.Home && campArea && campId != null && destination == Destination.PINBOARD -> setOf("lager_pinnwand")
+            else -> emptySet()
+        }
+        DisposableEffect(openPushTypes) {
+            OpenCampObject.types = openPushTypes
+            onDispose { OpenCampObject.types = emptySet() }
         }
         val motion = rememberMotionEnabled()
         AnimatedContent(
@@ -405,15 +766,46 @@ private fun MainContent(
             when (screen) {
                 is Screen.Assign -> {
                     val programId = screen.programId
-                    val assigned = assignedProgram ?: return@AnimatedContent
                     val leave = { assigning = false; programs.resetEdit() }
                     BackHandler(onBack = leave)
                     val edit = programs.edit.collectAsState().value
                     AssignmentScreen(
-                        assigned, programs.ageGroups.collectAsState().value, programProfile, edit,
+                        programs.assignable.collectAsState().value, programs.ageGroups.collectAsState().value, programProfile, edit,
                         onSave = { request -> programs.saveAssignment(programId, request, leave) },
                         onBack = leave,
-                        onRetry = programs::loadAgeGroups,
+                        onRetry = { programs.loadAssignment(programId) },
+                    )
+                }
+                is Screen.Event -> {
+                    val leave = { openedEvent = null }
+                    BackHandler(onBack = leave)
+                    EventScreen(
+                        form = eventForm.form.collectAsState().value,
+                        states = eventForm.states.collectAsState().value,
+                        onAnswer = eventForm::setAnswer,
+                        onText = eventForm::setText,
+                        onSubmit = eventForm::submit,
+                        onUnregister = eventForm::unregister,
+                        onDismiss = eventForm::dismiss,
+                        onBack = leave,
+                        onRetry = { eventForm.load(screen.eventId) },
+                    )
+                }
+                Screen.Proposal -> {
+                    val leave = { proposalOpen = false; proposals.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    ProposalScreen(
+                        options = proposals.options.collectAsState().value,
+                        draft = proposals.draft.collectAsState().value,
+                        send = proposals.send.collectAsState().value,
+                        mine = proposals.mine.collectAsState().value,
+                        onEdit = proposals::edit,
+                        onSubmit = proposals::submit,
+                        onUndo = proposals::undo,
+                        onWithdraw = proposals::withdraw,
+                        onDismiss = proposals::dismissNotice,
+                        onBack = leave,
+                        onRetry = proposals::reloadOptions,
                     )
                 }
                 is Screen.Registrations -> {
@@ -451,6 +843,7 @@ private fun MainContent(
                             onLeader = { attending -> programs.rsvpLeader(programId, attending) },
                             onAssign = { assigning = true },
                             onRegistrations = { viewingRegistrations = true },
+                            onEvent = { openedEvent = it },
                             onBack = { openedProgram = null },
                             onRetry = { programs.loadDetail(programId) },
                         )
@@ -499,6 +892,188 @@ private fun MainContent(
                         onBack = leave,
                     )
                 }
+                Screen.DirectConflict -> {
+                    val pending = directConflict ?: return@AnimatedContent
+                    // Ein Konflikt ohne Warteschlange verschwindet nie still: Es gibt keinen Weg zurück, nur die zwei Entscheide.
+                    BackHandler { }
+                    ConflictScreen(pending.change, onKeepMine = pending.keepMine, onTakeCurrent = pending.takeCurrent, onBack = null)
+                }
+                Screen.Meetings -> {
+                    val leave = { meetingsOpen = false }
+                    BackHandler(onBack = leave)
+                    MeetingListScreen(
+                        meetings, openedCamp, meetingRights, queueState, online,
+                        onOpenQueue = { queueOpen = true },
+                        onOpen = { openedMeeting = it },
+                        onBack = leave,
+                    )
+                }
+                is Screen.Agenda -> {
+                    val leave = { openedMeeting = null; meetings.closeMeeting() }
+                    BackHandler(onBack = leave)
+                    AgendaScreen(
+                        meetings, screen.meetingId, openedCamp, meetingRights, queueState, online, taskList, personNames,
+                        onOpenQueue = { queueOpen = true },
+                        onStartMode = { modeFor = screen.meetingId },
+                        onOpenMinutes = { minutesFor = screen.meetingId },
+                        onShareCalendar = { meetings.loadCalendar(screen.meetingId) },
+                        onBack = leave,
+                    )
+                }
+                is Screen.Minutes -> {
+                    val leave = { minutesFor = null }
+                    BackHandler(onBack = leave)
+                    MinutesScreen(
+                        meetings, screen.meetingId, openedCamp, meetingRights, queueState, online, personNames,
+                        onOpenQueue = { queueOpen = true },
+                        onShareCalendar = { meetings.loadCalendar(screen.meetingId) },
+                        onBack = leave,
+                    )
+                }
+                is Screen.MeetingMode -> {
+                    val leave = { modeFor = null; meetings.closeMode() }
+                    BackHandler(onBack = leave)
+                    MeetingModeScreen(
+                        meetings, screen.meetingId, openedCamp, meetingRights, queueState, online, personNames,
+                        onOpenQueue = { queueOpen = true },
+                        onOpenRessort = { openedRessort = it },
+                        onEnd = leave,
+                    )
+                }
+                is Screen.Live -> {
+                    val leave = if (screen.area == LiveArea.DAY) ({ liveArea = LiveArea.TODAY; liveDay = null; live.closeDay() }) else ({ liveArea = null; live.dismissNotice(); archive.dismissNotice(); archive.clearSearch() })
+                    BackHandler(onBack = leave)
+                    LiveScreen(
+                        screen.area, liveDay,
+                        LiveFrame(live, openedCamp, liveRights, queueState, online, { queueOpen = true }, planPeople, tasks.self, leave),
+                        LiveNav(
+                            onOpenArea = { liveArea = it },
+                            onOpenDay = { liveDay = it; liveArea = LiveArea.DAY },
+                            onOpenTask = { openedTask = it },
+                            onOpenShifts = { liveArea = null; planArea = PlanArea.SHIFTS },
+                            onOpenSearchHit = { hit ->
+                                archive.clearSearch()
+                                when (hit) {
+                                    is SearchDestination.Task -> openedTask = hit.id
+                                    is SearchDestination.Live -> liveArea = hit.area
+                                    is SearchDestination.Plan -> { liveArea = null; planArea = hit.area }
+                                    SearchDestination.Meetings -> { liveArea = null; meetingsOpen = true }
+                                    SearchDestination.Pinboard -> { liveArea = null; destination = Destination.PINBOARD }
+                                    SearchDestination.Inbox -> { liveArea = null; inboxOpen = true }
+                                    SearchDestination.Ressorts -> { liveArea = null; ressortsOpen = true }
+                                }
+                            },
+                        ),
+                        tasks, taskList, archive, archiveRights,
+                    )
+                }
+                is Screen.Plan -> {
+                    val leave = { planArea = null; planning.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    PlanScreen(
+                        screen.area, planning, openedCamp, planRights, queueState, online,
+                        onOpenQueue = { queueOpen = true },
+                        onOpenArea = { planArea = it },
+                        onBack = leave,
+                    )
+                }
+                Screen.Mentions -> {
+                    val leave = { mentionsOpen = false; meetings.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    MentionsScreen(
+                        meetings, openedCamp, meetingRights, queueState, online, personNames,
+                        onOpenQueue = { queueOpen = true },
+                        onOpenTask = { openedTask = it },
+                        onBack = leave,
+                    )
+                }
+                Screen.Inbox -> {
+                    val leave = { inboxOpen = false; comms.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    LaunchedEffect(Unit) {
+                        if (meetingRights.answerInbox) tasks.loadRessortsIfNeeded()
+                        if (meetingRights.editMeetings) meetings.loadMeetings(silent = true)
+                    }
+                    val meetingList = (meetings.meetings.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
+                    InboxScreen(
+                        comms, openedCamp, meetingRights, queueState, online,
+                        ressorts = (tasks.ressorts.collectAsState().value as? ApiResult.Ok)?.value.orEmpty(),
+                        upcoming = MeetingRules.upcoming(meetingList, todayInCamp()),
+                        onOpenQueue = { queueOpen = true },
+                        onBack = leave,
+                    )
+                }
+                Screen.LagerNotifications -> {
+                    val leave = { lagerNotificationsOpen = false }
+                    BackHandler(onBack = leave)
+                    LagerNotificationsScreen(
+                        comms, openedCamp, queueState, online, taskList,
+                        onOpenQueue = { queueOpen = true },
+                        onOpenTarget = openTarget,
+                        onBack = leave,
+                    )
+                }
+                is Screen.PostEditor -> {
+                    val leave = { postEditorOpen = false; editedPost = null }
+                    BackHandler(onBack = leave)
+                    val existing = screen.postId?.let { id -> (comms.posts.collectAsState().value as? ApiResult.Ok)?.value?.firstOrNull { it.id == id } }
+                    if (screen.postId != null && existing == null) {
+                        SideEffect { leave() }
+                    } else {
+                        PostEditorScreen(comms, existing, openedCamp, queueState, online, onOpenQueue = { queueOpen = true }, onBack = leave)
+                    }
+                }
+                is Screen.Conflict -> {
+                    val change = conflict ?: return@AnimatedContent
+                    val leave = { conflictId = null }
+                    BackHandler(onBack = leave)
+                    val queue = camp.queueFor(campId ?: return@AnimatedContent)
+                    ConflictScreen(
+                        change,
+                        onKeepMine = { queue.keepMine(change.clientOpId); conflictId = null; campId?.let(camp::sendNow) },
+                        onTakeCurrent = { queue.discard(change.clientOpId); conflictId = null },
+                        onBack = leave,
+                    )
+                }
+                Screen.Queue -> {
+                    val id = campId ?: return@AnimatedContent
+                    val queue = camp.queueFor(id)
+                    val leave = { queue.clearSent(); queueOpen = false }
+                    BackHandler(onBack = leave)
+                    QueueScreen(
+                        queueState, online,
+                        onSendNow = { camp.sendNow(id) },
+                        onDecide = { conflictId = it.clientOpId },
+                        onDiscard = { queue.discard(it.clientOpId) },
+                        onBack = leave,
+                    )
+                }
+                is Screen.Task -> {
+                    val leave = { openedTask = null }
+                    BackHandler(onBack = leave)
+                    TaskDetailScreen(
+                        tasks, screen.taskId, openedCamp, rights, queueState, online,
+                        onBack = leave,
+                        onOpenQueue = { openedTask = null; queueOpen = true },
+                        onOpenRessort = { openedRessort = it },
+                    )
+                }
+                Screen.Ressorts -> {
+                    val leave = { ressortsOpen = false }
+                    BackHandler(onBack = leave)
+                    RessortListScreen(tasks, onBack = leave, onOpen = { openedRessort = it })
+                }
+                is Screen.RessortPage -> {
+                    val leave = { openedRessort = null }
+                    BackHandler(onBack = leave)
+                    LaunchedEffect(screen.ressortId) { if (meetingRights.readInbox) comms.loadInbox(silent = true) }
+                    val feedback = if (meetingRights.readInbox) {
+                        (comms.inbox.collectAsState().value as? ApiResult.Ok)?.value?.filter { it.ressortId == screen.ressortId }
+                    } else {
+                        null
+                    }
+                    RessortScreen(tasks, screen.ressortId, rights, onBack = leave, onOpenTask = { openedTask = it; openedRessort = null }, feedback = feedback)
+                }
                 Screen.Notifications -> {
                     val leave = { notificationsOpen = false; push.clearError() }
                     BackHandler(onBack = leave)
@@ -509,6 +1084,10 @@ private fun MainContent(
                         onPrograms = push::setPrograms,
                         onRegistrations = push::setRegistrations,
                         onBack = leave,
+                        lager = comms.settings.collectAsState().value,
+                        onLager = comms::setSetting,
+                        onLagerRetry = comms::loadSettings,
+                        lagerBanner = { WriteErrorBanner(comms.writer) },
                     )
                 }
                 is Screen.CropImage -> {
@@ -527,7 +1106,13 @@ private fun MainContent(
                     BackHandler(onBack = leave)
                     PasswordScreen(first = false, form, onSave = auth::changePassword, onBack = leave)
                 }
-                Screen.Home -> MainScaffold(destination, onDestination = { destination = it }, unread = chatUnread) {
+                Screen.Home -> CompositionLocalProvider(LocalModeSwitch provides modeSwitch) { MainScaffold(
+                    // Ohne gewähltes Lager (Lagerwahl) steht im Dock nichts als aktiv.
+                    active = if (campArea && campId == null && destination == Destination.START) null else destination,
+                    onDestination = { if (it == Destination.MORE) moreOpen = true else if ((it != Destination.START && it != Destination.TASKS && it != Destination.PINBOARD) || campId != null) destination = it },
+                    unread = chatUnread,
+                    destinations = if (campArea) Destination.CAMP else Destination.PROGRAM,
+                ) {
                     AnimatedContent(
                         destination,
                         modifier = Modifier.fillMaxSize(),
@@ -555,11 +1140,74 @@ private fun MainContent(
                                 onOpenSupport = onOpenSupport,
                                 onOpenDeleteAccount = onOpenDeleteAccount,
                                 onSignOut = auth::signOut,
-                                onLeave = { auth.clearPasswordSaved(); auth.clearImageError() },
+                                onLeave = { auth.clearPasswordSaved(); auth.clearImageError(); calendarLink.forget() },
+                                termine = {
+                                    GroupsSection(account)
+                                    CalendarLinkSection(
+                                        status = calendarLink.status.collectAsState().value,
+                                        hasFresh = calendarLink.fresh.collectAsState().value != null,
+                                        busy = calendarLink.busy.collectAsState().value,
+                                        url = calendarLink::url,
+                                        onCreate = calendarLink::create,
+                                        onRevoke = calendarLink::revoke,
+                                        onReload = calendarLink::reload,
+                                        onDismissError = calendarLink::dismissError,
+                                    )
+                                    if ((proposals.options.collectAsState().value as? ApiResult.Ok)?.value?.mayPropose == true) {
+                                        SettingsCard {
+                                            SettingsRow(R.drawable.ic_calendar_plus, stringResource(R.string.proposal_row), onClick = { proposalOpen = true }, chevron = true)
+                                        }
+                                    }
+                                },
                                 lockAvailable = lockAvailable,
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,
                             )
+                        } else if (tab == Destination.TASKS && campId != null) {
+                            TasksScreen(
+                                tasks, openedCamp, rights, queueState, online,
+                                onOpenQueue = { queueOpen = true },
+                                onOpenTask = { openedTask = it },
+                            )
+                        } else if (tab == Destination.PINBOARD && campId != null) {
+                            PinboardScreen(
+                                comms, openedCamp, meetingRights, queueState, online,
+                                onOpenQueue = { queueOpen = true },
+                                onNewPost = { editedPost = null; postEditorOpen = true },
+                                onEditPost = { editedPost = it.id; postEditorOpen = true },
+                            )
+                        } else if (tab == Destination.START || tab == Destination.TASKS || tab == Destination.PINBOARD) {
+                            val id = campId
+                            if (id == null) {
+                                CampListScreen(
+                                    camp.camps.collectAsState().value,
+                                    camp.pushMissing.collectAsState().value,
+                                    onDismissPushMissing = camp::dismissPushMissing,
+                                    onOpen = { campId = it },
+                                    onRetry = camp::loadCamps,
+                                )
+                            } else {
+                                CampStartScreen(
+                                    campDetail, queueState, online,
+                                    onRetry = { camp.open(id) },
+                                    onToCamps = { campId = null },
+                                    onOpenQueue = { queueOpen = true },
+                                    fab = { StartFab(tasks, rights) },
+                                    body = { c ->
+                                        if (rights.seeLeadershipStart) {
+                                            LeadershipStart(
+                                                tasks, c, onOpenTask = { openedTask = it }, onOpenTasks = { destination = Destination.TASKS },
+                                                onOpenTarget = openTarget, onOpenMeeting = { openedMeeting = it }, onOpenToday = { liveArea = LiveArea.TODAY },
+                                            )
+                                        } else {
+                                            TeamStart(
+                                                tasks, c, onOpenTask = { openedTask = it }, onOpenTasks = { destination = Destination.TASKS }, onOpenTarget = openTarget,
+                                                live = live, onOpenToday = { liveArea = LiveArea.TODAY }, onOpenShifts = { planArea = PlanArea.SHIFTS }, onOpenPacking = { liveArea = LiveArea.PACKING },
+                                            )
+                                        }
+                                    },
+                                )
+                            }
                         } else {
                             ChatListScreen(
                                 chat.list.collectAsState().value,
@@ -574,8 +1222,76 @@ private fun MainContent(
                         }
                         }
                     }
-                }
+                } }
             }
+        }
+        if (tasks.quickOpen.collectAsState().value && rights.edit) QuickCaptureSheet(tasks)
+        if (modeMenuOpen) {
+            ModeMenu(
+                inCamp = if (campArea) campId ?: "" else null,
+                camps = camps,
+                unread = campUnread,
+                onDepartment = { campArea = false; campId = null; destination = Destination.PROGRAMS; modeMenuOpen = false },
+                onCamp = { campArea = true; campId = it; destination = Destination.START; modeMenuOpen = false },
+                onAllCamps = { campArea = true; campId = null; destination = Destination.START; modeMenuOpen = false },
+                onDismiss = { modeMenuOpen = false },
+            )
+        }
+        if (moreOpen) {
+            val you = listOfNotNull(
+                MoreEntry(R.string.more_profile, R.drawable.ic_profile) { moreOpen = false; campArea = false; campId = null; destination = Destination.PROFILE },
+                if (campId != null) MoreEntry(R.string.mentions_title, R.drawable.ic_chat) { moreOpen = false; mentionsOpen = true } else null,
+                if (campId != null && (meetingRights.readInbox || meetingRights.readOwnInbox)) MoreEntry(R.string.inbox_title, R.drawable.ic_send) { moreOpen = false; inboxOpen = true } else null,
+                if (campId != null) MoreEntry(R.string.notif_title, R.drawable.ic_bell) { moreOpen = false; lagerNotificationsOpen = true } else null,
+                if (campId != null) MoreEntry(R.string.queue_title, R.drawable.ic_clock) { moreOpen = false; queueOpen = true } else null,
+            )
+            val plan = if (campId != null) {
+                listOfNotNull(
+                    MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE },
+                    MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true },
+                    MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS },
+                    MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS },
+                    MoreEntry(R.string.groups_title, R.drawable.ic_group) { moreOpen = false; planArea = PlanArea.GROUPS },
+                    MoreEntry(R.string.shifts_title, R.drawable.ic_list_check) { moreOpen = false; planArea = PlanArea.SHIFTS },
+                    MoreEntry(R.string.swaps_title, R.drawable.ic_refresh) { moreOpen = false; planArea = PlanArea.SWAPS },
+                    MoreEntry(R.string.count_title, R.drawable.ic_check) { moreOpen = false; planArea = PlanArea.COUNT },
+                    MoreEntry(R.string.participants_title, R.drawable.ic_profile) { moreOpen = false; planArea = PlanArea.PARTICIPANTS },
+                    if (rights.readRessorts) MoreEntry(R.string.more_ressorts, R.drawable.ic_group) { moreOpen = false; ressortsOpen = true } else null,
+                )
+            } else {
+                emptyList()
+            }
+            val inCamp = if (campId != null) {
+                listOfNotNull(
+                    MoreEntry(R.string.today_title, R.drawable.ic_home) { moreOpen = false; liveArea = LiveArea.TODAY },
+                    if (openedCamp?.role != CampRole.READ_ONLY || liveRights.readAttendance) MoreEntry(R.string.att_title, R.drawable.ic_check) { moreOpen = false; liveArea = LiveArea.ATTENDANCE } else null,
+                    if (liveRights.readShopping) MoreEntry(R.string.shop_title, R.drawable.ic_list_check) { moreOpen = false; liveArea = LiveArea.SHOPPING } else null,
+                    MoreEntry(R.string.pack_title, R.drawable.ic_bring_along) { moreOpen = false; liveArea = LiveArea.PACKING },
+                    MoreEntry(R.string.emerg_title, R.drawable.ic_phone) { moreOpen = false; liveArea = LiveArea.EMERGENCY },
+                )
+            } else {
+                emptyList()
+            }
+            val files = if (campId != null) {
+                listOfNotNull(
+                    MoreEntry(R.string.infos_title, R.drawable.ic_info) { moreOpen = false; liveArea = LiveArea.INFOS },
+                    MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS },
+                    if (archiveRights.readAddressBook) MoreEntry(R.string.ab_title, R.drawable.ic_book) { moreOpen = false; liveArea = LiveArea.ADDRESSBOOK } else null,
+                    MoreEntry(R.string.print_title, R.drawable.ic_send) { moreOpen = false; liveArea = LiveArea.PRINTOUTS },
+                    MoreEntry(R.string.search_title, R.drawable.ic_search) { moreOpen = false; liveArea = LiveArea.SEARCH },
+                )
+            } else {
+                emptyList()
+            }
+            MoreSheet(
+                listOfNotNull(
+                    if (plan.isEmpty()) null else R.string.more_section_plan to plan,
+                    if (inCamp.isEmpty()) null else R.string.more_section_live to inCamp,
+                    if (files.isEmpty()) null else R.string.more_section_files to files,
+                    R.string.more_section_you to you,
+                ),
+                onDismiss = { moreOpen = false },
+            )
         }
     }
 }

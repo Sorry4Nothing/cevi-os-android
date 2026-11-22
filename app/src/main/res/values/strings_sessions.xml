@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lager, Schnitt A2: Sitzungen und Kommunikation (Entwurf L11 bis L19). Schweizer Schreibweise, «du», Buttons sind Verben. -->
+<resources>
+    <!-- Navigation -->
+    <string name="tab_pinboard">Pinnwand</string>
+    <string name="back_to_meetings">Zurück zu Höcks</string>
+    <string name="back_to_start">Zurück zum Start</string>
+    <string name="back_to_pinboard">Zurück zur Pinnwand</string>
+
+    <!-- Allgemein -->
+    <string name="error_field_required">Das braucht eine Angabe.</string>
+    <string name="error_check_fields">Bitte prüfe die markierten Angaben.</string>
+    <string name="error_time_format">Gib die Zeit so ein: 19:30.</string>
+    <string name="error_window_invalid">Das Ende muss nach dem Beginn liegen.</string>
+    <string name="error_file_link">Der Link ist nicht erlaubt. Er muss mit https:// beginnen und von deiner Abteilung freigegeben sein.</string>
+    <string name="error_meeting_has_agenda">Dieser Höck hat noch Traktanden. Verschiebe oder lösche sie zuerst.</string>
+    <string name="error_poll_closed">Diese Umfrage ist geschlossen.</string>
+    <string name="error_poll_exists">Diese Mitteilung hat schon eine Umfrage.</string>
+    <string name="error_not_member">Diese Person gehört nicht zum Lager.</string>
+    <string name="error_mention_invalid">Die Erwähnung geht nicht. Prüfe, ob die Person das sehen darf.</string>
+    <string name="mention_unknown">Person</string>
+
+    <!-- Feldnamen im Konfliktbildschirm -->
+    <string name="field_text">Text</string>
+    <string name="field_decision">Entscheid</string>
+    <string name="field_date">Datum</string>
+    <string name="field_time">Zeit</string>
+    <string name="field_place">Ort</string>
+    <string name="field_guests">Gäste</string>
+    <string name="field_kind">Art</string>
+    <string name="field_important">Wichtig</string>
+    <string name="field_pinned">Angeheftet</string>
+    <string name="field_visible_from">Sichtbar ab</string>
+    <string name="field_visible_until">Sichtbar bis</string>
+    <string name="field_reply">Antwort</string>
+    <string name="field_closed">Geschlossen</string>
+    <string name="field_responsible">Verantwortliche</string>
+    <string name="field_recipients">Empfänger</string>
+
+    <!-- Höcks (L11) -->
+    <string name="meetings_title">Höcks</string>
+    <string name="meetings_loading">Höcks werden geladen</string>
+    <string name="meetings_upcoming">Kommende</string>
+    <string name="meetings_past">Vergangene</string>
+    <string name="meetings_empty_title">Noch kein Höck</string>
+    <string name="meetings_empty_text">Plane den ersten Höck mit «Neuer Höck».</string>
+    <string name="meetings_new">Neuer Höck</string>
+    <string name="meetings_like_last">Wie der letzte</string>
+    <string name="meetings_open">Höck öffnen</string>
+    <string name="meetings_minutes_chip">Protokoll</string>
+    <string name="meetings_has_minutes">mit Protokoll</string>
+    <string name="meeting_editor_new">Neuer Höck</string>
+    <string name="meeting_editor_edit">Höck ändern</string>
+    <string name="meeting_field_title">Titel</string>
+    <string name="meeting_field_kind">Wer sieht den Höck?</string>
+    <string name="meeting_kind_leadership">Lagerleitung</string>
+    <string name="meeting_kind_team">Alle im Lager</string>
+    <string name="meeting_kind_leadership_hint">Das Team sieht diesen Höck nicht.</string>
+    <string name="meeting_kind_team_hint">Das Team sieht Datum, Zeit, Titel und Ort. Die Traktanden bleiben bei der Leitung.</string>
+    <string name="meeting_field_date_pick">Datum wählen</string>
+    <string name="meeting_field_time">Zeit (optional)</string>
+    <string name="meeting_field_time_hint">24 Stunden, zum Beispiel 19:30</string>
+    <string name="meeting_field_place">Ort (optional)</string>
+    <string name="meeting_field_guests">Gäste (optional)</string>
+    <string name="meeting_edit">Höck ändern</string>
+    <string name="meeting_delete">Höck löschen</string>
+    <string name="meeting_delete_title">«%1$s» löschen?</string>
+    <string name="meeting_delete_text">Ein Höck mit Traktanden lässt sich nicht löschen. Verschiebe die Traktanden zuerst.</string>
+    <string name="meeting_calendar">Als Datei für den Kalender</string>
+    <string name="meeting_guests">Gäste: %1$s</string>
+
+    <!-- Traktanden (L12) -->
+    <string name="agenda_title">Traktanden</string>
+    <string name="agenda_loading">Traktanden werden geladen</string>
+    <string name="agenda_more">Weitere Aktionen</string>
+    <string name="agenda_empty_title">Keine Traktanden</string>
+    <string name="agenda_empty_text">Füge ein Traktandum hinzu oder übernimm offene Aufgaben.</string>
+    <string name="agenda_reorder">Reihenfolge ändern</string>
+    <string name="agenda_reorder_hint">Nutze «Nach oben» und «Nach unten», um ein Traktandum zu verschieben.</string>
+    <string name="agenda_number">Traktandum %1$d: %2$s</string>
+    <string name="agenda_done">Besprochen</string>
+    <string name="agenda_decision">Entscheid: %1$s</string>
+    <string name="agenda_edit">Traktandum bearbeiten</string>
+    <string name="agenda_actions">Aktionen für %1$s</string>
+    <string name="agenda_move_up">%1$s nach oben</string>
+    <string name="agenda_move_down">%1$s nach unten</string>
+    <string name="agenda_move_up_short">Nach oben</string>
+    <string name="agenda_move_down_short">Nach unten</string>
+    <string name="agenda_mark_done">Als besprochen markieren</string>
+    <string name="agenda_mark_open">Wieder öffnen</string>
+    <string name="agenda_to_next">Auf nächsten Höck</string>
+    <string name="agenda_moved">«%1$s» auf den nächsten Höck verschoben.</string>
+    <plurals name="agenda_taken_over">
+        <item quantity="one">%d Punkt in diesen Höck übernommen.</item>
+        <item quantity="other">%d Punkte in diesen Höck übernommen.</item>
+    </plurals>
+    <string name="agenda_waiting">Warten auf einen Höck</string>
+    <string name="agenda_take_over">In diesen Höck übernehmen</string>
+    <string name="agenda_from_tasks">Aus Aufgaben hinzufügen</string>
+    <string name="agenda_no_tasks">Keine offenen Aufgaben zum Hinzufügen.</string>
+    <string name="agenda_add">Traktandum hinzufügen</string>
+    <string name="agenda_open_minutes">Protokoll öffnen</string>
+    <string name="agenda_start_mode">Höck-Modus starten</string>
+    <string name="agenda_delete_title">«%1$s» löschen?</string>
+    <string name="agenda_delete_text">Das Traktandum ist danach weg.</string>
+    <string name="agenda_editor_new">Neues Traktandum</string>
+    <string name="agenda_editor_edit">Traktandum bearbeiten</string>
+    <string name="agenda_field_title">Titel</string>
+    <string name="agenda_field_text">Text (optional)</string>
+    <string name="agenda_field_decision">Entscheid (optional)</string>
+    <string name="agenda_field_responsible">Verantwortliche</string>
+    <string name="agenda_field_mention">Person erwähnen</string>
+    <string name="agenda_mention_hint">Eine Erwähnung benachrichtigt die Person. Im Text steht sie als Marke, angezeigt wird «@Name».</string>
+
+    <!-- Protokoll (L13) -->
+    <string name="minutes_title">Protokoll</string>
+    <string name="minutes_loading">Protokoll wird geladen</string>
+    <string name="minutes_file">Datei</string>
+    <string name="minutes_none">Noch keine Datei verknüpft. Das Protokoll liegt am Ablageort deiner Abteilung.</string>
+    <string name="minutes_link">Protokoll verknüpfen</string>
+    <string name="minutes_link_text">Du verknüpfst eine Datei am Ablageort. Cevi OS speichert nur den Namen und den Link, nie den Inhalt.</string>
+    <string name="minutes_default_title">Protokoll %1$s</string>
+    <string name="minutes_field_title">Titel</string>
+    <string name="minutes_file_gone">Datei nicht mehr verknüpft</string>
+    <string name="minutes_open">Datei öffnen</string>
+    <string name="minutes_rename">Titel ändern</string>
+    <string name="minutes_present">Anwesende</string>
+    <string name="minutes_present_none">Niemand abgehakt.</string>
+    <string name="minutes_agenda">Traktanden</string>
+    <string name="minutes_decisions">Beschlüsse</string>
+    <string name="minutes_decisions_none">Noch keine Beschlüsse.</string>
+    <string name="decision_add">Beschluss hinzufügen</string>
+    <string name="decision_edit">Beschluss ändern</string>
+    <string name="decision_field_text">Beschluss</string>
+    <string name="decision_delete_title">Beschluss löschen?</string>
+    <string name="decision_delete_text">Der Beschluss ist danach weg.</string>
+    <string name="file_field_name">Name der Datei</string>
+    <string name="file_field_link">Link</string>
+    <string name="file_field_link_hint">Beginnt mit https://</string>
+
+    <!-- Höck-Modus (L14) -->
+    <string name="mode_title">Höck läuft</string>
+    <string name="mode_subtitle">%1$s, Traktandum %2$d von %3$d</string>
+    <string name="mode_end">Höck-Modus beenden</string>
+    <string name="mode_loading">Höck wird geladen</string>
+    <string name="mode_item_of">Traktandum %1$d von %2$d</string>
+    <string name="mode_decision">Entscheid festhalten</string>
+    <string name="mode_previous">Zurück</string>
+    <string name="mode_next">Weiter</string>
+    <string name="mode_present">Anwesende, %1$d von %2$d</string>
+    <string name="mode_is_present">anwesend</string>
+    <string name="mode_is_absent">nicht abgehakt</string>
+    <string name="mode_ressort_round">Ressort-Runde</string>
+    <string name="mode_ressort_none">Keine Ressorts.</string>
+    <string name="mode_ressort_counts">%1$d von %2$d erledigt</string>
+    <string name="mode_ressort_open">Ressort öffnen</string>
+    <plurals name="task_overdue_count">
+        <item quantity="one">%d überfällig</item>
+        <item quantity="other">%d überfällig</item>
+    </plurals>
+
+    <!-- Erwähnungen (L15) -->
+    <string name="mentions_title">Erwähnungen</string>
+    <string name="mentions_loading">Erwähnungen werden geladen</string>
+    <string name="mentions_empty_title">Keine Erwähnungen</string>
+    <string name="mentions_empty_text">Hier erscheinen Stellen, an denen jemand dich erwähnt.</string>
+    <string name="mention_source_agenda">Erwähnt in einem Traktandum, %1$s</string>
+    <string name="mention_source_decision">Erwähnt in einem Beschluss, %1$s</string>
+    <string name="mention_source_post">Erwähnt auf der Pinnwand, %1$s</string>
+    <string name="mention_source_task">Erwähnt in einer Aufgabe, %1$s</string>
+    <string name="mention_as_task">Als Aufgabe</string>
+    <string name="mention_mark_done">Erledigt</string>
+    <string name="mention_reopen">Wieder öffnen</string>
+    <string name="mention_done">Erledigt</string>
+    <string name="mention_task_created">Als Aufgabe angelegt.</string>
+
+    <!-- Pinnwand (L16) -->
+    <string name="pinboard_title">Pinnwand</string>
+    <string name="pinboard_loading">Pinnwand wird geladen</string>
+    <string name="pinboard_empty_title">Keine Mitteilungen</string>
+    <string name="pinboard_empty_text">Hier erscheinen Mitteilungen an das Lager.</string>
+    <string name="pinboard_new">Neue Mitteilung</string>
+    <string name="post_important">Wichtig</string>
+    <string name="post_pinned">Angeheftet</string>
+    <string name="post_upcoming">Ab %1$s</string>
+    <string name="post_expired">Abgelaufen</string>
+    <string name="post_actions">Aktionen für %1$s</string>
+    <string name="post_to_all">An alle</string>
+    <string name="post_to">An %1$s</string>
+    <plurals name="post_persons">
+        <item quantity="one">%d Person</item>
+        <item quantity="other">%d Personen</item>
+    </plurals>
+    <string name="post_visible_until">sichtbar bis %1$s</string>
+    <string name="post_by">von %1$s</string>
+    <string name="post_copy">Text für WhatsApp kopieren</string>
+    <string name="post_copied">Text kopiert.</string>
+    <string name="post_edit">Mitteilung ändern</string>
+    <string name="post_pin">Anheften</string>
+    <string name="post_unpin">Lösen</string>
+    <string name="post_delete_title">«%1$s» löschen?</string>
+    <string name="post_delete_text">Die Mitteilung verschwindet für alle.</string>
+    <string name="recipient_all">Alle</string>
+    <string name="recipient_leadership">Leitung</string>
+    <string name="recipient_team">Team</string>
+    <string name="recipient_read">Lesende</string>
+    <string name="reaction_thumbs_up">Daumen hoch</string>
+    <string name="reaction_heart">Herz</string>
+    <string name="reaction_laugh">Lachen</string>
+    <string name="reaction_surprise">Staunen</string>
+    <string name="reaction_thanks">Danke</string>
+    <string name="file_open">Datei öffnen</string>
+
+    <!-- Umfrage -->
+    <string name="poll_title">Umfrage: %1$s</string>
+    <string name="poll_closed">Umfrage geschlossen</string>
+    <string name="poll_multiple">Mehrere Stimmen erlaubt</string>
+    <string name="poll_until">Bis %1$s</string>
+    <string name="poll_mine">Deine Stimme</string>
+    <plurals name="poll_votes">
+        <item quantity="one">%d Stimme</item>
+        <item quantity="other">%d Stimmen</item>
+    </plurals>
+    <plurals name="poll_participants">
+        <item quantity="one">%d Person hat abgestimmt</item>
+        <item quantity="other">%d Personen haben abgestimmt</item>
+    </plurals>
+    <string name="poll_withdraw">Stimme zurückziehen</string>
+    <string name="poll_close">Umfrage schliessen</string>
+    <string name="poll_reopen">Umfrage öffnen</string>
+
+    <!-- Mitteilung schreiben (L17) -->
+    <string name="post_editor_new">Neue Mitteilung</string>
+    <string name="post_editor_edit">Mitteilung ändern</string>
+    <string name="post_field_title">Titel</string>
+    <string name="post_field_text">Text</string>
+    <string name="post_field_recipients">Empfänger</string>
+    <string name="post_from">Sichtbar ab: %1$s</string>
+    <string name="post_until">Sichtbar bis: %1$s</string>
+    <string name="post_window_now">sofort</string>
+    <string name="post_window_open">ohne Ende</string>
+    <string name="post_important_hint">Wichtige Mitteilungen lösen eine Benachrichtigung aus.</string>
+    <string name="post_pin_switch">Anheften</string>
+    <string name="post_send">Senden</string>
+    <string name="poll_editor_title">Umfrage</string>
+    <string name="poll_add">Umfrage hinzufügen</string>
+    <string name="poll_option_n">Option %1$d</string>
+    <string name="poll_option_add">Option hinzufügen</string>
+    <string name="poll_multiple_switch">Mehrere Stimmen erlaubt</string>
+    <string name="poll_remove">Umfrage entfernen</string>
+    <string name="poll_error_min">Eine Umfrage braucht mindestens zwei Optionen.</string>
+    <string name="file_section">Dateien</string>
+    <string name="file_add">Datei verknüpfen</string>
+    <string name="file_add_text">Die Datei liegt am Ablageort deiner Abteilung. Hier gibst du den Namen und den Link an.</string>
+    <string name="file_remove">Entfernen</string>
+
+    <!-- Eingang (L18) -->
+    <string name="inbox_title">Eingang</string>
+    <string name="inbox_subtitle">Feedback und Rückfragen</string>
+    <string name="inbox_loading">Eingang wird geladen</string>
+    <string name="inbox_empty_title">Eingang leer</string>
+    <string name="inbox_empty_text">Feedback und Rückfragen des Teams erscheinen hier.</string>
+    <string name="inbox_tab_inbox">Eingang</string>
+    <string name="inbox_tab_mine">Meine Meldungen</string>
+    <string name="inbox_new">Neue Meldung</string>
+    <string name="inbox_lookup">Rückfragecode eingeben</string>
+    <string name="inbox_mine_empty">Du hast noch nichts gesendet.</string>
+    <string name="inbox_kind_idea">Idee</string>
+    <string name="inbox_kind_wish">Wunsch</string>
+    <string name="inbox_kind_question">Frage</string>
+    <string name="inbox_kind_feedback">Feedback</string>
+    <string name="inbox_status_new">Neu</string>
+    <string name="inbox_status_progress">In Arbeit</string>
+    <string name="inbox_status_done">Erledigt</string>
+    <string name="inbox_anonymous">anonym</string>
+    <string name="inbox_unknown_sender">Unbekannt</string>
+    <string name="inbox_meta">%1$s, %2$s</string>
+    <string name="inbox_meta_own">%1$s, %2$s</string>
+    <string name="inbox_reply_is">Antwort: %1$s</string>
+    <string name="inbox_on_agenda">Auf Traktandum</string>
+    <string name="inbox_answer">Antworten</string>
+    <string name="inbox_assign">Ressort zuweisen</string>
+    <string name="inbox_to_agenda">Als Traktandum</string>
+    <string name="inbox_to_agenda_hint">Das Traktandum bekommt einen eigenen Titel. Der Text der Meldung wird nicht übernommen.</string>
+    <string name="inbox_next_meeting">Nächster Höck</string>
+    <string name="inbox_agenda_done">Als Traktandum hinzugefügt.</string>
+    <string name="inbox_field_text">Deine Nachricht</string>
+    <string name="inbox_field_hint">Schreib keine Namen von Kindern und keine Gesundheitsangaben.</string>
+    <string name="inbox_anonymous_switch">Anonym senden</string>
+    <string name="inbox_anonymous_on">Niemand sieht, dass du die Nachricht geschrieben hast. Du bekommst einen Code für die Antwort.</string>
+    <string name="inbox_anonymous_off">Die Lagerleitung sieht deinen Namen und kann dir antworten.</string>
+    <string name="inbox_send">Senden</string>
+    <string name="inbox_sent">Gesendet.</string>
+    <string name="inbox_code_title">Dein Rückfragecode</string>
+    <string name="inbox_code_text">Schreib den Code auf. Er wird nur jetzt angezeigt. Mit ihm liest du später die Antwort, ohne dass jemand weiss, wer du bist.</string>
+    <string name="inbox_code_copy">Code kopieren</string>
+    <string name="inbox_code_noted">Ich habe den Code notiert</string>
+    <string name="inbox_code_field">Rückfragecode</string>
+    <string name="inbox_lookup_text">Gib den Code ein, den du beim anonymen Senden bekommen hast.</string>
+    <string name="inbox_lookup_read">Antwort lesen</string>
+    <string name="inbox_lookup_unknown">Zu diesem Code gibt es nichts. Prüfe, ob du ihn richtig eingegeben hast.</string>
+    <string name="inbox_no_reply_yet">Noch keine Antwort.</string>
+    <string name="inbox_field_reply">Antwort</string>
+    <string name="inbox_reply_hint">Leer lassen nimmt die Antwort zurück.</string>
+    <string name="inbox_summary_answer">Meldung beantwortet</string>
+    <string name="inbox_summary_assign">Meldung zugeordnet</string>
+    <string name="ressort_feedback">Feedback</string>
+    <string name="ressort_feedback_empty">Kein Feedback zugeordnet.</string>
+
+    <!-- Benachrichtigungen (L19) -->
+    <string name="notif_title">Benachrichtigungen</string>
+    <string name="notif_tab_new">Neu</string>
+    <string name="notif_tab_settings">Einstellungen</string>
+    <string name="notif_loading">Benachrichtigungen werden geladen</string>
+    <string name="notif_empty_title">Nichts Neues</string>
+    <string name="notif_empty_text">Zuteilungen, Erwähnungen und Fristen erscheinen hier.</string>
+    <string name="notif_mark_all">Alle als gelesen markieren</string>
+    <string name="notif_mark_read">Gelesen</string>
+    <string name="notif_unread">Ungelesen</string>
+    <string name="notif_open">Öffnen</string>
+    <string name="notif_all">Alle Benachrichtigungen</string>
+    <string name="notif_settings_hint">Du bekommst nur die Arten, die an sind. Die Einstellung gilt für alle deine Lager, in der Liste und als Push.</string>
+    <string name="notif_kind_task_assigned">Aufgabe zugeteilt</string>
+    <string name="notif_kind_task_changed">Aufgabe geändert</string>
+    <string name="notif_kind_mention">Erwähnung</string>
+    <string name="notif_kind_due">Frist</string>
+    <string name="notif_kind_pinboard">Wichtige Mitteilung auf der Pinnwand</string>
+    <string name="notif_kind_inbox_reply">Antwort auf dein Feedback</string>
+    <string name="notif_kind_swap_request">Diensttausch: Anfrage</string>
+    <string name="notif_kind_swap_decision">Diensttausch: Entscheid</string>
+    <string name="notif_kind_attendance">Anwesenheit: Anfrage</string>
+    <string name="notif_kind_address_book">Adressbuch aufräumen</string>
+</resources>

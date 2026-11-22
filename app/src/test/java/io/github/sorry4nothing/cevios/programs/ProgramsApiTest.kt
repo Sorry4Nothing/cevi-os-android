@@ -35,23 +35,57 @@ class ProgramsApiTest {
 
     private fun json(code: Int, body: String) = MockResponse.Builder().code(code).body(body).build()
 
+    /** Ein Termin aus «Mein Kalender» (`GET /api/v1/termine/mein` und `/termine/{id}`). */
     private val camp = """
+        {"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","titel":"Sommerlager","status":"aktiv",
+         "ganztaegig":true,"beginn":null,"ende":null,"tagVon":"2027-07-10","tagBis":"2027-07-17",
+         "ort":"Zeltplatz","treffpunkt":null,"schlussOrt":"Bahnhof","schlussZeit":"16:30",
+         "mitnehmen":"Schlafsack","tags":[{"id":"t1","name":"Stufe A","typ":"stufe"},{"id":"t2","name":"Team Mat","typ":"team"}],
+         "anlass":{"id":"e1","anmeldeschluss":"2027-06-01T20:00:00Z","anmeldungOffen":true,"angemeldet":false},"kinder":[]}
+    """.trimIndent()
+
+    /** Der ältere Stand (`GET /api/v1/programme/{id}`), den nur die Zuordnung noch liest. */
+    private val legacy = """
         {"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","titel":"Sommerlager","status":"aktiv","sichtbarkeit":"eltern",
          "ganztaegig":true,"beginn":null,"ende":null,"tagVon":"2027-07-10","tagBis":"2027-07-17",
          "googleOrt":"Zeltplatz","treffpunkt":null,"schlussOrt":"Bahnhof","schlussZeit":"16:30",
          "mitnehmen":"Schlafsack","stufen":[{"id":"a1","name":"Stufe A"}],"googleBeschreibung":null}
     """.trimIndent()
 
+    private fun page(vararg entries: String, more: Boolean = false, next: String? = null) =
+        """{"termine":[${entries.joinToString(",")}],"weitere":$more,"naechste":${next?.let { "\"$it\"" } ?: "null"}}"""
+
     @Test
-    fun listAsksForWindowAndReadsAllFields() {
-        server.enqueue(json(200, """{"programme":[$camp]}"""))
+    fun listAsksForWindowOfMyCalendarAndReadsAllFields() {
+        server.enqueue(json(200, page(camp)))
         val result = runBlocking { programs.list(LocalDate.of(2027, 7, 1), LocalDate.of(2027, 7, 31)) }
-        assertEquals("GET /api/v1/programme?von=2027-07-01&bis=2027-07-31 HTTP/1.1", server.takeRequest().requestLine)
+        assertEquals("GET /api/v1/termine/mein?von=2027-07-01&bis=2027-07-31&limit=100 HTTP/1.1", server.takeRequest().requestLine)
         val p = (result as ApiResult.Ok).value.programs.single()
         assertEquals("Sommerlager", p.title)
         assertEquals("Zeltplatz", p.location)
-        assertEquals("Stufe A", p.ageGroups.single().name)
+        assertEquals(listOf("Stufe A" to "stufe", "Team Mat" to "team"), p.tags.map { it.name to it.type })
         assertEquals("16:30", p.closingTime)
+        assertEquals(ProgramEvent("e1", "2027-06-01T20:00:00Z", open = true, registered = false), p.event)
+    }
+
+    @Test
+    fun listFollowsThePagesUntilTheLastOne() {
+        val second = camp.replace("Sommerlager", "Waldspiel")
+        server.enqueue(json(200, page(camp, more = true, next = "abc/+=")))
+        server.enqueue(json(200, page(second)))
+        val list = (runBlocking { programs.list(LocalDate.of(2027, 7, 1), LocalDate.of(2027, 7, 31)) } as ApiResult.Ok).value.programs
+        assertEquals(listOf("Sommerlager", "Waldspiel"), list.map { it.title })
+        server.takeRequest()
+        // Der Wert für «nach» geht unverändert zurück, nur für die Adresse kodiert.
+        assertEquals("GET /api/v1/termine/mein?von=2027-07-01&bis=2027-07-31&limit=100&nach=abc%2F%2B%3D HTTP/1.1", server.takeRequest().requestLine)
+    }
+
+    @Test
+    fun aFailingPageFailsTheWholeList() {
+        server.enqueue(json(200, page(camp, more = true, next = "x")))
+        server.enqueue(json(500, """{"code":"FEHLER","message":"x"}"""))
+        val result = runBlocking { programs.list(LocalDate.of(2027, 7, 1), LocalDate.of(2027, 7, 31)) }
+        assertTrue(result is ApiResult.Failure)
     }
 
     @Test
@@ -60,7 +94,7 @@ class ProgramsApiTest {
         val p = (runBlocking { programs.read("7c9e6679-7425-40de-944b-e07fc1f90ae7") } as ApiResult.Ok).value
         assertEquals("Schlafsack", p.bringAlong)
         assertEquals("Bahnhof", p.closingLocation)
-        assertEquals("GET /api/v1/programme/7c9e6679-7425-40de-944b-e07fc1f90ae7 HTTP/1.1", server.takeRequest().requestLine)
+        assertEquals("GET /api/v1/termine/7c9e6679-7425-40de-944b-e07fc1f90ae7 HTTP/1.1", server.takeRequest().requestLine)
     }
 
     @Test
@@ -96,8 +130,8 @@ class ProgramsApiTest {
     @Test
     fun detailReadsChildrenAndOwnRegistration() {
         val detail = camp.replace(
-            "\"googleBeschreibung\":null",
-            """"googleBeschreibung":null,"teilnahmeOffen":true,"darfErgaenzen":false,"eigeneAnmeldung":"offen",
+            "\"kinder\":[]",
+            """"teilnahmeOffen":true,"eigeneAnmeldung":"offen",
                "kinder":[{"id":"k1","vorname":"Mia","status":"ja"},{"id":"k2","vorname":"Noah","status":null}]""",
         )
         server.enqueue(json(200, detail))
@@ -144,17 +178,19 @@ class ProgramsApiTest {
     }
 
     @Test
-    fun detailReadsVisibility() {
-        server.enqueue(json(200, camp))
-        val p = (runBlocking { programs.read("x") } as ApiResult.Ok).value
+    fun theAssignmentReadsTheOlderStateWithStagesAndVisibility() {
+        server.enqueue(json(200, legacy))
+        val p = (runBlocking { programs.readAssignable("x") } as ApiResult.Ok).value
+        assertEquals("GET /api/v1/programme/x HTTP/1.1", server.takeRequest().requestLine)
         assertEquals("eltern", p.visibility)
         assertFalse(p.allAgeGroups)
+        assertEquals("Zeltplatz", p.location)
     }
 
     @Test
     fun programWithoutAgeGroupsIsForAllAgeGroups() {
-        server.enqueue(json(200, camp.replace("\"stufen\":[{\"id\":\"a1\",\"name\":\"Stufe A\"}]", "\"stufen\":[]")))
-        assertTrue((runBlocking { programs.read("x") } as ApiResult.Ok).value.allAgeGroups)
+        server.enqueue(json(200, legacy.replace("\"stufen\":[{\"id\":\"a1\",\"name\":\"Stufe A\"}]", "\"stufen\":[]")))
+        assertTrue((runBlocking { programs.readAssignable("x") } as ApiResult.Ok).value.allAgeGroups)
     }
 
     @Test
@@ -191,7 +227,7 @@ class ProgramsApiTest {
 
     @Test
     fun withoutLocationThereIsNoLocation() {
-        server.enqueue(json(200, camp.replace("\"googleOrt\":\"Zeltplatz\"", "\"googleOrt\":\"  \"")))
+        server.enqueue(json(200, camp.replace("\"ort\":\"Zeltplatz\"", "\"ort\":\"  \"")))
         assertNull((runBlocking { programs.read("x") } as ApiResult.Ok).value.location)
     }
 
@@ -221,7 +257,7 @@ class ProgramsApiTest {
         server.enqueue(
             json(
                 200,
-                """{"programme":[${camp.replace("\"googleBeschreibung\":null", "\"googleBeschreibung\":null,\"kinder\":[{\"id\":\"k1\",\"vorname\":\"Noah\",\"status\":\"ja\"},{\"id\":\"k2\",\"vorname\":\"Lena\",\"status\":null}]")}]}""",
+                page(camp.replace("\"kinder\":[]", "\"kinder\":[{\"id\":\"k1\",\"vorname\":\"Noah\",\"status\":\"ja\"},{\"id\":\"k2\",\"vorname\":\"Lena\",\"status\":null}]")),
             ),
         )
         val p = (runBlocking { programs.list(LocalDate.of(2027, 7, 1), LocalDate.of(2027, 7, 31)) } as ApiResult.Ok).value.programs.single()

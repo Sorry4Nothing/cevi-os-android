@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -84,6 +85,8 @@ fun ProfileScreen(
     lockAvailable: Boolean = false,
     lockEnabled: Boolean = false,
     onLockChange: (Boolean) -> Unit = {},
+    /** Gruppen, Kalenderlink und Terminvorschlag: gehören zum Konto und kommen aus dem Bereich Termine. */
+    termine: @Composable ColumnScope.() -> Unit = {},
 ) {
     DisposableEffect(Unit) { onDispose(onLeave) }
     // Die Systemauswahl braucht keine Berechtigung: Die Person wählt, die App bekommt nur dieses eine Bild.
@@ -102,6 +105,7 @@ fun ProfileScreen(
             )
             SlowHint(imageForm.running)
             formErrorText(imageForm)?.let { NoticeBanner(NoticeKind.ERROR, it) }
+            termine()
             SectionTitle(R.string.profile_section_app)
             SettingsCard {
                 SettingsRow(R.drawable.ic_bell, stringResource(R.string.profile_notifications), onClick = onOpenNotifications, chevron = true)
@@ -214,7 +218,7 @@ private fun roleLine(profile: Profile): String {
 }
 
 @Composable
-private fun SectionTitle(@StringRes text: Int) {
+internal fun SectionTitle(@StringRes text: Int) {
     Text(
         stringResource(text),
         style = MaterialTheme.typography.labelLarge,
@@ -239,7 +243,7 @@ internal fun SettingsDivider() = HorizontalDivider(color = MaterialTheme.colorSc
 
 /** Eine Zeile mit Icon, Text und rechts ein Wert oder ein Pfeil. Ohne `onClick` ist sie nur Anzeige. */
 @Composable
-private fun SettingsRow(
+internal fun SettingsRow(
     @DrawableRes icon: Int,
     title: String,
     value: String? = null,

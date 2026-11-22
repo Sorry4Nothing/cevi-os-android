@@ -92,6 +92,7 @@ fun CalendarLinkSection(
     onDismissError: () -> Unit,
 ) {
     val context = LocalContext.current
+    val clipboardLabel = stringResource(R.string.cal_link_clipboard_label)
     var copied by remember { mutableStateOf(false) }
     LaunchedEffect(hasFresh) { if (!hasFresh) copied = false }
     SectionTitle(R.string.cal_link_title)
@@ -114,7 +115,7 @@ fun CalendarLinkSection(
                             NoticeBanner(NoticeKind.INFO, stringResource(R.string.cal_link_fresh))
                             OutlinedPillButton(
                                 stringResource(R.string.cal_link_copy),
-                                { url()?.let { copySecret(context, context.getString(R.string.cal_link_clipboard_label), it); copied = true } },
+                                { url()?.let { copySecret(context, clipboardLabel, it); copied = true } },
                                 Modifier.fillMaxWidth(), icon = R.drawable.ic_file,
                             )
                         }

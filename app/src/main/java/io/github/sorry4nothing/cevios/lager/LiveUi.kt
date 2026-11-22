@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -77,7 +76,6 @@ fun LivePage(
     subtitle: String? = frame.camp?.title,
     back: HeaderButton = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_camp), frame.onBack),
     action: HeaderButton? = null,
-    scroll: Boolean = true,
     content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
 ) {
     CampPage(
@@ -127,12 +125,6 @@ fun LiveSection(title: String, modifier: Modifier = Modifier, content: @Composab
     }
 }
 
-/** Eine Zeile mit Text links und etwas Kleinem rechts (Menge, Zeit). */
-@Composable
-fun SplitRow(start: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.CenterVertically, content = start)
-}
-
 /** Öffnet die Telefon-App mit der Nummer vorgewählt (`ACTION_DIAL`): Die Person wählt selbst, die App braucht dafür keine Berechtigung. */
 fun dial(context: Context, number: String) {
     runCatching { context.startActivity(Intent(Intent.ACTION_DIAL, io.github.sorry4nothing.cevios.contacts.PhoneRules.dialUri(number).toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
@@ -145,7 +137,7 @@ fun openRoute(context: Context, uri: String) {
         .onFailure { if (it !is ActivityNotFoundException) throw it }
 }
 
-/** Ein Text auf den Wert des Strings gekürzt für die Anzeige im Hinweis (eine Zeile, nie mehr als `max` Zeichen). */
+/** Ein Text auf höchstens `max` Zeichen gekürzt (für Titel in Blättern und Fragen). */
 fun String.clip(max: Int): String = if (length <= max) this else take(max - 1).trimEnd() + "…"
 
 /**

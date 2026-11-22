@@ -157,7 +157,8 @@ class PlanningLogicTest {
         assertEquals(CampTarget.Swaps, campTargetFor("lager_einteilung", "diensttausch", "x"))
         assertEquals(CampTarget.Swaps, campTargetFor("diensttausch_anfrage", "diensttausch", "x"))
         assertEquals(CampTarget.Swaps, campTargetFor("diensttausch_entscheid", "irgendwas", "x"))
-        assertEquals(CampTarget.Start, campTargetFor("lager_anwesenheit", "anwesenheit", "x"))
+        // Die Anwesenheit hat seit A4 einen eigenen Bildschirm.
+        assertEquals(CampTarget.Attendance, campTargetFor("lager_anwesenheit", "anwesenheit", "x"))
     }
 
     @Test

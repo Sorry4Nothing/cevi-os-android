@@ -182,7 +182,7 @@ private fun OwnAttendance(frame: LiveFrame, schedule: Schedule, own: AttendanceO
             val key = AttendanceKey(day.id, s.id)
             draft[key] ?: LiveRules.valueOf(own, day.id, s.id)
         }
-        Column(Modifier.fillMaxWidth().semantics(mergeDescendants = false) { contentDescription = title }, verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).semantics { heading() })
                 if (editable) {

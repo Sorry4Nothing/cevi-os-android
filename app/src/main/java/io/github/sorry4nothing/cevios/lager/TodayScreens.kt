@@ -155,7 +155,7 @@ fun TodayScreen(frame: LiveFrame, nav: LiveNav, taskList: List<CampTask>, tasks:
                             }
                         }
                         view.attendance?.let { summary -> TodayAttendance(summary, view.lagertag, sections) }
-                        if (frame.rights.readDayPages && view.lagertag != null) {
+                        if (frame.rights.readDayPages) {
                             OutlinedPillButton(stringResource(R.string.today_open_day), { nav.onOpenDay(view.lagertag.id) }, Modifier.fillMaxWidth(), icon = R.drawable.ic_calendar)
                         }
                         OutlinedPillButton(stringResource(R.string.emerg_title), { nav.onOpenArea(LiveArea.EMERGENCY) }, Modifier.fillMaxWidth(), icon = R.drawable.ic_phone)

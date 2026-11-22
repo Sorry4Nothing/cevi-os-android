@@ -10,6 +10,7 @@ import kotlinx.serialization.json.put
 
 /** Der Typ des Ziels einer Reaktion; die API kennt heute nur Beiträge der Pinnwand. */
 private const val REACTION_TARGET = "pinnwand_beitrag"
+private const val MENTION_TYPE = "pinnwand"
 
 /** Die Routen der Kommunikation: Pinnwand, Umfragen, Reaktionen, Eingang und Benachrichtigungen. Alle brauchen Netz. */
 class CommsApi(private val api: ApiClient) {
@@ -33,7 +34,7 @@ class CommsApi(private val api: ApiClient) {
     }
 
     /** Gleicht die Erwähnungen eines Beitrags ab, nachdem er gespeichert ist (idempotent). */
-    suspend fun syncMentions(campId: String, postId: String): ApiResult<Unit> = api.putWithoutBody("/api/v1/lager/$campId/erwaehnungen/pinnwand/$postId")
+    suspend fun syncMentions(campId: String, postId: String): ApiResult<Unit> = api.putWithoutBody("/api/v1/lager/$campId/erwaehnungen/$MENTION_TYPE/$postId")
 
     /** Meldet Beiträge als gesehen (höchstens 50, idempotent). 404, wenn die Person einen davon nicht lesen darf: dann ist nichts gemeldet. */
     suspend fun markSeen(campId: String, postIds: List<String>): ApiResult<Unit> =

@@ -125,9 +125,14 @@ class CampViewModel(
     }
 
     fun sendNow(campId: String) {
-        viewModelScope.launch {
-            val result = queueFor(campId).flush()
-            if (result is FlushResult.Sent) _online.value = true
+        viewModelScope.launch { flushAndAnnounce(queueFor(campId)) }
+    }
+
+    /** Sendet die Warteschlange; kam etwas an, melden die Module (über [changes]), dass sie neu laden sollen. */
+    private suspend fun flushAndAnnounce(queue: OfflineQueue) {
+        if (queue.flush() is FlushResult.Sent) {
+            _online.value = true
+            _changes.tryEmit(CampChange(0, setOf(CampChange.QUEUE_SENT), 0))
         }
     }
 
@@ -143,7 +148,7 @@ class CampViewModel(
             launch {
                 while (true) {
                     delay(RESEND_MS)
-                    if (queue.state.value.waiting > 0) queue.flush()
+                    if (queue.state.value.waiting > 0) flushAndAnnounce(queue)
                 }
             }
             var failures = 0
@@ -156,7 +161,7 @@ class CampViewModel(
                     _online.value = true
                     failures = 0
                     launch { refreshUnread(campId) }
-                    launch { queue.flush() }
+                    launch { flushAndAnnounce(queue) }
                     val result = sync.listen(
                         onNews = { handlePull(campId, sync) },
                         onReload = { _changes.tryEmit(CampChange(sync.seq ?: 0, emptySet(), 0, reload = true)) },

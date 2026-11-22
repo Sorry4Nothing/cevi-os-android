@@ -100,6 +100,14 @@ class ApiClient(
     suspend inline fun <reified B> patch(path: String, body: B): ApiResult<Unit> =
         send(request(path).patch(jsonBody(json.encodeToString(body))).build()) { }
 
+    /** PUT mit JSON-Body, die Antwort hat einen Inhalt (200). */
+    suspend inline fun <reified B, reified T> putJson(path: String, body: B): ApiResult<T> =
+        send(request(path).put(jsonBody(json.encodeToString(body))).build()) { json.decodeFromString<T>(it) }
+
+    /** PATCH mit JSON-Body, die Antwort hat einen Inhalt (200). */
+    suspend inline fun <reified B, reified T> patchJson(path: String, body: B): ApiResult<T> =
+        send(request(path).patch(jsonBody(json.encodeToString(body))).build()) { json.decodeFromString<T>(it) }
+
     /** POST mit JSON-Body, ohne Interesse an der Antwort. */
     suspend inline fun <reified B> postAction(path: String, body: B): ApiResult<Unit> =
         send(request(path).post(jsonBody(json.encodeToString(body))).build()) { }

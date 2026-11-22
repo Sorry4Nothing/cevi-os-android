@@ -121,6 +121,8 @@ data class QueueResult(
     val clientOpId: String,
     val status: String,
     val code: String? = null,
+    /** Nur bei `ok`: IDs und Versionen der geschriebenen Zeilen (keine Inhalte). */
+    @SerialName("ergebnis") val result: JsonObject? = null,
     @SerialName("aktuell") val current: JsonObject? = null,
     @SerialName("abweichend") val differing: List<String> = emptyList(),
 )

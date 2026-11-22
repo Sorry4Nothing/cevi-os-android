@@ -30,6 +30,8 @@ data class QueuedChange(
     val state: ChangeState = ChangeState.WAITING,
     /** Bei CONFLICT `VERSION_KONFLIKT`, bei REJECTED der Code des Servers (zum Beispiel `KEINE_BERECHTIGUNG`). */
     val code: String? = null,
+    /** Nur bei SENT: IDs und Versionen, die der Server geschrieben hat (damit eine Ansicht die neue Version kennt, bevor sie neu lädt). */
+    val result: JsonObject? = null,
     /** Nur bei CONFLICT: der aktuelle Stand der Zeile in der Ansicht der Rolle. */
     val current: JsonObject? = null,
     /** Nur bei CONFLICT: die Felder, die jetzt anders stehen. */
@@ -101,6 +103,24 @@ class OfflineQueue(
         return change
     }
 
+    /**
+     * Ändert eine Änderung, die noch wartet (zum Beispiel ein zweiter Tipp auf denselben Status): Sie geht mit der neuen Nutzlast
+     * und derselben `clientOpId` weg. Eine Änderung, die schon unterwegs oder entschieden ist, bleibt wie sie ist (`false`).
+     */
+    fun revise(clientOpId: String, payload: JsonObject, summary: String): Boolean {
+        // Während des Sendens kann die Nutzlast schon unterwegs sein: Dann bleibt sie, wie sie ist.
+        if (_state.value.sending || _state.value.changes.none { it.clientOpId == clientOpId && it.state == ChangeState.WAITING }) return false
+        update { all -> all.map { if (it.clientOpId == clientOpId && it.state == ChangeState.WAITING) it.copy(payload = payload, summary = summary) else it } }
+        return true
+    }
+
+    /** Nimmt eine Änderung zurück, die noch wartet und nicht unterwegs ist (die Aufgabe, die sie anlegen wollte, wurde gelöscht). */
+    fun cancel(clientOpId: String): Boolean {
+        if (_state.value.sending || _state.value.changes.none { it.clientOpId == clientOpId && it.state == ChangeState.WAITING }) return false
+        update { all -> all.filterNot { it.clientOpId == clientOpId } }
+        return true
+    }
+
     /** Sendet alle wartenden Änderungen, 100 je Anfrage, der Reihe nach. Gleichzeitige Aufrufe warten aufeinander. */
     suspend fun flush(): FlushResult = lock.withLock {
         var sentAny = false
@@ -146,7 +166,7 @@ class OfflineQueue(
             all.map { change ->
                 val result = byId[change.clientOpId]?.takeIf { r -> batch.any { it.clientOpId == r.clientOpId } } ?: return@map change
                 when (result.status) {
-                    "ok" -> change.copy(state = ChangeState.SENT, code = null)
+                    "ok" -> change.copy(state = ChangeState.SENT, code = null, result = result.result)
                     "konflikt" -> change.copy(
                         state = ChangeState.CONFLICT,
                         code = result.code ?: "VERSION_KONFLIKT",

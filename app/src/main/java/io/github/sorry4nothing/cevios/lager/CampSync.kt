@@ -38,7 +38,12 @@ class SseParser {
 private data class EventData(val bis: Long? = null)
 
 /** Was nach dem Abfragen des Feeds neu ist: die Objekttypen und die Zahl der Einträge; bei `reload` laden die Module ihre Listen neu. */
-data class CampChange(val seq: Long, val types: Set<String>, val count: Int, val reload: Boolean = false)
+data class CampChange(val seq: Long, val types: Set<String>, val count: Int, val reload: Boolean = false) {
+    companion object {
+        /** Kein Objekttyp des Servers: Die Warteschlange hat Änderungen gesendet, die Module laden ihre Listen neu. */
+        const val QUEUE_SENT = "_gesendet"
+    }
+}
 
 sealed interface PullResult {
     /** `change` ist `null`, wenn nichts Neues kam (Feed leer). */

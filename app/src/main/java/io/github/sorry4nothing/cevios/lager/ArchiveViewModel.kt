@@ -184,7 +184,9 @@ class ArchiveViewModel(
             if (campId != id) return@launch
             if (result is ApiResult.Ok || !silent || _timeline.value == null) _timeline.value = result
             if (rights.editSchedule && result is ApiResult.Ok) {
-                _proposal.value = (api.proposal(id) as? ApiResult.Ok)?.value?.takeUnless { it.isEmpty }
+                val proposal = (api.proposal(id) as? ApiResult.Ok)?.value?.takeUnless { it.isEmpty }
+                // Der Vorschlag gehört zum Lager der Anfrage: «Übernehmen» legt sonst Tage im falschen Lager an.
+                if (campId == id) _proposal.value = proposal
             }
         }
     }
@@ -282,6 +284,8 @@ class ArchiveViewModel(
         val text = _query.value
         if (!SearchRules.valid(text)) {
             _search.value = null
+            // Eine Suche, die noch läuft, hat ihr Ergebnis verloren (der Text hat sich geändert): Der Ladekreis darf nicht stehen bleiben.
+            _searching.value = false
             return
         }
         _searching.value = true
@@ -309,7 +313,10 @@ class ArchiveViewModel(
         writer.dismissError()
         _printing.value = printout
         viewModelScope.launch {
-            when (val result = api.printout(id, printout)) {
+            val result = api.printout(id, printout)
+            // Das Lager ist unterdessen gewechselt: Das PDF gehört nicht mehr zu dieser Ansicht (`reset` hat «printing» schon geleert).
+            if (campId != id) return@launch
+            when (result) {
                 is ApiResult.Ok -> _pdf.value = SharedPdf(printout.wire, result.value)
                 is ApiResult.Failure -> writer.fail(result) { loadPrintout(printout) }
             }

@@ -100,6 +100,7 @@ class CommsViewModel(
         _own.value = null
         _sent.value = null
         _codeView.value = null
+        codeLookups++
         _notifications.value = null
         _notice.value = null
         writer.clear()
@@ -140,35 +141,44 @@ class CommsViewModel(
         }
     }
 
+    private var creatingPost = false
+
     /** Legt eine Mitteilung an: erst die Dateien als Verknüpfung, dann den Beitrag, dann die Umfrage. */
     fun createPost(draft: PostDraft, onDone: () -> Unit) {
         val id = campId ?: return
+        // Ein zweiter Tipp während der Anfrage legte die Mitteilung doppelt an (die Route kennt keine Wiederholung).
+        if (creatingPost) return
+        creatingPost = true
         writer.dismissError()
         viewModelScope.launch {
-            val fileIds = mutableListOf<String>()
-            for ((name, link) in draft.files) {
-                when (val added = api.addFile(id, name.trim(), link.trim())) {
-                    is ApiResult.Ok -> fileIds += added.value.id
-                    is ApiResult.Failure -> return@launch writer.fail(added) { createPost(draft, onDone) }
-                }
-            }
-            val created = when (val result = api.createPost(id, postBody(draft, fileIds))) {
-                is ApiResult.Ok -> result.value
-                is ApiResult.Failure -> return@launch writer.fail(result) { createPost(draft, onDone) }
-            }
-            val options = draft.pollOptions.map { it.trim() }.filter { it.isNotEmpty() }
-            if (options.size >= 2) {
-                when (val poll = api.createPoll(id, created.id, options, draft.pollMultiple)) {
-                    is ApiResult.Ok -> Unit
-                    // Die Mitteilung steht schon: Ein neuer Versuch legt nur die Umfrage an.
-                    is ApiResult.Failure -> {
-                        loadPosts(silent = true)
-                        return@launch writer.fail(poll) { createPoll(created, options, draft.pollMultiple, onDone) }
+            try {
+                val fileIds = mutableListOf<String>()
+                for ((name, link) in draft.files) {
+                    when (val added = api.addFile(id, name.trim(), link.trim())) {
+                        is ApiResult.Ok -> fileIds += added.value.id
+                        is ApiResult.Failure -> return@launch writer.fail(added) { createPost(draft, onDone) }
                     }
                 }
+                val created = when (val result = api.createPost(id, postBody(draft, fileIds))) {
+                    is ApiResult.Ok -> result.value
+                    is ApiResult.Failure -> return@launch writer.fail(result) { createPost(draft, onDone) }
+                }
+                val options = draft.pollOptions.map { it.trim() }.filter { it.isNotEmpty() }
+                if (options.size >= 2) {
+                    when (val poll = api.createPoll(id, created.id, options, draft.pollMultiple)) {
+                        is ApiResult.Ok -> Unit
+                        // Die Mitteilung steht schon: Ein neuer Versuch legt nur die Umfrage an.
+                        is ApiResult.Failure -> {
+                            loadPosts(silent = true)
+                            return@launch writer.fail(poll) { createPoll(created, options, draft.pollMultiple, onDone) }
+                        }
+                    }
+                }
+                loadPosts(silent = true)
+                onDone()
+            } finally {
+                creatingPost = false
             }
-            loadPosts(silent = true)
-            onDone()
         }
     }
 
@@ -321,16 +331,22 @@ class CommsViewModel(
         _sent.value = null
     }
 
+    private var codeLookups = 0
+
     fun lookUpCode(code: String) {
         val id = campId ?: return
         writer.dismissError()
+        val lookup = ++codeLookups
         viewModelScope.launch {
             _codeView.value = null
-            _codeView.value = api.codeStatus(id, normalizeCode(code))
+            val result = api.codeStatus(id, normalizeCode(code))
+            // Nur die letzte Abfrage im gleichen Lager zählt; eine späte Antwort zeigt sonst den Stand eines anderen Codes.
+            if (campId == id && lookup == codeLookups) _codeView.value = result
         }
     }
 
     fun clearCodeView() {
+        codeLookups++
         _codeView.value = null
     }
 

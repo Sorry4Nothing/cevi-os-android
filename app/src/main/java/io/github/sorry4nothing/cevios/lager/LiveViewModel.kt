@@ -172,12 +172,16 @@ class LiveViewModel(
         _notice.value = null
     }
 
-    private fun <T> launchLoad(target: MutableStateFlow<ApiResult<T>?>, silent: Boolean, fetch: suspend (String) -> ApiResult<T>, after: (ApiResult<T>) -> Unit = {}) {
+    /** `current` fragt, ob die Antwort noch zur Anfrage passt (zum Beispiel noch derselbe Tag); sonst fällt sie weg. */
+    private fun <T> launchLoad(
+        target: MutableStateFlow<ApiResult<T>?>, silent: Boolean, fetch: suspend (String) -> ApiResult<T>,
+        after: (ApiResult<T>) -> Unit = {}, current: () -> Boolean = { true },
+    ) {
         val id = campId ?: return
         viewModelScope.launch(Background()) {
             if (!silent) target.value = null
             val result = fetch(id)
-            if (campId != id) return@launch
+            if (campId != id || !current()) return@launch
             if (result is ApiResult.Ok || !silent || target.value == null) target.value = result
             after(result)
         }
@@ -189,13 +193,13 @@ class LiveViewModel(
         writer.dismissError()
         _busy.value = true
         viewModelScope.launch {
-            when (val result = call(id)) {
-                is ApiResult.Ok -> {
-                    _busy.value = false
-                    onOk(result.value)
-                }
+            val result = call(id)
+            _busy.value = false
+            // Das Lager ist unterdessen zu oder gewechselt: Weder Fehler noch Folgeaktion gehören noch zu dieser Ansicht.
+            if (campId != id) return@launch
+            when (result) {
+                is ApiResult.Ok -> onOk(result.value)
                 is ApiResult.Failure -> {
-                    _busy.value = false
                     onFail(result)
                     writer.fail(result, retry)
                 }
@@ -234,8 +238,11 @@ class LiveViewModel(
 
     fun loadTodos(silent: Boolean = false): Unit = launchLoad(_todos, silent, api::todos)
 
-    fun addTodo(text: String): Unit =
+    fun addTodo(text: String) {
+        // Läuft schon eine Aktion, zählt ein zweiter Tipp nicht: Die Route kennt keine Wiederholung ohne Doppelanlage.
+        if (_busy.value) return
         send({ addTodo(text) }, { api.addTodo(it, text) }) { todo -> updateTodos { it + todo } }
+    }
 
     fun toggleTodo(todo: CampTodo) {
         val id = campId ?: return
@@ -267,7 +274,7 @@ class LiveViewModel(
             dayId = lagertagId
             _day.value = null
         }
-        launchLoad(_day, silent, { api.day(it, lagertagId) })
+        launchLoad(_day, silent, { api.day(it, lagertagId) }, current = { dayId == lagertagId })
     }
 
     fun closeDay() {
@@ -438,16 +445,19 @@ class LiveViewModel(
         updateShopping { list -> list.map { if (sameLine(it, line)) it.copy(done = done) else it } }
         viewModelScope.launch {
             var failure: ApiResult.Failure? = null
+            var written = 0
             for (entry in line.entries) {
                 val result = api.changeShopItem(id, entry.id, buildJsonObject { put("version", entry.version); put("erledigt", done) })
                 if (result is ApiResult.Failure) {
                     failure = result
                     break
                 }
+                written++
             }
             if (failure != null) {
                 updateShopping { list -> list.map { if (sameLine(it, line)) it.copy(done = !done) else it } }
-                if (failure.conflict != null) loadShopping(silent = true)
+                // Hat ein Teil der Artikel schon gewechselt, stimmt die Anzeige nur nach dem Neuladen.
+                if (failure.conflict != null || written > 0) loadShopping(silent = true)
                 writer.fail(failure) { toggleShopLine(line.copy(done = !done)) }
             } else {
                 loadShopping(silent = true)

@@ -101,7 +101,11 @@ class CampViewModel(
             _lostAccess.value = null
         }
         queueFor(campId)
-        viewModelScope.launch { _detail.value = api.read(campId) }
+        viewModelScope.launch {
+            val result = api.read(campId)
+            // Eine späte Antwort für ein früher geöffnetes Lager gibt dem jetzigen nicht seine Rechte.
+            if (openedId == campId) _detail.value = result
+        }
     }
 
     fun close() {

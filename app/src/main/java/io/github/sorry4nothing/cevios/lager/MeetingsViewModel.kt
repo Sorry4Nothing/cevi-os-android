@@ -165,8 +165,13 @@ class MeetingsViewModel(
         }
     }
 
+    /** Läuft schon eine Anlage, zählt ein zweiter Tipp nicht: Die Route nimmt keine Wiederholung ohne Doppelanlage an. */
+    private var creatingMeeting = false
+
     fun createMeeting(title: String, kind: MeetingKind, date: String, time: String?, place: String?, guests: String?, onCreated: (Meeting) -> Unit) {
         val id = campId ?: return
+        if (creatingMeeting) return
+        creatingMeeting = true
         writer.dismissError()
         viewModelScope.launch {
             val body = buildJsonObject {
@@ -177,7 +182,9 @@ class MeetingsViewModel(
                 place?.takeIf { it.isNotBlank() }?.let { put("ort", it.trim()) }
                 guests?.takeIf { it.isNotBlank() }?.let { put("gaeste", it.trim()) }
             }
-            when (val result = api.createMeeting(id, body)) {
+            val result = api.createMeeting(id, body)
+            creatingMeeting = false
+            when (result) {
                 is ApiResult.Ok -> {
                     loadMeetings(silent = true)
                     onCreated(result.value)

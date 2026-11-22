@@ -274,6 +274,7 @@
     <string name="mode_menu_title">Bereich wechseln</string>
     <string name="mode_department_sub">Programme, Chat, Profil</string>
     <string name="mode_camp_sub">Start, Aufgaben, Chat, Mehr</string>
+    <string name="mode_practice_sub">Zum Ausprobieren</string>
     <string name="mode_all_camps">Alle Lager</string>
     <plurals name="mode_camp_news">
         <item quantity="one">%d neu</item>
@@ -286,6 +287,10 @@
     <string name="camps_empty_title">Du bist in keinem Lager</string>
     <string name="camps_empty_text">Sobald dich die Lagerleitung hinzufügt, erscheint das Lager hier.</string>
     <string name="camps_section_closed">Abgeschlossen</string>
+    <string name="camps_section_practice">Übungslager</string>
+    <string name="camp_practice_chip">Übung</string>
+    <string name="camp_practice_title">Übungslager</string>
+    <string name="camp_practice_text">Zum Ausprobieren, Änderungen zählen nicht</string>
     <string name="camp_open">Lager öffnen</string>
     <string name="camp_status_draft">Entwurf</string>
     <string name="camp_status_active">Aktiv</string>

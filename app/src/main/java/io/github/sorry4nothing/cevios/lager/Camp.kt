@@ -49,6 +49,15 @@ private const val STATUS_ACTIVE = "aktiv"
 private const val STATUS_CLOSED = "abgeschlossen"
 private const val STATUS_ARCHIVED = "archiviert"
 
+/** Die Abschnitte der Lagerwahl: offene, abgeschlossene und Übungslager (sie stehen immer für sich, auch wenn sie abgeschlossen sind). */
+data class CampSections(val open: List<Camp>, val closed: List<Camp>, val practice: List<Camp>)
+
+fun List<Camp>.inSections(): CampSections {
+    val (practice, real) = partition { it.practice }
+    val (closed, open) = real.partition { it.readOnly }
+    return CampSections(open, closed, practice)
+}
+
 @Serializable
 data class CampList(@SerialName("lager") val camps: List<Camp>)
 

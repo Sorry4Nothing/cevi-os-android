@@ -34,4 +34,13 @@ class CampFormatTest {
         assertEquals(false, CampPermissions(CampRole.TEAM, false, setOf("ressort")).canRead("aufgabe"))
         assertEquals(true, CampPermissions(CampRole.TEAM, false, setOf("aufgabe")).canRead("aufgabe"))
     }
+
+    @Test
+    fun practiceCampsHaveTheirOwnSectionEvenWhenClosed() {
+        fun camp(id: String, status: String, practice: Boolean) = Camp(id, id, "2027-07-17", "2027-07-24", null, status, "team", practice = practice)
+        val sections = listOf(camp("a", "aktiv", false), camp("b", "abgeschlossen", false), camp("c", "aktiv", true), camp("d", "abgeschlossen", true)).inSections()
+        assertEquals(listOf("a"), sections.open.map { it.id })
+        assertEquals(listOf("b"), sections.closed.map { it.id })
+        assertEquals(listOf("c", "d"), sections.practice.map { it.id })
+    }
 }

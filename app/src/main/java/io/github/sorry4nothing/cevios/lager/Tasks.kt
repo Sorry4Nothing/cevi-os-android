@@ -300,6 +300,10 @@ data class WeatherDay(
     @SerialName("datum") val date: String,
     @SerialName("zustand") val condition: String? = null,
     @SerialName("warnungen") val warnings: List<String> = emptyList(),
+    @SerialName("tmax") val high: Double? = null,
+    @SerialName("tmin") val low: Double? = null,
+    @SerialName("regen") val rain: Double? = null,
+    @SerialName("boeen") val gusts: Double? = null,
 )
 
 @Serializable

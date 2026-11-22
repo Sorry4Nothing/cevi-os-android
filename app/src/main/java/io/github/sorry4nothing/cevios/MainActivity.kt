@@ -632,7 +632,8 @@ private fun MainContent(
         val openPushTypes = when {
             target == Screen.Mentions -> setOf("lager_erwaehnung")
             target == Screen.Inbox -> setOf("lager_eingang")
-            target == Screen.Plan(PlanArea.SWAPS) -> setOf("lager_einteilung")
+            // Nur die Leitung sieht Entscheide im Feed; wer nur die eigenen Anfragen sieht, bekommt den Push weiterhin.
+            target == Screen.Plan(PlanArea.SWAPS) && planRights.decideSwap -> setOf("lager_einteilung")
             target == Screen.Home && campArea && campId != null && destination == Destination.PINBOARD -> setOf("lager_pinnwand")
             else -> emptySet()
         }

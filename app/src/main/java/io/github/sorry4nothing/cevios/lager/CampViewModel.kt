@@ -88,7 +88,7 @@ class CampViewModel(
         }
     }
 
-    private suspend fun refreshUnread(campId: String) {
+    suspend fun refreshUnread(campId: String) {
         (api.unread(campId) as? ApiResult.Ok)?.let { count -> _unread.update { it + (campId to count.value.count) } }
     }
 
@@ -122,6 +122,11 @@ class CampViewModel(
     fun enqueue(campId: String, type: String, payload: JsonObject, summary: String, fieldLabels: Map<String, String> = emptyMap()) {
         queueFor(campId).enqueue(type, payload, summary, fieldLabels)
         sendNow(campId)
+    }
+
+    /** Eine andere Stelle hat Aufgaben angelegt (zum Beispiel «Als Aufgabe» bei einer Erwähnung): Die Aufgabenliste lädt neu. */
+    fun announceTasksChanged() {
+        _changes.tryEmit(CampChange(0, setOf("aufgabe"), 0))
     }
 
     fun sendNow(campId: String) {

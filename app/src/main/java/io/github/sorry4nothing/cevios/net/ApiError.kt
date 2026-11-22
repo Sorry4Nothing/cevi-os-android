@@ -20,6 +20,9 @@ enum class ApiError(@StringRes val text: Int) {
     /** 409 `LAGER_GESCHLOSSEN`: Das Lager ist abgeschlossen oder archiviert und lässt nur noch lesen. */
     LAGER_CLOSED(R.string.error_lager_closed),
 
+    /** 409 `VERSION_KONFLIKT`: Die Zeile hat inzwischen eine andere Version; `ApiResult.Failure.conflict` trägt den aktuellen Stand. */
+    VERSION_CONFLICT(R.string.error_version_conflict),
+
     /** 410 `FEED_NEU_LADEN`: Der Stand der App ist zu alt für den Änderungsfeed; sie lädt die Listen neu. */
     FEED_RELOAD(R.string.error_feed_reload),
 
@@ -46,6 +49,7 @@ enum class ApiError(@StringRes val text: Int) {
             409 -> when (code) {
                 "PROGRAMM_BEGONNEN" -> PROGRAM_STARTED
                 "LAGER_GESCHLOSSEN" -> LAGER_CLOSED
+                "VERSION_KONFLIKT" -> VERSION_CONFLICT
                 else -> REGISTRATION_CLOSED // sonst PROGRAMM_GESCHLOSSEN
             }
             410 -> FEED_RELOAD
@@ -59,6 +63,9 @@ enum class ApiError(@StringRes val text: Int) {
     }
 }
 
+/** Der Stand, den der Server bei `VERSION_KONFLIKT` mitliefert (`aktuell`, `abweichend`). */
+data class VersionConflict(val current: kotlinx.serialization.json.JsonObject, val differing: List<String>)
+
 sealed interface ApiResult<out T> {
     data class Ok<out T>(val value: T) : ApiResult<T>
 
@@ -66,7 +73,13 @@ sealed interface ApiResult<out T> {
      * `code` ist der Fehlercode des Servers und nur bei 400, 403, 409, 410 und 503 gefüllt (z. B. `PASSWORD_COMPROMISED`).
      * `retryAfterSeconds` nennt bei 429 die Wartezeit aus dem Header `X-Retry-After`, wenn der Server sie schickt.
      */
-    data class Failure(val error: ApiError, val code: String? = null, val retryAfterSeconds: Int? = null) : ApiResult<Nothing>
+    data class Failure(
+        val error: ApiError,
+        val code: String? = null,
+        val retryAfterSeconds: Int? = null,
+        /** Nur bei `VERSION_KONFLIKT`: der aktuelle Stand der Zeile und die Felder, die jetzt anders stehen. */
+        val conflict: VersionConflict? = null,
+    ) : ApiResult<Nothing>
 }
 
 /** Gibt der Fehler an dieser Stelle einen genaueren Text: aus `from` wird `to`, alles andere bleibt (auch `code` und Wartezeit). */

@@ -208,11 +208,13 @@ class ApiClient(
     private fun failure(response: Response): ApiResult.Failure {
         if (response.code == 401 && !response.request.url.encodedPath.startsWith(SIGN_IN_PATH)) _unauthorized.tryEmit(Unit)
         if (response.code == 403 && response.request.url.encodedPath.startsWith(API_PATH)) _forbidden.tryEmit(Unit)
-        val read = if (response.code in CODE_STATUSES) errorCode(response) else null
+        val body = if (response.code in CODE_STATUSES) errorBody(response) else null
+        val read = body?.code
         // Bei 403 zählt nur der zweite Faktor; sonst heisst 403 schlicht «kein Recht», ohne Code.
         val code = if (response.code == 403 && read != SECOND_FACTOR_CODE) null else read
         val retryAfter = if (response.code == 429) response.header(RETRY_AFTER)?.toIntOrNull()?.coerceIn(1, MAX_RETRY_AFTER) else null
-        return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter)
+        val conflict = if (code == VERSION_CONFLICT_CODE && body?.current != null) VersionConflict(body.current, body.differing) else null
+        return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter, conflict)
     }
 
     private fun <T> evaluate(response: Response, decode: (Response) -> T): ApiResult<T> {
@@ -228,9 +230,9 @@ class ApiClient(
         }
     }
 
-    /** Der Fehlercode `{code, message}` des Servers; sonst `null`. Nur der Code zählt, `message` zeigt die App nie. */
-    private fun errorCode(response: Response): String? = try {
-        json.decodeFromString<ErrorBody>(response.body.string()).code
+    /** Der Fehler `{code, message}` des Servers (bei Versionskonflikt mit `aktuell` und `abweichend`); sonst `null`. `message` zeigt die App nie. */
+    private fun errorBody(response: Response): ErrorBody? = try {
+        json.decodeFromString<ErrorBody>(response.body.string())
     } catch (e: IOException) {
         null
     } catch (e: IllegalArgumentException) {
@@ -238,13 +240,18 @@ class ApiClient(
     }
 
     @Serializable
-    private class ErrorBody(val code: String? = null)
+    private class ErrorBody(
+        val code: String? = null,
+        @kotlinx.serialization.SerialName("aktuell") val current: kotlinx.serialization.json.JsonObject? = null,
+        @kotlinx.serialization.SerialName("abweichend") val differing: List<String> = emptyList(),
+    )
 
     companion object {
         private const val SIGN_IN_PATH = "/api/auth/sign-in"
         /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed) und 503 (Wartung). */
         private val CODE_STATUSES = setOf(400, 403, 409, 410, 503)
         private const val SECOND_FACTOR_CODE = "ZWEITER_FAKTOR_FEHLT"
+        private const val VERSION_CONFLICT_CODE = "VERSION_KONFLIKT"
         private const val STREAM_TIMEOUT_SECONDS = 70L
         private const val API_PATH = "/api/v1/"
 

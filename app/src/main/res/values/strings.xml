@@ -327,6 +327,7 @@
     <string name="to_camps">Zu deinen Lagern</string>
     <string name="state_maintenance_title">Lager-Modul nicht erreichbar</string>
     <string name="state_maintenance_text">Das Lager-Modul ist gerade nicht erreichbar. Deine Änderungen warten in der App, solange du sie offen lässt.</string>
+    <string name="error_version_conflict">Das wurde inzwischen von jemand anderem geändert. Der aktuelle Stand ist neu geladen.</string>
     <string name="error_lager_closed">Dieses Lager ist abgeschlossen. Du kannst nichts mehr ändern.</string>
     <string name="error_feed_reload">Dein Stand im Lager ist zu alt. Die App lädt ihn neu.</string>
     <string name="error_second_factor">Die Lagerleitung braucht einen zweiten Faktor. Die App kann ihn noch nicht abfragen. Melde dich dafür im Web an.</string>

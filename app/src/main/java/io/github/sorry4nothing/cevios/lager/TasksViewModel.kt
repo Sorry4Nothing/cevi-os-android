@@ -47,7 +47,7 @@ enum class UndoKind { DONE, STATUS, ASSIGNED, DUE, RESSORT, DELETED }
 class UndoNotice(val kind: UndoKind, val count: Int, val status: TaskStatus? = null, val undo: () -> Unit)
 
 /** Eine Aktion mit Netz ist gescheitert; `retry` wiederholt sie. */
-class ActionError(val error: ApiError, val retry: (() -> Unit)?)
+class ActionError(val error: ApiError, val retry: (() -> Unit)?, val code: String? = null)
 
 /** Die erkannte Person, das erkannte Ressort einer Zeile der Schnelleingabe: gewählt, offen (noch zu wählen) oder keine. */
 sealed interface QuickChoice<out T> {

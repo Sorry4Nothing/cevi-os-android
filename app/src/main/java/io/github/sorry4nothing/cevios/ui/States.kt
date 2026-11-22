@@ -62,7 +62,7 @@ enum class ErrorPage {
             ApiError.MAINTENANCE -> MAINTENANCE
             ApiError.SECOND_FACTOR_MISSING -> SECOND_FACTOR
             ApiError.TOO_MANY_REQUESTS, ApiError.REGISTRATION_CLOSED, ApiError.PROGRAM_STARTED, ApiError.DIRECT_CHAT_UNAVAILABLE,
-            ApiError.MESSAGE_TOO_FAST, ApiError.LAGER_CLOSED, ApiError.FEED_RELOAD, ApiError.UNKNOWN -> ERROR
+            ApiError.MESSAGE_TOO_FAST, ApiError.LAGER_CLOSED, ApiError.VERSION_CONFLICT, ApiError.FEED_RELOAD, ApiError.UNKNOWN -> ERROR
         }
     }
 }

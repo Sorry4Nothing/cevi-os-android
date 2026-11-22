@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.images.LocalStageLogos
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.cevi
@@ -35,9 +36,17 @@ enum class ChipKind(@DrawableRes val icon: Int?) {
     AGE_GROUP(null),
 }
 
-/** Kleines Etikett für einen Zustand. Nicht bedienbar; bedienbar ist die Karte, auf der es sitzt. */
+/** Eine Gruppe als Etikett. `stageId` ist nur bei einer echten Stufe gesetzt, nie bei «Alle Stufen». */
+data class GroupChip(val name: String, val stageId: String? = null)
+
+/**
+ * Kleines Etikett für einen Zustand. Nicht bedienbar; bedienbar ist die Karte, auf der es sitzt.
+ * Mit `stageId` steht vor dem Namen das Logo der Stufe, aber nur, wenn sie ein eigenes hat (sonst bleibt das Etikett wie es war;
+ * das Cevi-Logo als Ersatz wäre auf jedem Etikett Wiederholung). Das Logo ist dekorativ, der Name steht daneben.
+ */
 @Composable
-fun StatusChip(kind: ChipKind, text: String, modifier: Modifier = Modifier) {
+fun StatusChip(kind: ChipKind, text: String, modifier: Modifier = Modifier, stageId: String? = null) {
+    val logoId = stageId?.takeIf { kind == ChipKind.AGE_GROUP && it in LocalStageLogos.current }
     val colors = MaterialTheme.cevi
     val scheme = MaterialTheme.colorScheme
     val (surfaceColor, contentColor) = when (kind) {
@@ -56,6 +65,7 @@ fun StatusChip(kind: ChipKind, text: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.s1),
     ) {
+        logoId?.let { StageLogo(it, size = 20.dp) }
         kind.icon?.let { Icon(painterResource(it), contentDescription = null, tint = contentColor, modifier = Modifier.size(16.dp)) }
         Text(text, style = MaterialTheme.typography.labelMedium, color = contentColor)
     }

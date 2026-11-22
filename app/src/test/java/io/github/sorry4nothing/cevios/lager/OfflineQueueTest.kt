@@ -16,10 +16,15 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
+import java.util.concurrent.TimeUnit
 
 /** Warteschlange und Konfliktlogik: gegen einen Fake-Server und gegen einen Ersatz, der das Netz verliert. */
 class OfflineQueueTest {
+    // Ein hängender Test soll mit Namen scheitern, nicht die CI stundenlang blockieren.
+    @get:Rule val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
     private lateinit var server: MockWebServer
     private lateinit var queue: OfflineQueue
     private val id = "7c9e6679-7425-40de-944b-e07fc1f90ae7"

@@ -1,9 +1,14 @@
 package io.github.sorry4nothing.cevios.lager
 
 import org.junit.Assert.assertEquals
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
+import java.util.concurrent.TimeUnit
 
 class CampFormatTest {
+    // Ein hängender Test soll mit Namen scheitern, nicht die CI stundenlang blockieren.
+    @get:Rule val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
     @Test
     fun datesInWordsInSwissGerman() {
         assertEquals("17. bis 24. Juli 2027", campDates("2027-07-17", "2027-07-24"))

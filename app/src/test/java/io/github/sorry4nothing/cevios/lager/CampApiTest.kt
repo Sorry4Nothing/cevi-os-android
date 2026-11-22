@@ -14,10 +14,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
+import java.util.concurrent.TimeUnit
 
 /** Die Lager-Routen gegen einen Fake-Server: Pfade, Felder, Fehlercodes. */
 class CampApiTest {
+    // Ein hängender Test soll mit Namen scheitern, nicht die CI stundenlang blockieren.
+    @get:Rule val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
     private lateinit var server: MockWebServer
     private lateinit var camps: CampApi
 

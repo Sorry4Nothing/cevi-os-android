@@ -9,9 +9,11 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
+import okhttp3.Request
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -229,5 +231,20 @@ class ApiClientTest {
         server.enqueue(MockResponse.Builder().code(500).build())
         client.get<Me>("/api/v1/ich")
         assertEquals(0, client.pending.value)
+    }
+    @Test
+    fun aDecodeThatThrowsIsAnUnknownErrorAndNeverHangs() {
+        server.enqueue(MockResponse.Builder().code(200).body("{}").build())
+        val request = Request.Builder().url(server.url("/api/v1/ich")).build()
+        val result = runBlocking { withTimeout(5_000) { client().send(request) { error("kaputt") } } }
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN), result)
+    }
+
+    @Test
+    fun anErrorWhileDecodingReachesTheCallerInsteadOfHanging() {
+        server.enqueue(MockResponse.Builder().code(200).body("{}").build())
+        val request = Request.Builder().url(server.url("/api/v1/ich")).build()
+        val outcome = runCatching { runBlocking { withTimeout(5_000) { client().send(request) { throw IllegalAccessError("x") } } } }
+        assertTrue(outcome.exceptionOrNull() is IllegalAccessError)
     }
 }

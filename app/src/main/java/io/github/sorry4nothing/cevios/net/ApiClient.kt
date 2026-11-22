@@ -35,6 +35,7 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * Marke für Anfragen im Hintergrund (regelmässiges Nachladen, Bilder, «gelesen» melden): Sie zählen nicht in
@@ -178,9 +179,16 @@ class ApiClient(
                         continuation.resume(ApiResult.Failure(error))
                     }
 
-                    // Darf nie werfen, sonst bleibt die Fortsetzung hängen.
+                    // Darf nie ohne Antwort enden, sonst bleibt die Fortsetzung hängen: Ein Fehler beim Auswerten (auch ein Error)
+                    // kommt als Ausnahme beim Aufrufer an, statt dass die Anfrage ewig wartet.
                     override fun onResponse(call: Call, response: Response) {
-                        continuation.resume(response.use { evaluate(it, decode) })
+                        val result = try {
+                            response.use { evaluate(it, decode) }
+                        } catch (t: Throwable) {
+                            continuation.resumeWithException(t)
+                            return
+                        }
+                        continuation.resume(result)
                     }
                 })
             }
@@ -206,6 +214,8 @@ class ApiClient(
         } catch (e: IOException) {
             ApiResult.Failure(ApiError.NETWORK)
         } catch (e: IllegalArgumentException) { // auch SerializationException
+            ApiResult.Failure(ApiError.UNKNOWN)
+        } catch (e: RuntimeException) { // eine Antwort, die sich nicht auswerten lässt, ist ein unbekannter Fehler
             ApiResult.Failure(ApiError.UNKNOWN)
         }
     }

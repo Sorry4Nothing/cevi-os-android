@@ -37,13 +37,13 @@ data class Camp(
     val readOnly: Boolean get() = readOnlyFlag ?: (status == STATUS_CLOSED || status == STATUS_ARCHIVED)
 
     val active: Boolean get() = status == STATUS_ACTIVE
-
-    private companion object {
-        const val STATUS_ACTIVE = "aktiv"
-        const val STATUS_CLOSED = "abgeschlossen"
-        const val STATUS_ARCHIVED = "archiviert"
-    }
 }
+
+// Auf Dateiebene, nicht in einem privaten `companion object` der Klasse: Dessen Feld ist für den erzeugten Serialisierer
+// ausserhalb der Klasse nicht erreichbar (IllegalAccessError, der Aufruf bliebe hängen).
+private const val STATUS_ACTIVE = "aktiv"
+private const val STATUS_CLOSED = "abgeschlossen"
+private const val STATUS_ARCHIVED = "archiviert"
 
 @Serializable
 data class CampList(@SerialName("lager") val camps: List<Camp>)

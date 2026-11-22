@@ -11,10 +11,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
+import java.util.concurrent.TimeUnit
 
 /** Änderungsfeed und Ereignisstrom gegen einen Fake-Server. */
 class CampSyncTest {
+    // Ein hängender Test soll mit Namen scheitern, nicht die CI stundenlang blockieren.
+    @get:Rule val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
     private lateinit var server: MockWebServer
     private lateinit var sync: CampSync
     private val id = "7c9e6679-7425-40de-944b-e07fc1f90ae7"

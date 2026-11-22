@@ -420,19 +420,21 @@ sealed interface CampTarget {
     data object Inbox : CampTarget
     data object Notifications : CampTarget
     data object Swaps : CampTarget
+    data object Attendance : CampTarget
     data object Start : CampTarget
 }
 
 /**
  * Baut das Ziel aus Art oder Push-`typ` und dem Objekt. Aufgaben öffnen sich selbst; Erwähnungen führen zur Liste der Erwähnungen
  * (der Inhalt ist ein Traktandum, ein Beschluss oder ein Beitrag, den die Liste mit Titel nennt); wichtige Mitteilungen zur
- * Pinnwand, Antworten auf Feedback in den Eingang; Diensttausch (Anfrage und Entscheid) zur Liste der Anfragen; alles andere zum Start.
+ * Pinnwand, Antworten auf Feedback in den Eingang; Diensttausch (Anfrage und Entscheid) zur Liste der Anfragen; Anwesenheit (Anfrage und Entscheid) zur Anwesenheit; alles andere zum Start.
  */
 fun campTargetFor(kind: String?, objectType: String, objectId: String): CampTarget = when {
     kind == "erwaehnung" || kind == "lager_erwaehnung" -> CampTarget.Mentions
     kind == "pinnwand_wichtig" || kind == "lager_pinnwand" -> if (objectType == "adressbuch") CampTarget.Start else CampTarget.Pinboard
     kind == "eingang_antwort" || kind == "lager_eingang" -> CampTarget.Inbox
     kind == "diensttausch_anfrage" || kind == "diensttausch_entscheid" || kind == "lager_einteilung" || objectType == "diensttausch" -> CampTarget.Swaps
+    kind == "anwesenheit_anfrage" || kind == "anwesenheit_entscheid" || kind == "lager_anwesenheit" || objectType.startsWith("anwesenheit") -> CampTarget.Attendance
     objectType.startsWith("aufgabe") -> CampTarget.Task(objectId)
     else -> CampTarget.Start
 }

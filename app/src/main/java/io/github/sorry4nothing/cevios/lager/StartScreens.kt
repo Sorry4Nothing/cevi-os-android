@@ -75,6 +75,7 @@ fun ColumnScope.LeadershipStart(
     onOpenTasks: () -> Unit,
     onOpenTarget: (CampTarget) -> Unit = {},
     onOpenMeeting: (String) -> Unit = {},
+    onOpenToday: () -> Unit = {},
 ) {
     val data by vm.start.collectAsState()
     val reloads by vm.reloads.collectAsState()
@@ -131,7 +132,7 @@ fun ColumnScope.LeadershipStart(
                     }
                 }
             }
-            data.today?.let { TodaySection(it, camp) }
+            data.today?.let { TodaySection(it, camp, onOpenToday) }
             NewsSection(data.news, (tasks as? ApiResult.Ok)?.value.orEmpty(), onOpenTask, onOpenTarget)
         }
     }
@@ -141,7 +142,17 @@ private const val START_TASKS = 5
 
 /** Start des Teams (Entwurf L3): meine Aufgaben und was es Neues gibt. Dienste, Zimmer und Fahrten folgen mit den Schnitten A3 und A4. */
 @Composable
-fun ColumnScope.TeamStart(vm: TasksViewModel, camp: Camp, onOpenTask: (String) -> Unit, onOpenTasks: () -> Unit, onOpenTarget: (CampTarget) -> Unit = {}) {
+fun ColumnScope.TeamStart(
+    vm: TasksViewModel,
+    camp: Camp,
+    onOpenTask: (String) -> Unit,
+    onOpenTasks: () -> Unit,
+    onOpenTarget: (CampTarget) -> Unit = {},
+    live: LiveViewModel? = null,
+    onOpenToday: () -> Unit = {},
+    onOpenShifts: () -> Unit = {},
+    onOpenPacking: () -> Unit = {},
+) {
     val data by vm.start.collectAsState()
     val reloads by vm.reloads.collectAsState()
     val tasks by vm.tasks.collectAsState()
@@ -153,7 +164,8 @@ fun ColumnScope.TeamStart(vm: TasksViewModel, camp: Camp, onOpenTask: (String) -
         is ApiResult.Failure -> ErrorState(state.error, vm::retryTasks, Modifier.heightIn(max = 420.dp))
         is ApiResult.Ok -> {
             val own = TaskRules.mine(state.value, vm.self.id, MineSort.DUE, today).filterNot { it.done }
-            if (own.isEmpty() && data.news.isNullOrEmpty()) {
+            if (live != null) TeamArea(live, camp, onOpenToday, onOpenShifts, onOpenPacking)
+            if (own.isEmpty() && data.news.isNullOrEmpty() && live == null) {
                 Column(Modifier.fillMaxWidth().padding(vertical = Spacing.s6), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     Text(stringResource(R.string.team_empty_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
                     Text(stringResource(R.string.team_empty_text), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -231,7 +243,7 @@ private fun ProgressCard(start: CampStart, camp: Camp) {
 
 /** Eine Aufgabe in einer Liste des Starts: Titel, Person und Frist, Zustand als Etikett. */
 @Composable
-private fun StartTaskRow(task: CampTask, today: LocalDate, onOpen: () -> Unit) {
+internal fun StartTaskRow(task: CampTask, today: LocalDate, onOpen: () -> Unit) {
     val shape = MaterialTheme.shapes.medium
     val overdue = TaskRules.overdueDays(task, today)
     val line = if (overdue != null) {
@@ -266,7 +278,7 @@ private fun StartTaskRow(task: CampTask, today: LocalDate, onOpen: () -> Unit) {
 
 /** «Heute im Lager»: Tageschef und Zahl der Dienste; vor dem ersten Lagertag steht, ab wann es das gibt. */
 @Composable
-private fun TodaySection(today: CampToday, camp: Camp) {
+private fun TodaySection(today: CampToday, camp: Camp, onOpenToday: () -> Unit) {
     StartSection(R.string.start_today) {
         if (today.lagertag == null) {
             Text(stringResource(R.string.start_today_empty, formatDay(camp.from)), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -281,6 +293,7 @@ private fun TodaySection(today: CampToday, camp: Camp) {
                 val count = shifts.duties.size
                 if (count > 0) Text(pluralStringResource(R.plurals.start_duties, count, count), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            TextActionButton(stringResource(R.string.start_open_today), onOpenToday)
         }
     }
 }
@@ -357,14 +370,14 @@ internal fun newsTime(iso: String): String {
 }
 
 @Composable
-private fun weatherDayName(day: LocalDate, today: LocalDate): String = when (java.time.temporal.ChronoUnit.DAYS.between(today, day)) {
+internal fun weatherDayName(day: LocalDate, today: LocalDate): String = when (java.time.temporal.ChronoUnit.DAYS.between(today, day)) {
     0L -> stringResource(R.string.day_today)
     1L -> stringResource(R.string.day_tomorrow)
     else -> weekdayName(day)
 }
 
 @androidx.annotation.StringRes
-private fun weatherText(code: String): Int = when (code) {
+internal fun weatherText(code: String): Int = when (code) {
     "gewitter" -> R.string.weather_thunder
     "boeen" -> R.string.weather_gusts
     "hitze" -> R.string.weather_heat

@@ -4,6 +4,8 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +31,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
-import io.github.sorry4nothing.cevios.ui.theme.Eyebrow
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.cevi
@@ -39,16 +40,18 @@ class HeaderButton(@DrawableRes val icon: Int, val description: String, val onCl
 
 /**
  * Derselbe Kopf auf jedem Screen: oben, nur mit Knopf, eine Zeile (48 dp) mit Zurück links und höchstens einer Aktion
- * rechts, darunter Überzeile und Titel.
+ * rechts, darunter der Titel mit Untertitel und Gruppen-Chips.
  * Der Titel ist eine Überschrift; nach dem Öffnen springt der Fokus auf ihn (`focusOnTitle`).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Header(
     title: String?,
     modifier: Modifier = Modifier,
-    eyebrow: String? = null,
-    /** Stufen, deren Logo vor der Überzeile steht (dekorativ, der Name steht in der Überzeile). */
-    eyebrowStages: List<String> = emptyList(),
+    /** Kontext als Satzteil unter dem Titel (Datum, Programm); keine Überzeile über dem Titel. */
+    subtitle: String? = null,
+    /** Gruppen (Stufe, Team) als Chips unter dem Untertitel. */
+    groups: List<String> = emptyList(),
     back: HeaderButton? = null,
     action: HeaderButton? = null,
     titleStyle: TextStyle = MaterialTheme.typography.headlineLarge,
@@ -68,12 +71,6 @@ fun Header(
         }
         if (title != null) {
             Column(Modifier.padding(horizontal = Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
-                if (eyebrow != null || eyebrowStages.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1), verticalAlignment = Alignment.CenterVertically) {
-                        eyebrowStages.forEach { StageLogo(it, size = 24.dp) }
-                        eyebrow?.let { Text(it.uppercase(), style = Eyebrow, color = MaterialTheme.cevi.accent) }
-                    }
-                }
                 val focus = remember { FocusRequester() }
                 if (focusOnTitle) LaunchedEffect(title) { focus.requestFocus() }
                 Text(
@@ -84,6 +81,14 @@ fun Header(
                         .then(if (focusOnTitle) Modifier.focusRequester(focus).focusTarget() else Modifier)
                         .semantics { heading() },
                 )
+                subtitle?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+            if (groups.isNotEmpty()) {
+                FlowRow(
+                    Modifier.padding(horizontal = Spacing.s2),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+                ) { groups.forEach { StatusChip(ChipKind.AGE_GROUP, it) } }
             }
         }
     }

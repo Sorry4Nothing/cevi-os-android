@@ -209,10 +209,10 @@ private fun SectionTitle(text: String) {
 
 /** Kopf mit Zurück und Titel, darunter der scrollende Inhalt; die Tastatur schiebt den Inhalt nach oben. */
 @Composable
-private fun FormPage(eyebrow: String, title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
+private fun FormPage(subtitle: String, title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
     val back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_program), onBack)
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState())) {
-        Header(title = title, eyebrow = eyebrow, back = back, titleStyle = MaterialTheme.typography.headlineMedium, focusOnTitle = true)
+        Header(title = title, subtitle = subtitle, back = back, titleStyle = MaterialTheme.typography.headlineMedium, focusOnTitle = true)
         Column(Modifier.padding(horizontal = Spacing.s5), verticalArrangement = Arrangement.spacedBy(Spacing.s4)) {
             content()
             Spacer(Modifier.height(Spacing.s2))

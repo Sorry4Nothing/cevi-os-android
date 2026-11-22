@@ -293,7 +293,7 @@ data class ShiftSuggestion(
     @SerialName("geaendert") val changed: Int? = null,
 )
 
-/** Ein Tag des Lagers aus dem Zeitplan (`GET …/zeitplan`); die App braucht nur Tage und Abschnitte. */
+/** Ein Tag des Lagers aus dem Zeitplan (`GET …/zeitplan`); der Schichtplan braucht Tage und Abschnitte, der Zeitplan auch die Meilensteine. */
 @Serializable
 data class CampDay(val id: String, @SerialName("datum") val date: String, val label: String? = null)
 
@@ -301,7 +301,11 @@ data class CampDay(val id: String, @SerialName("datum") val date: String, val la
 data class DaySection(val id: String, val name: String, @SerialName("zeit") val time: String? = null, @SerialName("reihenfolge") val order: Int = 0)
 
 @Serializable
-data class Schedule(@SerialName("lagertage") val days: List<CampDay>, @SerialName("tagesabschnitte") val sections: List<DaySection>)
+data class Schedule(
+    @SerialName("lagertage") val days: List<CampDay>,
+    @SerialName("tagesabschnitte") val sections: List<DaySection>,
+    @SerialName("meilensteine") val milestones: List<Milestone> = emptyList(),
+)
 
 // ---- Diensttausch ----
 

@@ -49,6 +49,7 @@ class AndroidCommsTexts(private val context: Context) : CommsTexts {
         "verantwortlichePersonIds" to context.getString(R.string.field_responsible),
         "empfaenger" to context.getString(R.string.field_recipients),
         "name" to context.getString(R.string.field_name),
+        "behalten" to context.getString(R.string.field_keep),
         "plaetze" to context.getString(R.string.field_seats),
         "notiz" to context.getString(R.string.field_note),
         "vorname" to context.getString(R.string.field_first_name),

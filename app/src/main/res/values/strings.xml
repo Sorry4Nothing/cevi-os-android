@@ -682,6 +682,9 @@
     <string name="ressort_loading">Ressort wird geladen</string>
     <string name="ressort_subtitle">Ressort %1$s</string>
     <string name="ressort_people">Personen</string>
+    <string name="ressort_quiet">Ruhiges Ressort</string>
+    <string name="ressort_quiet_hint">Hat gerade nichts zu tun. Die Liste zeigt es blasser, der Zeitplan nennt es.</string>
+    <string name="ressort_quiet_label">Ruhig</string>
     <string name="ressort_no_people">Noch niemand eingetragen.</string>
     <string name="ressort_role_deputy">Stellvertretung</string>
     <string name="ressort_notes">Notizen</string>
@@ -697,6 +700,8 @@
 
     <string name="summary_created">Aufgabe «%1$s» angelegt</string>
     <string name="summary_changed">Aufgabe «%1$s» geändert</string>
+    <string name="summary_ressort_quiet">Ressort «%1$s» ruhig gestellt</string>
+    <string name="summary_ressort_active">Ressort «%1$s» nicht mehr ruhig</string>
     <string name="summary_status">Aufgabe «%1$s» auf «%2$s» gesetzt</string>
     <string name="summary_deleted">Aufgabe «%1$s» gelöscht</string>
     <string name="field_title">Titel</string>

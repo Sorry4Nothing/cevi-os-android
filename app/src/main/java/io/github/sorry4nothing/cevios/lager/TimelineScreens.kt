@@ -74,12 +74,13 @@ private val WEEKDAYS = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
  * für fehlende Lagertage und Abschnitte. Meilensteine ändern und verschieben (mit Vorschau) hat der Entwurf nicht.
  */
 @Composable
-fun TimelineScreen(frame: LiveFrame, archive: ArchiveViewModel, onOpenTask: (String) -> Unit) {
+fun TimelineScreen(frame: LiveFrame, archive: ArchiveViewModel, onOpenTask: (String) -> Unit, quietRessorts: List<String> = emptyList(), onOpenRessorts: (() -> Unit)? = null) {
     val state by archive.timeline.collectAsState()
     val proposal by archive.proposal.collectAsState()
     val busy by archive.busy.collectAsState()
     var calendar by rememberSaveable { mutableStateOf(false) }
     var proposalHidden by remember { mutableStateOf(false) }
+    var quietHidden by remember { mutableStateOf(false) }
     LaunchedEffect(frame.camp?.id) { archive.loadTimeline(silent = archive.timeline.value is ApiResult.Ok) }
 
     ArchivePage(frame, archive, stringResource(R.string.timeline_title)) {
@@ -100,6 +101,13 @@ fun TimelineScreen(frame: LiveFrame, archive: ArchiveViewModel, onOpenTask: (Str
                                 NoticeKind.INFO,
                                 stringResource(R.string.timeline_proposal_title) + ". " + stringResource(R.string.timeline_proposal_text),
                                 stringResource(R.string.timeline_proposal_action), { archive.adoptProposal() }, { proposalHidden = true },
+                            )
+                        }
+                        if (quietRessorts.isNotEmpty() && !quietHidden) {
+                            ActionBanner(
+                                NoticeKind.INFO,
+                                stringResource(R.string.timeline_quiet_title) + ". " + stringResource(R.string.timeline_quiet_text, quietRessorts.joinToString(", ")),
+                                onOpenRessorts?.let { stringResource(R.string.timeline_quiet_action) }, onOpenRessorts, { quietHidden = true },
                             )
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {

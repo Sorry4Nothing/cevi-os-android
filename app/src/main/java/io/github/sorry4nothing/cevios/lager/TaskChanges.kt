@@ -14,6 +14,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 
+/** Die Operation der Warteschlange für «Ruhiges Ressort» (Felder `id`, `version`, `ruhig`). */
+const val RESSORT_QUIET_OP = "ressort.ruhig"
+
 /** Die Operationen der Warteschlange für Aufgaben (Namen und Felder bestimmt der Server, `aenderungen`). */
 object TaskOps {
     const val CREATE = "aufgabe.anlegen"

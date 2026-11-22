@@ -217,6 +217,8 @@ data class Ressort(
     @SerialName("reihenfolge") val order: Int = 0,
     @SerialName("leitung") val leader: RessortPerson? = null,
     @SerialName("stv") val deputy: RessortPerson? = null,
+    /** «Ruhiges Ressort»: hat gerade nichts zu tun; die App zeigt es grau und im Zeitplan als Hinweis. */
+    @SerialName("ruhig") val quiet: Boolean = false,
 )
 
 @Serializable

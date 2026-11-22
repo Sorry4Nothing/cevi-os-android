@@ -24,7 +24,9 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import java.time.LocalDate
 
 /** Die Sätze der Warteschlange und die Feldnamen des Konfliktdialogs; sie stehen in `strings.xml`, der ViewModel kennt sie nicht. */
@@ -36,6 +38,8 @@ interface TaskTexts {
     fun statusSet(title: String, status: TaskStatus): String
 
     fun deleted(title: String): String
+
+    fun ressortQuiet(name: String, quiet: Boolean): String
 
     fun fieldLabels(): Map<String, String>
 }
@@ -684,6 +688,20 @@ class TasksViewModel(
             if (campId != id) return@launch
             if (result is ApiResult.Ok || !silent || rawRessorts.value == null) rawRessorts.value = result
         }
+    }
+
+    /**
+     * «Ruhiges Ressort» an- oder ausschalten (Recht `ressorts.bearbeiten`). Die Änderung geht über die Warteschlange; bis der Server
+     * sie bestätigt, zeigt die Ansicht den neuen Wert.
+     */
+    fun setRessortQuiet(ressort: Ressort, quiet: Boolean) {
+        val id = campId ?: return
+        if (!rights.editRessorts || ressort.quiet == quiet) return
+        val payload = buildJsonObject { put("id", ressort.id); put("version", ressort.version); put("ruhig", quiet) }
+        camp.enqueue(id, RESSORT_QUIET_OP, payload, texts.ressortQuiet(ressort.name, quiet), texts.fieldLabels())
+        val shown = ressort.copy(quiet = quiet)
+        (rawRessorts.value as? ApiResult.Ok)?.let { ok -> rawRessorts.value = ApiResult.Ok(ok.value.map { if (it.id == ressort.id) shown else it }) }
+        _bundle.update { current -> (current as? ApiResult.Ok)?.takeIf { it.value.ressort.id == ressort.id }?.let { ApiResult.Ok(it.value.copy(ressort = shown)) } ?: current }
     }
 
     fun openRessort(ressortId: String) {

@@ -23,6 +23,7 @@
     <!-- Feldnamen im Konfliktbildschirm -->
     <string name="field_text">Text</string>
     <string name="field_decision">Entscheid</string>
+    <string name="field_duration">Dauer</string>
     <string name="field_date">Datum</string>
     <string name="field_time">Zeit</string>
     <string name="field_place">Ort</string>

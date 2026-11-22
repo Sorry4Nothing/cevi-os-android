@@ -671,11 +671,11 @@ private fun MainContent(
         // Wer Mitteilungen schreibt, wählt auch Ressorts und Gruppen als Empfänger; ohne Recht bleiben die Listen leer.
         val recipientRessorts = (tasks.ressorts.collectAsState().value as? ApiResult.Ok)?.value
         val recipientGroups = (planning.groups.collectAsState().value as? ApiResult.Ok)?.value?.groups
+        LaunchedEffect(campId, meetingRights.editPinboard, liveArea) {
+            if (campId != null && rights.readRessorts && (meetingRights.editPinboard || liveArea == LiveArea.TIMELINE)) tasks.loadRessortsIfNeeded()
+        }
         LaunchedEffect(campId, meetingRights.editPinboard) {
-            if (campId != null && meetingRights.editPinboard) {
-                if (rights.readRessorts) tasks.loadRessortsIfNeeded()
-                planning.loadGroups(silent = true)
-            }
+            if (campId != null && meetingRights.editPinboard) planning.loadGroups(silent = true)
         }
         LaunchedEffect(recipientRessorts, recipientGroups) {
             comms.setChoices(RecipientChoices(recipientRessorts.orEmpty().map { it.id to it.name }, recipientGroups.orEmpty().map { it.id to it.name }))
@@ -954,6 +954,8 @@ private fun MainContent(
                             onOpenDay = { liveDay = it; liveArea = LiveArea.DAY },
                             onOpenTask = { openedTask = it },
                             onOpenShifts = { liveArea = null; planArea = PlanArea.SHIFTS },
+                            quietRessorts = if (rights.readRessorts) recipientRessorts.orEmpty().filter { it.quiet }.map { it.name } else emptyList(),
+                            onOpenRessorts = if (rights.readRessorts) ({ liveArea = null; ressortsOpen = true }) else null,
                             onOpenSearchHit = { hit ->
                                 archive.clearSearch()
                                 when (hit) {

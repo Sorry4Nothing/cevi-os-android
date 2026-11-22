@@ -31,9 +31,6 @@ data class RsvpState(
 
 const val LEADER_KEY = "leitung"
 
-/** Zustand beim Speichern von Ergänzungen oder Zuordnung durch Leitende. */
-data class EditState(val running: Boolean = false, val error: ApiError? = null)
-
 private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
 
 /** `null` heisst: wird geladen. Die Daten bleiben nur im Arbeitsspeicher. */
@@ -57,19 +54,9 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
     private val _registrations = MutableStateFlow<ApiResult<Registrations>?>(null)
     val registrations: StateFlow<ApiResult<Registrations>?> = _registrations.asStateFlow()
 
-    private val _edit = MutableStateFlow(EditState())
-    val edit: StateFlow<EditState> = _edit.asStateFlow()
-
-    /** Für die Rechte bei der Zuordnung (Admin, Stufenleitung); `null`, solange es lädt. */
+    /** Für die Rechte bei den Anmeldungen (Admin, Stufenleitung, Leitung); `null`, solange es lädt. */
     private val _profile = MutableStateFlow<ApiResult<Profile>?>(null)
     val profile: StateFlow<ApiResult<Profile>?> = _profile.asStateFlow()
-
-    /** Der ältere Stand des Programms mit Stufen und Sichtbarkeit, den die Zuordnung braucht (der Kalender kennt beides nicht). */
-    private val _assignable = MutableStateFlow<ApiResult<Program>?>(null)
-    val assignable: StateFlow<ApiResult<Program>?> = _assignable.asStateFlow()
-
-    private val _ageGroups = MutableStateFlow<ApiResult<AgeGroupList>?>(null)
-    val ageGroups: StateFlow<ApiResult<AgeGroupList>?> = _ageGroups.asStateFlow()
 
     private var detailJob: Job? = null
     private var openedId: String? = null
@@ -102,44 +89,6 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
     fun loadRegistrations(programId: String) {
         _registrations.value = null
         viewModelScope.launch { _registrations.value = api.registrations(programId) }
-    }
-
-    fun loadAgeGroups() {
-        _ageGroups.value = null
-        viewModelScope.launch { _ageGroups.value = api.ageGroups() }
-    }
-
-    fun resetEdit() {
-        _edit.value = EditState()
-        _assignable.value = null
-    }
-
-    /** Lädt für die Zuordnung den älteren Stand des Programms und die Stufen der Abteilung. */
-    fun loadAssignment(programId: String) {
-        _assignable.value = null
-        viewModelScope.launch { _assignable.value = api.readAssignable(programId) }
-        loadAgeGroups()
-    }
-
-    fun saveAssignment(programId: String, request: AssignmentRequest, onSaved: () -> Unit) =
-        saveEdit(programId, onSaved) { api.assign(programId, request) }
-
-    /** Speichert, liest Detail und Liste danach neu und meldet den Erfolg. Bei einem Fehler bleibt der Bildschirm offen. */
-    private fun saveEdit(programId: String, onSaved: () -> Unit, block: suspend () -> ApiResult<Unit>) {
-        if (_edit.value.running) return
-        _edit.value = EditState(running = true)
-        viewModelScope.launch {
-            when (val result = block()) {
-                is ApiResult.Failure -> _edit.value = EditState(error = result.error)
-                is ApiResult.Ok -> {
-                    _edit.value = EditState()
-                    val fresh = api.read(programId)
-                    if (openedId == programId) _detail.value = fresh
-                    fetchList()
-                    onSaved()
-                }
-            }
-        }
     }
 
     /**

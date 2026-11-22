@@ -141,21 +141,6 @@
     <string name="saving">Wird gespeichert …</string>
     <string name="back_to_program">Zurück zum Programm</string>
 
-    <string name="assignment_action">Stufen und Sichtbarkeit</string>
-    <string name="assignment_title">Stufen und Sichtbarkeit</string>
-    <string name="assignment_loading">Stufen werden geladen</string>
-    <string name="assignment_age_groups">Stufen</string>
-    <string name="assignment_no_choices">Du bist in keiner Stufe Stufenleitung. Darum kannst du keine Stufe zuordnen.</string>
-    <string name="assignment_fixed">Diese Stufen kannst du nicht ändern: %1$s. Sie und die Sichtbarkeit bleiben, wie sie sind.</string>
-    <string name="assignment_visibility">Wer sieht das Programm?</string>
-    <string name="visibility_intern">Intern</string>
-    <string name="visibility_intern_text">Nur Stufenleitungen und Admins</string>
-    <string name="visibility_leaders">Leitende</string>
-    <string name="visibility_leaders_text">Zusätzlich die Leitenden der Stufen</string>
-    <string name="visibility_parents">Eltern</string>
-    <string name="visibility_parents_text">Zusätzlich die Eltern der Stufen</string>
-    <string name="assignment_needs_age_group">Ohne Stufe geht nur «Intern».</string>
-
     <!-- Anmeldung, Passwort, Willkommen, Profil -->
     <string name="department">Cevi Stäfa-Hombrechtikon</string>
     <string name="start_loading">Wird geladen …</string>

@@ -175,8 +175,6 @@ import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
 import io.github.sorry4nothing.cevios.termine.TermineApi
 import io.github.sorry4nothing.cevios.auth.SettingsCard
 import io.github.sorry4nothing.cevios.auth.SettingsRow
-import io.github.sorry4nothing.cevios.programs.AssignmentRules
-import io.github.sorry4nothing.cevios.programs.AssignmentScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import io.github.sorry4nothing.cevios.programs.ProgramListScreen
@@ -389,7 +387,6 @@ private sealed interface Screen {
     data class RessortPage(val ressortId: String) : Screen { override val depth = 2 }
     data class Conflict(val changeId: String) : Screen { override val depth = 2 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
-    data class Assign(val programId: String) : Screen { override val depth = 2 }
     data class Event(val eventId: String) : Screen { override val depth = 2 }
     data object Proposal : Screen { override val depth = 1 }
 }
@@ -471,7 +468,6 @@ private fun MainContent(
     var proposalOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
-    var assigning by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
     // Das gewählte Profilfoto, solange die Person den Ausschnitt wählt.
     var croppingImage by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -499,7 +495,7 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false
+        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
@@ -585,7 +581,6 @@ private fun MainContent(
             proposals.loadOptions()
         }
     }
-    LaunchedEffect(assigning, openedProgram) { if (assigning) openedProgram?.let(programs::loadAssignment) }
     LaunchedEffect(viewingRegistrations, openedProgram) {
         val id = openedProgram
         if (viewingRegistrations && id != null) programs.loadRegistrations(id)
@@ -734,7 +729,6 @@ private fun MainContent(
             campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
             openedEvent != null -> Screen.Event(openedEvent!!)
             proposalOpen -> Screen.Proposal
-            programId != null && assigning -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
             chatId != null -> Screen.Chat(chatId)
@@ -764,18 +758,6 @@ private fun MainContent(
             label = "bildschirm",
         ) { screen ->
             when (screen) {
-                is Screen.Assign -> {
-                    val programId = screen.programId
-                    val leave = { assigning = false; programs.resetEdit() }
-                    BackHandler(onBack = leave)
-                    val edit = programs.edit.collectAsState().value
-                    AssignmentScreen(
-                        programs.assignable.collectAsState().value, programs.ageGroups.collectAsState().value, programProfile, edit,
-                        onSave = { request -> programs.saveAssignment(programId, request, leave) },
-                        onBack = leave,
-                        onRetry = { programs.loadAssignment(programId) },
-                    )
-                }
                 is Screen.Event -> {
                     val leave = { openedEvent = null }
                     BackHandler(onBack = leave)
@@ -835,13 +817,11 @@ private fun MainContent(
                         ProgramDetailScreen(
                             detail,
                             programs.rsvp.collectAsState().value,
-                            canAssign = AssignmentRules.mayAssign(programProfile),
                             canSeeRegistrations = assignedProgram?.let { RegistrationsRules.maySee(it, programProfile) } == true,
                             contacts = programs.contacts.collectAsState().value,
                             account = account,
                             onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                             onLeader = { attending -> programs.rsvpLeader(programId, attending) },
-                            onAssign = { assigning = true },
                             onRegistrations = { viewingRegistrations = true },
                             onEvent = { openedEvent = it },
                             onBack = { openedProgram = null },

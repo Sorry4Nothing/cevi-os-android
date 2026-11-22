@@ -41,9 +41,6 @@ class ProgramsApi(private val api: ApiClient) {
     /** Ein Termin aus «Mein Kalender» mit Treffpunkt, Mitnehmen und den eigenen Kindern. */
     suspend fun read(id: String): ApiResult<Program> = api.get("/api/v1/termine/$id")
 
-    /** Der ältere Stand des Programms (mit Stufen und Sichtbarkeit): nur für die Zuordnung, die der Vertrag noch anbietet. */
-    suspend fun readAssignable(id: String): ApiResult<Program> = api.get("/api/v1/programme/$id")
-
     /** Meldet ein eigenes Kind an («ja») oder ab («nein»); eine frühere Antwort wird überschrieben. */
     suspend fun setAttendance(id: String, childId: String, attending: Boolean): ApiResult<Unit> =
         api.put("/api/v1/programme/$id/teilnahmen/$childId", rsvpBody(attending))
@@ -51,10 +48,6 @@ class ProgramsApi(private val api: ApiClient) {
     /** Dasselbe für die eigene Anmeldung als Leitung. */
     suspend fun setLeaderRsvp(id: String, attending: Boolean): ApiResult<Unit> =
         api.put("/api/v1/programme/$id/leitung", rsvpBody(attending))
-
-    /** Setzt Stufen und Sichtbarkeit; die App schickt den vollen neuen Stand, wie die API es verlangt. */
-    suspend fun assign(id: String, request: AssignmentRequest): ApiResult<Unit> =
-        api.put("/api/v1/programme/$id/zuordnung", request)
 
     suspend fun ageGroups(): ApiResult<AgeGroupList> = api.get("/api/v1/stufen")
 

@@ -236,13 +236,11 @@ private fun listTime(program: Program): String = when (val time = program.time()
 fun ProgramDetailScreen(
     state: ApiResult<Program>?,
     rsvp: RsvpState,
-    canAssign: Boolean,
     canSeeRegistrations: Boolean,
     contacts: ApiResult<ContactList>?,
     account: Profile,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
-    onAssign: () -> Unit,
     onRegistrations: () -> Unit,
     onEvent: (String) -> Unit,
     onBack: () -> Unit,
@@ -259,7 +257,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canAssign, canSeeRegistrations, contacts, account, back, onChild, onLeader, onAssign, onRegistrations, onEvent)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canSeeRegistrations, contacts, account, back, onChild, onLeader, onRegistrations, onEvent)
         }
     }
 }
@@ -268,14 +266,12 @@ fun ProgramDetailScreen(
 private fun ProgramContent(
     program: Program,
     rsvp: RsvpState,
-    canAssign: Boolean,
     canSeeRegistrations: Boolean,
     contacts: ApiResult<ContactList>?,
     account: Profile,
     back: HeaderButton,
     onChild: (childId: String, attending: Boolean) -> Unit,
     onLeader: (attending: Boolean) -> Unit,
-    onAssign: () -> Unit,
     onRegistrations: () -> Unit,
     onEvent: (String) -> Unit,
 ) {
@@ -304,7 +300,7 @@ private fun ProgramContent(
             program.event?.let { EventCard(it, program.cancelled, onEvent) }
             RegistrationSection(program, rsvp, account, onChild, onLeader)
             ContactSection(program, contacts)
-            LeaderSection(program, canAssign, canSeeRegistrations, onAssign, onRegistrations)
+            LeaderSection(canSeeRegistrations, onRegistrations)
             Box(Modifier.height(Spacing.s4))
         }
     }
@@ -353,29 +349,20 @@ private fun ContactSection(program: Program, contacts: ApiResult<ContactList>?) 
     }
 }
 
-/**
- * Aktionen für Leitende: die Anmeldungen ansehen (Admins sowie Leitende und SL der Stufen) und, nur für Admins und
- * Stufenleitungen, Stufen und Sichtbarkeit setzen.
- */
+/** Aktionen für Leitende: die Anmeldungen ansehen (Admins sowie Leitende und SL der Stufen). */
 @Composable
 private fun LeaderSection(
-    program: Program,
-    canAssign: Boolean,
     canSeeRegistrations: Boolean,
-    onAssign: () -> Unit,
     onRegistrations: () -> Unit,
 ) {
-    if (!canAssign && !canSeeRegistrations) return
+    if (!canSeeRegistrations) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
         Text(
             stringResource(R.string.section_leaders),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 6.dp).semantics { heading() },
         )
-        if (canSeeRegistrations) {
-            OutlinedPillButton(stringResource(R.string.registrations_action), onRegistrations, Modifier.fillMaxWidth(), icon = R.drawable.ic_group)
-        }
-        if (canAssign) OutlinedPillButton(stringResource(R.string.assignment_action), onAssign, Modifier.fillMaxWidth())
+        OutlinedPillButton(stringResource(R.string.registrations_action), onRegistrations, Modifier.fillMaxWidth(), icon = R.drawable.ic_group)
     }
 }
 

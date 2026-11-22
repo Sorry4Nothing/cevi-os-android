@@ -128,8 +128,12 @@ class OfflineQueue(
             val batch = _state.value.changes.filter { it.state == ChangeState.WAITING }.take(MAX_BATCH)
             if (batch.isEmpty()) break
             _state.update { it.copy(sending = true) }
-            val result = api.sendQueue(campId, batch.map { QueueOperation(it.clientOpId, it.type, it.payload) })
-            _state.update { it.copy(sending = false) }
+            // Auch bei einer Ausnahme (oder beim Abbruch) darf «sending» nicht stehen bleiben: Sonst liessen sich wartende Änderungen nie mehr ändern.
+            val result = try {
+                api.sendQueue(campId, batch.map { QueueOperation(it.clientOpId, it.type, it.payload) })
+            } finally {
+                _state.update { it.copy(sending = false) }
+            }
             when (result) {
                 is ApiResult.Ok -> {
                     _state.update { it.copy(offline = false) }

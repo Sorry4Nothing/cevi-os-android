@@ -230,4 +230,14 @@ class OfflineQueueTest {
         assertEquals(listOf("titel"), rows.map { it.label })
         assertFalse(rows.single().differs)
     }
+
+    @Test
+    fun aSenderThatThrowsDoesNotLeaveTheQueueSending() {
+        val broken = OfflineQueue(id, MemoryQueueStore(), { _, _ -> throw IllegalStateException("kaputt") }, newId = { "op-x" })
+        broken.enqueue("a.b", payload("1"), "eins")
+        runCatching { runBlocking { broken.flush() } }
+        assertFalse(broken.state.value.sending)
+        // Die Änderung wartet weiter und lässt sich noch ändern.
+        assertTrue(broken.revise("op-x", payload("2"), "zwei"))
+    }
 }

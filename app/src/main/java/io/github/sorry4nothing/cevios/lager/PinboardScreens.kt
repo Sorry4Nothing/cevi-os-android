@@ -169,6 +169,7 @@ private fun PostCard(post: Post, rights: MeetingRights, now: Instant, vm: CommsV
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     val window = postState(post, now)
+    val copiedText = stringResource(R.string.post_copied)
     val audience = audienceText(post)
     val until = instantToDay(post.visibleUntil)?.let { stringResource(R.string.post_visible_until, formatDay(it)) }
     val meta = listOfNotNull(audience, until).joinToString(", ")
@@ -189,7 +190,7 @@ private fun PostCard(post: Post, rights: MeetingRights, now: Instant, vm: CommsV
         author?.let { Text(stringResource(R.string.post_by, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         post.files.forEach { file -> FileRow(file) { open(file.link) } }
         ReactionRow(post, rights.interact, vm)
-        TextActionButton(stringResource(R.string.post_copy), { copyToClipboard(context, copyText(post)); vm.showNotice(context.getString(R.string.post_copied)) })
+        TextActionButton(stringResource(R.string.post_copy), { copyToClipboard(context, copyText(post)); vm.showNotice(copiedText) })
         post.poll?.let { poll -> PollBlock(post, poll, rights, vm) }
     }
     if (menu) {

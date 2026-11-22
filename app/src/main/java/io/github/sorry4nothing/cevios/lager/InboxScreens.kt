@@ -113,6 +113,9 @@ fun InboxScreen(
         if (rights.readOwnInbox) vm.loadOwn()
     }
     val doneText = stringResource(R.string.inbox_agenda_done)
+    val sentText = stringResource(R.string.inbox_sent)
+    val answerSummary = stringResource(R.string.inbox_summary_answer)
+    val assignSummary = stringResource(R.string.inbox_summary_assign)
 
     CampPage(
         title = stringResource(R.string.inbox_title),
@@ -143,7 +146,7 @@ fun InboxScreen(
 
     if (composing) {
         InboxComposeSheet(
-            onSend = { kind, text, anonymous -> composing = false; vm.send(kind, text, anonymous) { if (!anonymous) vm.showNotice(context.getString(R.string.inbox_sent)) } },
+            onSend = { kind, text, anonymous -> composing = false; vm.send(kind, text, anonymous) { if (!anonymous) vm.showNotice(sentText) } },
             onDismiss = { composing = false },
         )
     }
@@ -169,7 +172,7 @@ fun InboxScreen(
                 // Nur was sich ändert, geht hinaus; ohne Änderung bleibt es beim Schliessen.
                 val newReply = reply.takeIf { it != entry.reply.orEmpty() }
                 val newStatus = status.takeIf { it != entry.status }
-                if (newReply != null || newStatus != null) vm.answer(entry, newReply, newStatus, context.getString(R.string.inbox_summary_answer))
+                if (newReply != null || newStatus != null) vm.answer(entry, newReply, newStatus, answerSummary)
             },
             onDismiss = { answering = null },
         )
@@ -179,7 +182,7 @@ fun InboxScreen(
             title = stringResource(R.string.inbox_assign),
             choices = listOf(Choice(null, stringResource(R.string.task_no_ressort))) + ressorts.map { Choice(it.id, it.abbreviation + " " + it.name) },
             initial = entry.ressortId,
-            onApply = { id -> assigning = null; vm.assignRessort(entry, id, context.getString(R.string.inbox_summary_assign)) },
+            onApply = { id -> assigning = null; vm.assignRessort(entry, id, assignSummary) },
             onDismiss = { assigning = null },
         )
     }

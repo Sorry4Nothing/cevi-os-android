@@ -439,7 +439,7 @@ fun campTargetFor(kind: String?, objectType: String, objectId: String): CampTarg
     else -> CampTarget.Start
 }
 
-private fun notificationKindText(kind: String): Int = when (kind) {
+internal fun notificationKindText(kind: String): Int = when (kind) {
     "aufgabe_zugeteilt" -> R.string.notif_kind_task_assigned
     "aufgabe_geaendert" -> R.string.notif_kind_task_changed
     "erwaehnung" -> R.string.notif_kind_mention

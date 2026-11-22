@@ -160,6 +160,7 @@ import io.github.sorry4nothing.cevios.push.PushApi
 import io.github.sorry4nothing.cevios.push.PushTarget
 import io.github.sorry4nothing.cevios.push.PushToken
 import io.github.sorry4nothing.cevios.push.PushViewModel
+import io.github.sorry4nothing.cevios.lager.WriteErrorBanner
 import io.github.sorry4nothing.cevios.termine.CalendarLinkSection
 import io.github.sorry4nothing.cevios.termine.CalendarLinkViewModel
 import io.github.sorry4nothing.cevios.termine.EventScreen
@@ -534,6 +535,7 @@ private fun MainContent(
     // Auch nach Drehen oder Prozess-Ende lädt das Offene neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(openedProgram) { openedProgram?.let(programs::loadDetail) }
     LaunchedEffect(openedEvent) { openedEvent?.let(eventForm::load) }
+    LaunchedEffect(notificationsOpen) { if (notificationsOpen) comms.loadSettings() }
     LaunchedEffect(proposalOpen) {
         if (proposalOpen) {
             proposals.reloadOptions()
@@ -1045,6 +1047,10 @@ private fun MainContent(
                         onPrograms = push::setPrograms,
                         onRegistrations = push::setRegistrations,
                         onBack = leave,
+                        lager = comms.settings.collectAsState().value,
+                        onLager = comms::setSetting,
+                        onLagerRetry = comms::loadSettings,
+                        lagerBanner = { WriteErrorBanner(comms.writer) },
                     )
                 }
                 is Screen.CropImage -> {

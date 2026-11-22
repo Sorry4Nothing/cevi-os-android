@@ -104,6 +104,10 @@
     <string name="anlass_no_participants_text">Für diesen Anlass melden Eltern ihr Kind an. Auf deinem Konto ist kein Kind hinterlegt.</string>
     <string name="anlass_deadline">Anmeldeschluss: %1$s</string>
 
+    <!-- Benachrichtigungen -->
+    <string name="notifications_lager_title">Lager</string>
+    <string name="notifications_lager_failed">Die Schalter für das Lager sind nicht geladen. Versuche es nochmals.</string>
+
     <!-- Push-Ziel -->
     <string name="channel_termine">Termine</string>
 </resources>

@@ -174,6 +174,9 @@ import io.github.sorry4nothing.cevios.termine.EventViewModel
 import io.github.sorry4nothing.cevios.termine.GroupsSection
 import io.github.sorry4nothing.cevios.termine.ProposalScreen
 import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
+import io.github.sorry4nothing.cevios.termine.RoomListScreen
+import io.github.sorry4nothing.cevios.termine.RoomRequestScreen
+import io.github.sorry4nothing.cevios.termine.RoomsViewModel
 import io.github.sorry4nothing.cevios.termine.TermineApi
 import io.github.sorry4nothing.cevios.auth.SettingsCard
 import io.github.sorry4nothing.cevios.auth.SettingsRow
@@ -391,6 +394,8 @@ private sealed interface Screen {
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
     data class Event(val eventId: String) : Screen { override val depth = 2 }
     data object Proposal : Screen { override val depth = 1 }
+    data object Rooms : Screen { override val depth = 1 }
+    data object RoomRequest : Screen { override val depth = 2 }
 }
 
 @Composable
@@ -435,6 +440,7 @@ private fun MainContent(
     val archive = viewModel { ArchiveViewModel(archiveApi, meetingsApi, tasksApi, camp, AndroidCommsTexts(appContext)) }
     val calendarLink = viewModel { CalendarLinkViewModel(termineApi) }
     val proposals = viewModel { ProposalsViewModel(termineApi) }
+    val rooms = viewModel { RoomsViewModel(termineApi) }
     val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
@@ -468,6 +474,9 @@ private fun MainContent(
     // Termine: die Anmeldung zu einem Anlass (ID des Anlasses) und «Termin vorschlagen».
     var openedEvent by rememberSaveable { mutableStateOf<String?>(null) }
     var proposalOpen by rememberSaveable { mutableStateOf(false) }
+    // Räume: «Meine Raumanfragen» (K3) und davon aus «Raum anfragen» (K2).
+    var roomsOpen by rememberSaveable { mutableStateOf(false) }
+    var roomRequestOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
@@ -497,9 +506,10 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false
+        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
+            is PushTarget.RoomDecision -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomsOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
             is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
             // Widgets: die Liste der Programme, die Chatliste oder eine Lager-Seite (das Lager kennt das Widget, sonst zeigt die Lagerwahl).
@@ -576,6 +586,9 @@ private fun MainContent(
             proposals.loadMine()
         }
     }
+    // Die Räume laden beim Öffnen neu: Daten bleiben nur im Arbeitsspeicher.
+    LaunchedEffect(roomsOpen) { if (roomsOpen) rooms.reloadMine() }
+    LaunchedEffect(roomRequestOpen) { if (roomRequestOpen) rooms.reloadRooms() }
     // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
     LaunchedEffect(destination) {
         if (destination == Destination.PROFILE) {
@@ -750,6 +763,8 @@ private fun MainContent(
             campArea && campId != null && inboxOpen -> Screen.Inbox
             campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
             openedEvent != null -> Screen.Event(openedEvent!!)
+            roomRequestOpen -> Screen.RoomRequest
+            roomsOpen -> Screen.Rooms
             proposalOpen -> Screen.Proposal
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
@@ -793,6 +808,34 @@ private fun MainContent(
                         onDismiss = eventForm::dismiss,
                         onBack = leave,
                         onRetry = { eventForm.load(screen.eventId) },
+                    )
+                }
+                Screen.RoomRequest -> {
+                    val leave = { roomRequestOpen = false; rooms.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    RoomRequestScreen(
+                        rooms = rooms.rooms.collectAsState().value,
+                        draft = rooms.draft.collectAsState().value,
+                        send = rooms.send.collectAsState().value,
+                        onEdit = rooms::edit,
+                        onSubmit = rooms::submit,
+                        onUndo = rooms::undo,
+                        onDismiss = rooms::dismissNotice,
+                        onBack = leave,
+                        onRetry = rooms::reloadRooms,
+                    )
+                }
+                Screen.Rooms -> {
+                    val leave = { roomsOpen = false; rooms.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    RoomListScreen(
+                        mine = rooms.mine.collectAsState().value,
+                        list = rooms.list.collectAsState().value,
+                        onAsk = { rooms.dismissNotice(); roomRequestOpen = true },
+                        onCancel = { rooms.cancel(it.id, confirmed = it.status == "bestaetigt") },
+                        onDismiss = rooms::dismissNotice,
+                        onBack = leave,
+                        onRetry = rooms::reloadMine,
                     )
                 }
                 Screen.Proposal -> {
@@ -1162,6 +1205,10 @@ private fun MainContent(
                                         SettingsCard {
                                             SettingsRow(R.drawable.ic_calendar_plus, stringResource(R.string.proposal_row), onClick = { proposalOpen = true }, chevron = true)
                                         }
+                                    }
+                                    // Räume anfragen darf jede angemeldete Person der Abteilung (Vertrag `frageRaumAn`).
+                                    SettingsCard {
+                                        SettingsRow(R.drawable.ic_door, stringResource(R.string.room_row), onClick = { roomsOpen = true }, chevron = true)
                                     }
                                 },
                                 lockAvailable = lockAvailable,

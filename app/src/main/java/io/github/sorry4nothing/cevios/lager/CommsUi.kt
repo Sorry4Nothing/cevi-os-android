@@ -126,6 +126,8 @@ fun writeErrorRes(error: ActionError): Int = when (error.code) {
     "KEINE_ANFRAGE_NOETIG" -> R.string.error_attendance_open
     "ANFRAGE_OFFEN" -> R.string.error_attendance_waiting
     "SEITE_VORHANDEN" -> R.string.error_day_exists
+    "IN_VERWENDUNG" -> R.string.error_in_use
+    "VORLAGE_UNGUELTIG" -> R.string.error_template_invalid
     else -> when (error.error) {
         ApiError.NETWORK, ApiError.LAGER_CLOSED, ApiError.FORBIDDEN, ApiError.TOO_MANY_REQUESTS, ApiError.VERSION_CONFLICT, ApiError.NOT_FOUND -> error.error.text
         else -> R.string.task_error

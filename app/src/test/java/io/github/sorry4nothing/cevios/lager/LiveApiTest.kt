@@ -244,6 +244,28 @@ class LiveApiTest {
     // ---- Packliste ----
 
     @Test
+    fun templatesAreListedAndAppliedWithoutABody() {
+        server.enqueue(json(200, """{"vorlagen":[{"id":"$a","art":"packliste","name":"Sommerlager","anzahl":12},{"id":"$b","art":"aufgaben","name":"Vorbereitung","anzahl":30}]}"""))
+        val templates = (runBlocking { api.templates(camp) } as ApiResult.Ok).value.templates
+        assertEquals("GET /api/v1/lager/$camp/vorlagen HTTP/1.1", server.takeRequest().requestLine)
+        assertTrue(templates[0].isPacking && !templates[0].isTasks)
+        assertTrue(templates[1].isTasks)
+        server.enqueue(json(201, """{"trocken":false,"art":"packliste","punkte":[{"abschnitt":"Kleidung","text":"Regenjacke","nurLagerleitung":false},{"abschnitt":"Schlafen","text":"Schlafsack","nurLagerleitung":false}]}"""))
+        val applied = (runBlocking { api.applyTemplate(camp, a) } as ApiResult.Ok).value
+        val request = server.takeRequest()
+        assertEquals("POST /api/v1/lager/$camp/vorlagen/$a/anwenden HTTP/1.1", request.requestLine)
+        assertEquals(0, request.body!!.size)
+        assertEquals(2, applied.count)
+    }
+
+    @Test
+    fun applyingATemplateTwiceOverTheLimitIsAConflictWithItsCode() {
+        server.enqueue(json(409, """{"code":"LIMIT_ERREICHT","message":"Die Packliste ist voll."}"""))
+        val failure = runBlocking { api.applyTemplate(camp, a) } as ApiResult.Failure
+        assertEquals("LIMIT_ERREICHT", failure.code)
+    }
+
+    @Test
     fun packListReadsStatesAndOwnItems() {
         server.enqueue(
             json(

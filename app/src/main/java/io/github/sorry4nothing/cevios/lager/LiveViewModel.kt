@@ -141,7 +141,7 @@ class LiveViewModel(
         _schedule.value = null; _today.value = null; _todos.value = null; _myWeek.value = null; _day.value = null; dayId = null; _days.value = null
         _own.value = null; _draft.value = emptyMap(); _summary.value = null; _requests.value = null
         _shopping.value = null; _onlyMine.value = false; _suggestions.value = emptyList(); _shopUndo.value = null
-        _pack.value = null; _emergency.value = null; _emergencyStale.value = false; _infos.value = null
+        _pack.value = null; _templates.value = null; _emergency.value = null; _emergencyStale.value = false; _infos.value = null
         _notice.value = null; _busy.value = false
         suggestionJob?.cancel()
         writer.clear()
@@ -484,6 +484,28 @@ class LiveViewModel(
     // ---- Packliste ----
 
     fun loadPack(silent: Boolean = false): Unit = launchLoad(_pack, silent, api::packList)
+
+    private val _templates = MutableStateFlow<ApiResult<List<CampTemplate>>?>(null)
+
+    /** Die Vorlagen zum Anwenden; `null`, solange sie laden. */
+    val templates: StateFlow<ApiResult<List<CampTemplate>>?> = _templates.asStateFlow()
+
+    fun loadTemplates() {
+        val id = campId ?: return
+        viewModelScope.launch(Background()) {
+            _templates.value = null
+            val result = api.templates(id)
+            if (campId != id) return@launch
+            _templates.value = if (result is ApiResult.Ok) ApiResult.Ok(result.value.templates) else result as ApiResult.Failure
+        }
+    }
+
+    /** Wendet eine Vorlage an; `onDone` bekommt die Zahl der angelegten Einträge. */
+    fun applyTemplate(template: CampTemplate, onDone: (Int) -> Unit = {}): Unit =
+        send({ applyTemplate(template, onDone) }, { api.applyTemplate(it, template.id) }) { applied ->
+            loadPack(silent = true)
+            onDone(applied.count)
+        }
 
     /** Hakt einen Punkt ab oder macht ihn wieder offen. Der Haken erscheint sofort und springt zurück, wenn es scheitert. */
     fun togglePack(row: PackRow) {

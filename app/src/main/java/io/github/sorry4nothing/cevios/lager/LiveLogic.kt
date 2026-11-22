@@ -32,6 +32,8 @@ data class LiveRights(
     val editShopping: Boolean,
     /** `packliste.abhaken`: abhaken, entfernen, eigene Punkte. Standard: Lagerleitung, Leitung, Team. */
     val tickPacking: Boolean,
+    /** `vorlagen.anwenden`: Vorlagen für die Packliste im Lager anwenden. Standard: nur die Lagerleitung. */
+    val applyTemplates: Boolean,
     /** `infos.bearbeiten`: Abschnitte ändern, anlegen, löschen, ordnen. Standard: nur die Lagerleitung. */
     val editInfos: Boolean,
     /** Eigene To-dos führt jede Rolle (auch «lesen»), solange das Lager offen ist. */
@@ -49,6 +51,7 @@ data class LiveRights(
             readShopping = p.may("einkauf.lesen"),
             editShopping = p.mayWrite("einkauf.bearbeiten"),
             tickPacking = p.mayWrite("packliste.abhaken"),
+            applyTemplates = p.mayWrite("vorlagen.anwenden"),
             editInfos = p.mayWrite("infos.bearbeiten"),
             todos = !p.readOnly,
             seesAttendance = p.may("anwesenheit.eigene", "anwesenheit.lesen_alle"),

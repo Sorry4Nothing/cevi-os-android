@@ -88,6 +88,8 @@ class RightsFromListTest {
         assertTrue(LiveRights.of(only("tagesseiten.bearbeiten")).editDayPages)
         assertTrue(LiveRights.of(only("einkauf.lesen")).readShopping)
         assertTrue(LiveRights.of(only("packliste.abhaken")).tickPacking)
+        assertTrue(LiveRights.of(only("vorlagen.anwenden")).applyTemplates)
+        assertFalse(LiveRights.of(only("packliste.abhaken")).applyTemplates)
         assertTrue(LiveRights.of(only("infos.bearbeiten")).editInfos)
     }
 

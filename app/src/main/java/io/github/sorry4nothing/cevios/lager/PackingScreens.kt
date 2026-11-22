@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -28,6 +29,7 @@ import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.CeviDialog
+import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.RoundButton
 import io.github.sorry4nothing.cevios.ui.StatePage
@@ -49,6 +51,8 @@ fun PackingScreen(frame: LiveFrame) {
     var adding by remember { mutableStateOf(false) }
     var actions by remember { mutableStateOf<PackRow?>(null) }
     var showRemoved by remember { mutableStateOf(false) }
+    var choosing by remember { mutableStateOf(false) }
+    var chosen by remember { mutableStateOf<CampTemplate?>(null) }
     LaunchedEffect(frame.camp?.id) { vm.loadPack(silent = vm.pack.value is ApiResult.Ok) }
 
     LivePage(frame, stringResource(R.string.pack_title)) {
@@ -62,7 +66,11 @@ fun PackingScreen(frame: LiveFrame) {
                 val removed = list.items.filter { it.state == PackState.REMOVED }
                 if (sections.isEmpty() && removed.isEmpty()) {
                     StatePage(R.drawable.ic_bring_along, stringResource(R.string.pack_empty_title), stringResource(R.string.pack_empty_text)) {
-                        if (tick) PrimaryButton(stringResource(R.string.pack_add_own), { adding = true }, icon = R.drawable.ic_plus)
+                        if (frame.rights.applyTemplates) PrimaryButton(stringResource(R.string.pack_template_take), { vm.loadTemplates(); choosing = true }, icon = R.drawable.ic_file)
+                        if (tick) {
+                            if (frame.rights.applyTemplates) OutlinedPillButton(stringResource(R.string.pack_add_own), { adding = true }, icon = R.drawable.ic_plus)
+                            else PrimaryButton(stringResource(R.string.pack_add_own), { adding = true }, icon = R.drawable.ic_plus)
+                        }
                     }
                 } else {
                     LiveColumn {
@@ -99,6 +107,27 @@ fun PackingScreen(frame: LiveFrame) {
                 }
             }
         }
+    }
+    if (choosing) {
+        val templates = (vm.templates.collectAsState().value as? ApiResult.Ok)?.value.orEmpty().filter { it.isPacking }
+        ChoiceSheet(
+            title = stringResource(R.string.pack_template_title),
+            choices = templates.map { Choice(it.id, stringResource(R.string.pack_template_choice, it.name, pluralStringResource(R.plurals.pack_template_count, it.count, it.count))) },
+            initial = null,
+            onApply = { id -> choosing = false; chosen = templates.firstOrNull { it.id == id } },
+            onDismiss = { choosing = false },
+            emptyText = stringResource(R.string.pack_template_none),
+        )
+    }
+    chosen?.let { template ->
+        // Zweimal angewendet legt jeden Punkt zweimal an und lässt sich nicht zurücknehmen: darum vorher fragen.
+        ConfirmDialog(
+            title = stringResource(R.string.pack_template_confirm_title, template.name),
+            text = pluralStringResource(R.plurals.pack_template_confirm_text, template.count, template.count),
+            confirmLabel = stringResource(R.string.pack_template_apply),
+            onConfirm = { chosen = null; vm.applyTemplate(template) },
+            onDismiss = { chosen = null },
+        )
     }
     actions?.let { row ->
         val entry = if (row.own) stringResource(R.string.task_delete) to { vm.deleteOwnPackItem(row) } else stringResource(R.string.pack_remove) to { vm.removePackItem(row) }

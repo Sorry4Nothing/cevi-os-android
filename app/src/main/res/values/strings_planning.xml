@@ -335,5 +335,7 @@
     <string name="error_person_unavailable">Die Person kann die Schicht nicht übernehmen.</string>
     <string name="error_swap_invalid">Mit dieser Person oder Schicht geht der Tausch nicht.</string>
     <string name="error_duty_exists">Einen Dienst mit diesem Namen gibt es in diesem Abschnitt schon.</string>
+    <string name="error_in_use">Dieser Eintrag wird noch verwendet.</string>
+    <string name="error_template_invalid">Diese Vorlage lässt sich nicht lesen.</string>
     <string name="error_limit_reached">Mehr gibt es davon nicht. Das Limit ist erreicht.</string>
 </resources>

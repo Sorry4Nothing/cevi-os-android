@@ -149,8 +149,22 @@
     <!-- Packliste (L29) -->
     <string name="pack_title">Packliste</string>
     <string name="pack_loading">Packliste wird geladen</string>
+    <string name="pack_template_take">Vorlage nehmen</string>
+    <string name="pack_template_title">Vorlage für die Packliste</string>
+    <string name="pack_template_choice">%1$s, %2$s</string>
+    <plurals name="pack_template_count">
+        <item quantity="one">%d Punkt</item>
+        <item quantity="other">%d Punkte</item>
+    </plurals>
+    <string name="pack_template_none">Es gibt keine Vorlage für die Packliste.</string>
+    <string name="pack_template_confirm_title">«%1$s» anwenden?</string>
+    <plurals name="pack_template_confirm_text">
+        <item quantity="one">Ein Punkt kommt in die Packliste. Das lässt sich nicht zurücknehmen.</item>
+        <item quantity="other">%d Punkte kommen in die Packliste. Das lässt sich nicht zurücknehmen.</item>
+    </plurals>
+    <string name="pack_template_apply">Anwenden</string>
     <string name="pack_empty_title">Noch keine Punkte</string>
-    <string name="pack_empty_text">Die Lagerleitung trägt die Packliste ein. Du kannst eigene Punkte ergänzen.</string>
+    <string name="pack_empty_text">Die Lagerleitung trägt die Packliste ein, zum Beispiel mit einer Vorlage. Du kannst eigene Punkte ergänzen.</string>
     <string name="pack_count">%1$d von %2$d gepackt</string>
     <string name="pack_leadership_only">nur Lagerleitung</string>
     <string name="pack_add_own">Eigenen Punkt hinzufügen</string>

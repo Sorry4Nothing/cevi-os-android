@@ -49,8 +49,8 @@ fun roomRequestBody(draft: RoomDraft, now: ZonedDateTime = ZonedDateTime.now(SWI
     val from = parseTime(draft.from) ?: return null
     val to = parseTime(draft.to) ?: return null
     return RoomRequestBody(
-        day.atTime(from).atZone(SWISS_ZONE).toOffsetDateTime().toString(),
-        day.atTime(to).atZone(SWISS_ZONE).toOffsetDateTime().toString(),
+        offsetText(day, from),
+        offsetText(day, to),
         draft.purpose.trim(),
     )
 }

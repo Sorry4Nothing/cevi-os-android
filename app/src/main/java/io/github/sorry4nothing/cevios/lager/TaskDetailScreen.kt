@@ -181,9 +181,9 @@ fun TaskDetailScreen(
                 if (lead == null) {
                     Text(stringResource(R.string.task_unassigned), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    PersonLine(lead.display, stringResource(if (lead.automatic) R.string.task_role_ressort_lead else R.string.task_role_lead))
+                    PersonLine(lead.display, stringResource(if (lead.automatic) R.string.task_role_ressort_lead else R.string.task_role_lead), lead.imageUrl)
                 }
-                task.supporters.forEach { PersonLine(it.display, stringResource(R.string.task_role_support)) }
+                task.supporters.forEach { PersonLine(it.display, stringResource(R.string.task_role_support), it.imageUrl) }
                 if (canEdit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                         if (task.assignee?.id != vm.self.id) TextActionButton(stringResource(R.string.task_take), { vm.take(task) })
@@ -327,13 +327,13 @@ private fun Section(title: Int, headingExtra: String? = null, content: @Composab
 }
 
 @Composable
-private fun PersonLine(name: String, role: String) {
+private fun PersonLine(name: String, role: String, imageUrl: String?) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = Sizes.touchTarget).semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
-        Avatar(name, size = 32.dp)
+        Avatar(name, size = 32.dp, imageUrl = imageUrl)
         Text(stringResource(R.string.task_person_role, name, role), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
     }
 }

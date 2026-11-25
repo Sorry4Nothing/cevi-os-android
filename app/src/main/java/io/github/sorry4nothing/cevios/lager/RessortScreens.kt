@@ -176,8 +176,8 @@ fun RessortScreen(
                         if (lead == null && deputy == null) {
                             Text(stringResource(R.string.ressort_no_people), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        lead?.let { PersonRow(it.display, stringResource(R.string.task_role_lead)) }
-                        deputy?.let { PersonRow(it.display, stringResource(R.string.ressort_role_deputy)) }
+                        lead?.let { PersonRow(it.display, stringResource(R.string.task_role_lead), it.imageUrl) }
+                        deputy?.let { PersonRow(it.display, stringResource(R.string.ressort_role_deputy), it.imageUrl) }
                     }
                     SectionBlock(R.string.ressort_notes) {
                         if (result.value.notes.isEmpty()) {
@@ -263,13 +263,13 @@ private fun SectionBlock(title: Int, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun PersonRow(name: String, role: String) {
+private fun PersonRow(name: String, role: String, imageUrl: String?) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = Sizes.touchTarget).semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
-        Avatar(name, size = 32.dp)
+        Avatar(name, size = 32.dp, imageUrl = imageUrl)
         Text(stringResource(R.string.task_person_role, name, role), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
     }
 }

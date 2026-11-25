@@ -174,11 +174,7 @@ class AuthViewModel(
         viewModelScope.launch {
             when (val result = api.signIn(username.trim(), password)) {
                 is ApiResult.Failure -> _form.value = failureForm(result, signInErrorText(result))
-                is ApiResult.Ok -> if (result.value.twoFactorRedirect) {
-                    // Admins melden sich nur im Admin-Bereich an: kein Sitzungscookie, auch kein halbes (`two_factor`).
-                    forgetSession()
-                    _form.value = FormState(error = R.string.login_admin_only)
-                } else {
+                is ApiResult.Ok -> {
                     // Das Passwort ist ein Ausweis wie die Biometrie: Wer sich damit anmeldet, wird nicht gleich noch einmal gefragt.
                     unlocked = true
                     rememberStartPassword(password)

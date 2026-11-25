@@ -151,7 +151,6 @@
     <string name="login_running">Anmeldung läuft …</string>
     <string name="login_forgot">Passwort vergessen? Dann hilft die Leitung.</string>
     <string name="login_failed">Anmeldung nicht möglich. Bitte Benutzername und Passwort prüfen oder später nochmals versuchen. Sonst hilft die Leitung.</string>
-    <string name="login_admin_only">Admins melden sich im Admin-Bereich an. In der App geht das nicht.</string>
     <string name="password_show">Passwort anzeigen</string>
     <string name="password_title_first">Eigenes Passwort wählen</string>
     <string name="password_title">Passwort ändern</string>

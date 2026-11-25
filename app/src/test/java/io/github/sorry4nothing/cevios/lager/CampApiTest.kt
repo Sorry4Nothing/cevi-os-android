@@ -187,7 +187,9 @@ class CampApiTest {
     @Test
     fun leadershipWithoutSecondFactorGetsItsOwnError() {
         server.enqueue(json(403, """{"code":"ZWEITER_FAKTOR_FEHLT","message":"x"}"""))
+        server.enqueue(json(403, """{"code":"ZWEITER_FAKTOR_SITZUNG","message":"x"}"""))
         server.enqueue(json(403, """{"code":"KEINE_BERECHTIGUNG","message":"x"}"""))
+        assertEquals(ApiError.SECOND_FACTOR_MISSING, (runBlocking { camps.read(id) } as ApiResult.Failure).error)
         assertEquals(ApiError.SECOND_FACTOR_MISSING, (runBlocking { camps.read(id) } as ApiResult.Failure).error)
         assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), runBlocking { camps.read(id) })
     }

@@ -26,7 +26,10 @@ enum class ApiError(@StringRes val text: Int) {
     /** 410 `FEED_NEU_LADEN`: Der Stand der App ist zu alt für den Änderungsfeed; sie lädt die Listen neu. */
     FEED_RELOAD(R.string.error_feed_reload),
 
-    /** 403 `ZWEITER_FAKTOR_FEHLT`: Nur noch für Rechte und Verwaltung im Web (#523); die App bietet das nicht an, zeigt aber «nur am Computer», falls ein Server es meldet. */
+    /**
+     * 403 `ZWEITER_FAKTOR_FEHLT` oder `ZWEITER_FAKTOR_SITZUNG` (Sitzung der App ohne Code): Verwaltung und Rechte mit «erweitert» gibt es nur im Web;
+     * die App bietet das nicht an, zeigt aber «nur am Computer», falls ein Server es meldet.
+     */
     SECOND_FACTOR_MISSING(R.string.error_second_factor),
 
     /** 503 `IN_WARTUNG`: Der Bereich ist nur lesbar, bis die Wartung endet. */
@@ -41,10 +44,12 @@ enum class ApiError(@StringRes val text: Int) {
     UNKNOWN(R.string.error_unknown);
 
     companion object {
+        private val SECOND_FACTOR_CODES = setOf("ZWEITER_FAKTOR_FEHLT", "ZWEITER_FAKTOR_SITZUNG")
+
         /** `code` ist der Fehlercode des Servers (bei 409 und 400); er unterscheidet dort die Fälle. */
         fun from(status: Int, code: String? = null): ApiError = when (status) {
             401 -> NOT_SIGNED_IN
-            403 -> if (code == "ZWEITER_FAKTOR_FEHLT") SECOND_FACTOR_MISSING else FORBIDDEN
+            403 -> if (code in SECOND_FACTOR_CODES) SECOND_FACTOR_MISSING else FORBIDDEN
             404 -> NOT_FOUND
             409 -> when (code) {
                 "PROGRAMM_BEGONNEN" -> PROGRAM_STARTED

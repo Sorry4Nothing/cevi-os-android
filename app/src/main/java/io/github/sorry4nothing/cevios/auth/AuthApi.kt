@@ -8,8 +8,9 @@ class AuthApi(private val api: ApiClient) {
     /** Die Sitzung und ihre Person, oder `null` ohne gültige Sitzung. Verlängert die Sitzung, wenn es fällig ist. */
     suspend fun session(): ApiResult<AuthSession?> = api.get("/api/auth/get-session")
 
-    suspend fun signIn(username: String, password: String): ApiResult<SignInResponse> =
-        api.post("/api/auth/sign-in/username", SignInRequest(username, password))
+    /** Die App meldet sich immer ohne zweiten Faktor an; die Sitzung kommt als Cookie, der Inhalt der Antwort zählt nicht. */
+    suspend fun signIn(username: String, password: String): ApiResult<Unit> =
+        api.postAction("/api/auth/sign-in/username", SignInRequest(username, password))
 
     /** Antwortet auch ohne Sitzung mit 200. Das Cookie löscht der Server per `Set-Cookie`. */
     suspend fun signOut(): ApiResult<Unit> = api.postWithoutBody("/api/auth/sign-out")

@@ -9,12 +9,25 @@ In `~/.gradle/gradle.properties`:
 | Schlüssel | Inhalt |
 | --- | --- |
 | `ceviApiBaseUrl` | Adresse des Servers (`https://…`), wird in die APK eingebrannt |
+| `ceviPlayCloudProject` | Projektnummer des Google-Cloud-Projekts für Play Integrity (nur Ziffern); ohne sie bleibt der App-Nachweis aus |
 | `ceviSigningStoreFile` | Pfad zur Schlüsseldatei (`.jks`, liegt ausserhalb des Repos) |
 | `ceviSigningStorePassword`, `ceviSigningKeyAlias`, `ceviSigningKeyPassword` | Zugang zum Schlüssel |
 
 Ohne die Signierung-Angaben baut `assembleRelease` eine **unsignierte** APK (`app-release-unsigned.apk`): Sie lässt sich nicht installieren.
 
 **Den Schlüssel sichern.** Wer ihn verliert, kann eine verteilte App nicht mehr aktualisieren: Alle müssen sie deinstallieren (und verlieren die lokalen Daten). Die Signatur der Pilot-APK ist ausserdem nicht die der späteren Play-Version; wer von der APK in den Store wechselt, installiert neu.
+
+## App-Nachweis einschalten (Play Integrity)
+
+Die App holt bei jeder Anmeldung eine Herausforderung, belegt sie mit Play Integrity und schickt das Ticket im Header `X-Cevi-Nachweis` mit. Der Server entscheidet über `APP_NACHWEIS` (siehe `docs/app-nachweis.md` und `betrieb.md` im Backend):
+
+1. **`aus`** (Vorgabe): Die Herausforderung antwortet 404, die App meldet sich wie bisher an. Dieselbe APK läuft vor und nach dem Umschalten.
+2. **`pruefen`**: Der Server prüft das Ticket, lässt aber auch Anmeldungen ohne gültigen Nachweis zu und schreibt den Grund in sein Log (`app_nachweis`, Feld `grund`). **Hier beginnen** und mit der echten APK mindestens einmal anmelden.
+3. **`pflicht`**: Ohne gültiges Ticket antwortet die Anmeldung 401. Erst umschalten, wenn `pruefen` sauber lief und `APP_MIN_VERSION` auf eine Version mit Nachweis angehoben ist; ältere Versionen können sich sonst nicht mehr anmelden.
+
+Die APK braucht die Projektnummer (`ceviPlayCloudProject`, siehe oben), sonst bleibt der Nachweis in dieser Version aus.
+
+**Nicht geprüft:** Play Integrity beurteilt das Gerät und die Herkunft der App. Ob der Server die Pilot-APK ausserhalb des Play Store (GitHub-Release, eigenes Signaturzertifikat) annimmt, hängt von der Konfiguration des App-Zertifikats im Server ab. Das Backend ist nur gegen selbst erzeugte Fixtures getestet; eine echte Antwort von Google gab es noch nie, und die App wurde nicht gegen einen Server mit eingeschaltetem Nachweis auf einem Gerät geprüft. Der erste Lauf gehört deshalb in den Modus `pruefen`. Über das Umschalten entscheidet der Betreiber.
 
 ## Version anheben
 

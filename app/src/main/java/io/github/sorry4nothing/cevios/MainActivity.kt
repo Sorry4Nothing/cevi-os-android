@@ -132,6 +132,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import io.github.sorry4nothing.cevios.auth.AuthApi
+import io.github.sorry4nothing.cevios.auth.PlayIntegrity
 import io.github.sorry4nothing.cevios.auth.AuthState
 import io.github.sorry4nothing.cevios.auth.AuthViewModel
 import io.github.sorry4nothing.cevios.auth.FormState
@@ -252,8 +253,8 @@ class MainActivity : FragmentActivity() {
 /** Je nach Anmeldestand: Start, Fehler, Anmelden, Passwort wählen, Willkommen oder die App selbst. */
 @Composable
 private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
-    val authApi = remember(client) { AuthApi(client) }
     val widgetContext = LocalContext.current.applicationContext
+    val authApi = remember(client) { AuthApi(client, PlayIntegrity.forBuild(widgetContext)) }
     // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets und geteilte Dateien im Cache verschwinden.
     val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext) }, lock, client::hasSession) }
     val state by auth.state.collectAsState()

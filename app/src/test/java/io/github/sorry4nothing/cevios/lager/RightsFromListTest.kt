@@ -72,6 +72,8 @@ class RightsFromListTest {
         assertTrue(MeetingRights.of(only("hoecks.bearbeiten")).editMeetings)
         assertTrue(MeetingRights.of(only("protokolle.bearbeiten")).editMinutes)
         assertTrue(MeetingRights.of(only("pinnwand.lesen")).readPinboard)
+        assertTrue(MeetingRights.of(only("pinnwand.lesen")).markSeen)
+        assertFalse("im abgeschlossenen Lager meldet die App nicht «gesehen»", MeetingRights.of(only("pinnwand.lesen", readOnly = true)).markSeen)
         assertTrue(MeetingRights.of(only("interaktion.schreiben")).interact)
         assertTrue(MeetingRights.of(only("eingang.lesen")).readInbox)
         assertTrue(MeetingRights.of(only("eingang.antworten")).answerInbox)

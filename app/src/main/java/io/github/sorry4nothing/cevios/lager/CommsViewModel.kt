@@ -213,7 +213,7 @@ class CommsViewModel(
      */
     fun reportSeen(posts: List<Post>, now: java.time.Instant = java.time.Instant.now()) {
         val id = campId ?: return
-        if (!rights.readPinboard) return
+        if (!rights.markSeen) return
         val fresh = posts.filter { !it.seen.own && postState(it, now) == PostWindow.VISIBLE && it.id !in reportedSeen }.map { it.id }.take(SEEN_BATCH)
         if (fresh.isEmpty()) return
         reportedSeen += fresh

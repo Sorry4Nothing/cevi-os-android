@@ -8,6 +8,9 @@
     <string name="error_registration_closed">Die Anmeldung ist geschlossen. Das Programm ist abgesagt oder hat schon begonnen.</string>
     <string name="error_network">Keine Verbindung. Prüfe dein Internet und versuche es nochmals.</string>
     <string name="error_unknown">Etwas ist schiefgelaufen. Bitte versuche es nochmals.</string>
+    <string name="error_app_proof_invalid">Anmeldung nicht möglich. Bitte versuche es später nochmals.</string>
+    <string name="error_app_proof_unreachable">Die Bestätigung der App ist gerade nicht erreichbar. Bitte versuche es in einem Moment nochmals.</string>
+    <string name="error_integrity_unavailable">Die App konnte hier nicht bestätigt werden. Dafür braucht es Google Play und eine Verbindung. Bitte prüfe beides und versuche es nochmals.</string>
 
     <string name="loading">Wird geladen …</string>
     <string name="retry">Nochmals versuchen</string>

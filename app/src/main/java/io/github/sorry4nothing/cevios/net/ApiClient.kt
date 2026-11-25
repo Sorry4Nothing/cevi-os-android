@@ -214,9 +214,13 @@ class ApiClient(
     }
 
     private fun failure(response: Response): ApiResult.Failure {
-        if (response.code == 401 && !response.request.url.encodedPath.startsWith(SIGN_IN_PATH)) _unauthorized.tryEmit(Unit)
-        if (response.code == 403 && response.request.url.encodedPath.startsWith(API_PATH)) _forbidden.tryEmit(Unit)
-        val body = if (response.code in CODE_STATUSES) errorBody(response) else null
+        val path = response.request.url.encodedPath
+        // Anmeldung und Nachweis laufen ohne Sitzung: Ihr 401 heisst nie «Sitzung beendet».
+        val beforeSession = path.startsWith(SIGN_IN_PATH) || path.startsWith(PROOF_PATH)
+        if (response.code == 401 && !beforeSession) _unauthorized.tryEmit(Unit)
+        if (response.code == 403 && path.startsWith(API_PATH)) _forbidden.tryEmit(Unit)
+        // Ein 401 trägt nur hier einen Code, den die App liest (`APP_NACHWEIS_*`).
+        val body = if (response.code in CODE_STATUSES || (response.code == 401 && beforeSession)) errorBody(response) else null
         val read = body?.code
         // Bei 403 zählt nur der zweite Faktor; sonst heisst 403 schlicht «kein Recht», ohne Code.
         val code = if (response.code == 403 && read !in SECOND_FACTOR_CODES) null else read
@@ -256,6 +260,7 @@ class ApiClient(
 
     companion object {
         private const val SIGN_IN_PATH = "/api/auth/sign-in"
+        private const val PROOF_PATH = "/api/v1/app/nachweis"
         /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed) und 503 (Wartung). */
         private val CODE_STATUSES = setOf(400, 403, 409, 410, 503)
         private val SECOND_FACTOR_CODES = setOf("ZWEITER_FAKTOR_FEHLT", "ZWEITER_FAKTOR_SITZUNG")

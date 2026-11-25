@@ -286,74 +286,75 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
     val openPrivacy = { openInBrowser(context, authApi.privacyUrl()) }
     val motion = rememberMotionEnabled()
     Surface(Modifier.fillMaxSize()) {
-        AnimatedContent(
-            state,
-            transitionSpec = { loginTransition(initialState, motion) },
-            contentKey = { it::class },
-            label = "anmeldung",
-        ) { current ->
-            when (current) {
-                AuthState.Loading -> StartScreen()
-                AuthState.Locked -> LockedScreen(
-                    form,
-                    onUnlock = {
-                        prompter.unlock {
-                            when (it) {
-                                LockOutcome.Success -> auth.unlock()
-                                LockOutcome.Invalidated -> auth.lockInvalidated()
-                                LockOutcome.Failed -> auth.unlockFailed()
-                                LockOutcome.Declined -> Unit
+        // Über dem Start gibt es keinen zweiten Ladekreis.
+        BusyOverlay(busy = pending > 0 && state !is AuthState.Loading) {
+            AnimatedContent(
+                state,
+                transitionSpec = { loginTransition(initialState, motion) },
+                contentKey = { it::class },
+                label = "anmeldung",
+            ) { current ->
+                when (current) {
+                    AuthState.Loading -> StartScreen()
+                    AuthState.Locked -> LockedScreen(
+                        form,
+                        onUnlock = {
+                            prompter.unlock {
+                                when (it) {
+                                    LockOutcome.Success -> auth.unlock()
+                                    LockOutcome.Invalidated -> auth.lockInvalidated()
+                                    LockOutcome.Failed -> auth.unlockFailed()
+                                    LockOutcome.Declined -> Unit
+                                }
                             }
+                        },
+                        onUsePassword = auth::signOut,
+                    )
+                    is AuthState.Failed -> Box(Modifier.safeDrawingPadding()) { ErrorState(current.error, onRetry = auth::start) }
+                    is AuthState.SignedOut -> {
+                        var loginRequested by rememberSaveable { mutableStateOf(false) }
+                        if (current.expired && !loginRequested) {
+                            Box(Modifier.safeDrawingPadding()) {
+                                ErrorState(ApiError.NOT_SIGNED_IN, onRetry = {}, onSignIn = { loginRequested = true })
+                            }
+                        } else {
+                            LoginScreen(form, onSignIn = auth::signIn)
                         }
-                    },
-                    onUsePassword = auth::signOut,
-                )
-                is AuthState.Failed -> Box(Modifier.safeDrawingPadding()) { ErrorState(current.error, onRetry = auth::start) }
-                is AuthState.SignedOut -> {
-                    var loginRequested by rememberSaveable { mutableStateOf(false) }
-                    if (current.expired && !loginRequested) {
-                        Box(Modifier.safeDrawingPadding()) {
-                            ErrorState(ApiError.NOT_SIGNED_IN, onRetry = {}, onSignIn = { loginRequested = true })
-                        }
-                    } else {
-                        LoginScreen(form, onSignIn = auth::signIn)
                     }
-                }
-                AuthState.MustChangePassword -> PasswordScreen(
-                    first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
-                )
-                is AuthState.Welcome -> WelcomeScreen(
-                    name = current.profile.name,
-                    passwordSaved = passwordSaved,
-                    form = form,
-                    onReadPrivacy = openPrivacy,
-                    onAccept = auth::acceptPrivacy,
-                    lockAvailable = lockAvailable,
-                    lockEnabled = lockEnabled,
-                    onLockChange = onLockChange,
-                )
-                is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
-                    // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
-                    val images = viewModel { ProfileImages(ProfileImageApi(client)) }
-                    val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
-                    CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
-                        MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
-                            passwordSaved, form, imageForm, auth,
-                            pushTarget, onPushTargetHandled,
-                            onOpenPrivacy = openPrivacy,
-                            onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
-                            onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
-                            lockAvailable = lockAvailable,
-                            lockEnabled = lockEnabled,
-                            onLockChange = onLockChange,
-                        )
+                    AuthState.MustChangePassword -> PasswordScreen(
+                        first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
+                    )
+                    is AuthState.Welcome -> WelcomeScreen(
+                        name = current.profile.name,
+                        passwordSaved = passwordSaved,
+                        form = form,
+                        onReadPrivacy = openPrivacy,
+                        onAccept = auth::acceptPrivacy,
+                        lockAvailable = lockAvailable,
+                        lockEnabled = lockEnabled,
+                        onLockChange = onLockChange,
+                    )
+                    is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
+                        // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
+                        val images = viewModel { ProfileImages(ProfileImageApi(client)) }
+                        val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
+                        CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
+                            MainContent(
+                                ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
+                                passwordSaved, form, imageForm, auth,
+                                pushTarget, onPushTargetHandled,
+                                onOpenPrivacy = openPrivacy,
+                                onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
+                                onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
+                                lockAvailable = lockAvailable,
+                                lockEnabled = lockEnabled,
+                                onLockChange = onLockChange,
+                            )
+                        }
                     }
                 }
             }
         }
-        // Über dem Start gibt es keinen zweiten Ladekreis.
-        BusyOverlay(busy = pending > 0 && state !is AuthState.Loading)
     }
 }
 

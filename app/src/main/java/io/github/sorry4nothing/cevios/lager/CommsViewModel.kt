@@ -38,6 +38,34 @@ data class PostDraft(
     val files: List<Pair<String, String>> = emptyList(),
 )
 
+/**
+ * Merkt sich die Dateien eines Entwurfs, die schon verknüpft sind: Ein neuer Versuch (nach einem Fehler bei einer späteren Datei
+ * oder beim Beitrag) legt nur den fehlenden Rest an, statt die Verknüpfungen nochmals zu erzeugen.
+ */
+class PostFiles {
+    private var draft: PostDraft? = null
+    private val ids = mutableListOf<String>()
+
+    /** Die IDs aller Dateien des Entwurfs; beim ersten Fehler dieser Fehler. */
+    suspend fun link(draft: PostDraft, add: suspend (name: String, link: String) -> ApiResult<CampFile>): ApiResult<List<String>> {
+        if (this.draft != draft) clear()
+        this.draft = draft
+        while (ids.size < draft.files.size) {
+            val (name, link) = draft.files[ids.size]
+            when (val added = add(name.trim(), link.trim())) {
+                is ApiResult.Ok -> ids += added.value.id
+                is ApiResult.Failure -> return added
+            }
+        }
+        return ApiResult.Ok(ids.toList())
+    }
+
+    fun clear() {
+        draft = null
+        ids.clear()
+    }
+}
+
 /** Wie die Empfänger eines Beitrags im Editor heissen: Ressorts und Programmgruppen des Lagers (die Oberfläche setzt sie). */
 data class RecipientChoices(val ressorts: List<Pair<String, String>> = emptyList(), val groups: List<Pair<String, String>> = emptyList()) {
     fun ressortName(id: String): String? = ressorts.firstOrNull { it.first == id }?.second
@@ -138,6 +166,7 @@ class CommsViewModel(
         _posts.value = null
         _choices.value = RecipientChoices()
         reportedSeen.clear()
+        postFiles.clear()
         _inbox.value = null
         _own.value = null
         _sent.value = null
@@ -217,6 +246,7 @@ class CommsViewModel(
     }
 
     private var creatingPost = false
+    private val postFiles = PostFiles()
 
     /** Legt eine Mitteilung an: erst die Dateien als Verknüpfung, dann den Beitrag, dann die Umfrage. */
     fun createPost(draft: PostDraft, onDone: () -> Unit) {
@@ -227,15 +257,12 @@ class CommsViewModel(
         writer.dismissError()
         viewModelScope.launch {
             try {
-                val fileIds = mutableListOf<String>()
-                for ((name, link) in draft.files) {
-                    when (val added = api.addFile(id, name.trim(), link.trim())) {
-                        is ApiResult.Ok -> fileIds += added.value.id
-                        is ApiResult.Failure -> return@launch writer.fail(added) { createPost(draft, onDone) }
-                    }
+                val fileIds = when (val linked = postFiles.link(draft) { name, link -> api.addFile(id, name, link) }) {
+                    is ApiResult.Ok -> linked.value
+                    is ApiResult.Failure -> return@launch writer.fail(linked) { createPost(draft, onDone) }
                 }
                 val created = when (val result = api.createPost(id, postBody(draft, fileIds))) {
-                    is ApiResult.Ok -> result.value
+                    is ApiResult.Ok -> result.value.also { postFiles.clear() }
                     is ApiResult.Failure -> return@launch writer.fail(result) { createPost(draft, onDone) }
                 }
                 if (hasMentionMarks(draft.title, draft.text)) syncMentions(created.id)

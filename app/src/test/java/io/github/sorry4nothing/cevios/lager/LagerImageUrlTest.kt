@@ -33,6 +33,27 @@ class LagerImageUrlTest {
     }
 
     @Test
+    fun roomMemberReadsTheImagePathAndParticipantsHaveNone() {
+        val room = json.decodeFromString<Room>(
+            """{"id":"$id","version":1,"name":"Eiger","art":"zimmer","mitglieder":[
+                {"typ":"person","id":"$id","name":"Anna","bildUrl":"$path"},
+                {"typ":"teilnehmer","id":"$id","name":"Kind","bildUrl":null},
+                {"typ":"person","id":"$id","name":"Ben"}]}""",
+        )
+        assertEquals(listOf(path, null, null), room.members.map { it.imageUrl })
+    }
+
+    @Test
+    fun tripPassengerReadsTheImagePath() {
+        val trip = json.decodeFromString<Trip>(
+            """{"id":"$id","version":1,"richtung":"hin","art":"auto","mitfahrer":[
+                {"id":"$id","version":1,"personId":"$id","name":"Anna","stufe":null,"bildUrl":"$path"},
+                {"id":"$id","version":1,"teilnehmerId":"$id","name":"Kind","stufe":"Biber","bildUrl":null}]}""",
+        )
+        assertEquals(listOf(path, null), trip.passengers.map { it.imageUrl })
+    }
+
+    @Test
     fun theAvatarLoadsOnlyTheRouteOfThePersonImage() {
         assertTrue(isProfileImagePath(path))
         assertFalse(isProfileImagePath("https://boese.example$path"))

@@ -77,7 +77,7 @@ enum class RoomKind(val wire: String) {
 
 /** Wer in einem Zimmer liegt: Teilnehmende (`teilnehmer`) oder Mitglied des Lagers (`person`); beim Team nur der Name. */
 @Serializable
-data class RoomMember(@SerialName("typ") val kind: String = "", val id: String = "", val name: String) {
+data class RoomMember(@SerialName("typ") val kind: String = "", val id: String = "", val name: String, @SerialName("bildUrl") val imageUrl: String? = null) {
     val isParticipant: Boolean get() = kind == "teilnehmer"
 }
 
@@ -144,7 +144,7 @@ enum class TripDirection(val wire: String) {
 }
 
 @Serializable
-data class TripPerson(val id: String, val version: Long, val personId: String? = null, val teilnehmerId: String? = null, val name: String, @SerialName("stufe") val stage: String? = null)
+data class TripPerson(val id: String, val version: Long, val personId: String? = null, val teilnehmerId: String? = null, val name: String, @SerialName("stufe") val stage: String? = null, @SerialName("bildUrl") val imageUrl: String? = null)
 
 @Serializable
 data class TripDriver(val personId: String, val name: String? = null)

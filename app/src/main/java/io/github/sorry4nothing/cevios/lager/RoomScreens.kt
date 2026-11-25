@@ -212,7 +212,7 @@ private fun RoomCard(room: Room, rights: PlanRights, onAssign: () -> Unit, onEdi
                     .semantics(mergeDescendants = true) { contentDescription = member.name },
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(member.name)
+                Avatar(member.name, imageUrl = member.imageUrl)
                 Text(member.name, style = MaterialTheme.typography.bodyLarge)
             }
         }

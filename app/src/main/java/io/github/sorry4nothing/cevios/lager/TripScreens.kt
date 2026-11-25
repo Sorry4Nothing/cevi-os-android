@@ -222,7 +222,7 @@ private fun TripCard(trip: Trip, rights: PlanRights, onAssign: () -> Unit, onEdi
                     .semantics(mergeDescendants = true) { contentDescription = joinDetail(passenger.name, passenger.stage).orEmpty() },
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(passenger.name)
+                Avatar(passenger.name, imageUrl = passenger.imageUrl)
                 Text(passenger.name, style = MaterialTheme.typography.bodyLarge)
             }
         }

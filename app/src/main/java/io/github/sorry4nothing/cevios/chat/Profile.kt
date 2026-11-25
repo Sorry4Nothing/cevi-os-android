@@ -20,7 +20,12 @@ data class ProfileChild(
 @Serializable
 data class Profile(
     val id: String,
-    val admin: Boolean = false,
+    /** Rolle der Abteilung (`abteilungsleitung_person`); fehlt das Feld, gilt `false`. */
+    @SerialName("abteilungsleitung") val departmentLead: Boolean = false,
+    /** Plattformrolle mit allen Rechten und Sichten der eigenen Abteilung. */
+    @SerialName("entwickler") val developer: Boolean = false,
+    /** «web», «app_ungeprueft» oder «app_nachgewiesen»: nur zum Lesen, kein Recht hängt daran. */
+    @SerialName("clientArt") val clientKind: String? = null,
     @SerialName("telefon") val phone: String? = null,
     @SerialName("rollen") val roles: List<ProfileRole> = emptyList(),
     @SerialName("stufen") val ageGroups: List<ProfileAgeGroup> = emptyList(),
@@ -39,6 +44,9 @@ data class Profile(
     /** Cevi-Name (Spitzname); `null` oder leer ohne Angabe. */
     val ceviName: String? = null,
 ) {
+    /** Sieht, was die Abteilungsleitung sieht: Abteilungsleitung oder Entwickler. */
+    val seesAll get() = departmentLead || developer
+
     fun isGroupLeader(ageGroupId: String) = roles.any { it.type == "stufenleitung" && it.ageGroupId == ageGroupId }
 }
 

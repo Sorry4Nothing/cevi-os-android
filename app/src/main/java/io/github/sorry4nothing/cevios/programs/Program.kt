@@ -55,8 +55,6 @@ data class Program(
     val id: String,
     @SerialName("titel") val title: String,
     val status: String,
-    /** «intern», «leitende» oder «eltern»: wer das Programm ausser Admins und Stufenleitungen sieht. */
-    @SerialName("sichtbarkeit") val visibility: String = "intern",
     @SerialName("ganztaegig") val allDay: Boolean,
     @SerialName("beginn") val start: String? = null,
     @SerialName("ende") val end: String? = null,

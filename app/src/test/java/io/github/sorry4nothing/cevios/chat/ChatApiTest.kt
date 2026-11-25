@@ -116,7 +116,7 @@ class ChatApiTest {
         server.enqueue(
             json(
                 200,
-                """{"id":"u1","name":"Beispiel","benutzername":"b","mussPasswortAendern":false,"admin":false,
+                """{"id":"u1","name":"Beispiel","benutzername":"b","mussPasswortAendern":false,"abteilungsleitung":false,"entwickler":false,
                 "rollen":[{"stufeId":"s1","typ":"stufenleitung"}],
                 "stufen":[{"id":"s1","name":"Pfadi","kuerzel":"PF"}],
                 "kinder":[{"id":"k1","vorname":"Mia","nachname":"Muster","stufeId":"s1"}]}""",

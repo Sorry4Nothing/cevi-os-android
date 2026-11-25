@@ -9,7 +9,7 @@
     <string name="group_chip">%1$s %2$s</string>
     <string name="profile_groups_none">Du hast noch keine Gruppe.</string>
     <string name="profile_groups_hint">Du siehst die Termine deiner Gruppen. Ändern kann das die Abteilungsleitung.</string>
-    <string name="role_function_admin">Abteilungsleitung</string>
+    <string name="role_function_department_lead">Abteilungsleitung</string>
     <string name="role_function_leader">Stufenleitung</string>
     <string name="role_function_leading">Leitung</string>
 

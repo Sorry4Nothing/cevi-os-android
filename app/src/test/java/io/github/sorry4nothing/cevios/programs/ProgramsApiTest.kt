@@ -177,9 +177,9 @@ class ProgramsApiTest {
             (runBlocking { programs.ageGroups() } as ApiResult.Ok).value.ageGroups,
         )
         assertEquals("GET /api/v1/stufen HTTP/1.1", server.takeRequest().requestLine)
-        server.enqueue(json(200, """{"id":"u1","admin":true,"rollen":[{"stufeId":"s1","typ":"stufenleitung"}]}"""))
+        server.enqueue(json(200, """{"id":"u1","entwickler":true,"rollen":[{"stufeId":"s1","typ":"stufenleitung"}]}"""))
         val profile = (runBlocking { programs.profile() } as ApiResult.Ok).value
-        assertTrue(profile.admin && profile.isGroupLeader("s1"))
+        assertTrue(profile.developer && profile.seesAll && profile.isGroupLeader("s1"))
     }
 
     @Test

@@ -119,13 +119,14 @@ class TermineLogicTest {
     @Test
     fun groupsShowTheirStagesAndTheFunction() {
         val profile = Profile(
-            id = "u", admin = false, roles = listOf(ProfileRole("s1", "stufenleitung")), ageGroups = listOf(ProfileAgeGroup("s1", "Wölfe")),
+            id = "u", roles = listOf(ProfileRole("s1", "stufenleitung")), ageGroups = listOf(ProfileAgeGroup("s1", "Wölfe")),
         )
         val labels = groupLabels(profile, "Abteilungsleitung", "Stufenleitung", "Leitung")
         assertEquals(listOf("Wölfe", "Stufenleitung"), labels.map { it.name })
         assertEquals("s1", labels.first().stageId)
         assertNull(labels.last().stageId)
-        assertEquals(listOf("Abteilungsleitung"), groupLabels(Profile(id = "a", admin = true), "Abteilungsleitung", "Stufenleitung", "Leitung").map { it.name })
+        assertEquals(listOf("Abteilungsleitung"), groupLabels(Profile(id = "a", departmentLead = true), "Abteilungsleitung", "Stufenleitung", "Leitung").map { it.name })
+        assertTrue("der Entwickler hat keine Funktion in der Abteilung", groupLabels(Profile(id = "e", developer = true), "A", "S", "L").isEmpty())
         assertTrue(groupLabels(Profile(id = "p"), "A", "S", "L").isEmpty())
     }
 

@@ -54,7 +54,7 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
     private val _registrations = MutableStateFlow<ApiResult<Registrations>?>(null)
     val registrations: StateFlow<ApiResult<Registrations>?> = _registrations.asStateFlow()
 
-    /** Für die Rechte bei den Anmeldungen (Admin, Stufenleitung, Leitung); `null`, solange es lädt. */
+    /** Für die Rechte bei den Anmeldungen (Abteilungsleitung, Entwickler, Stufenleitung, Leitung); `null`, solange es lädt. */
     private val _profile = MutableStateFlow<ApiResult<Profile>?>(null)
     val profile: StateFlow<ApiResult<Profile>?> = _profile.asStateFlow()
 

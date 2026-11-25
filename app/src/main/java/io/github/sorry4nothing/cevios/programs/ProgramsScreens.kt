@@ -349,7 +349,7 @@ private fun ContactSection(program: Program, contacts: ApiResult<ContactList>?) 
     }
 }
 
-/** Aktionen für Leitende: die Anmeldungen ansehen (Admins sowie Leitende und SL der Stufen). */
+/** Aktionen für Leitende: die Anmeldungen ansehen (Abteilungsleitung, Entwickler sowie Leitende und SL der Stufen). */
 @Composable
 private fun LeaderSection(
     canSeeRegistrations: Boolean,

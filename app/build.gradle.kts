@@ -25,6 +25,12 @@ android {
         // Echte Adresse nur lokal (~/.gradle/gradle.properties oder -PceviApiBaseUrl), nie im Repo.
         val apiBaseUrl = providers.gradleProperty("ceviApiBaseUrl").getOrElse("https://api.example.org")
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+
+        // Projektnummer des Google-Cloud-Projekts für Play Integrity: nur lokal (~/.gradle/gradle.properties oder -PceviPlayCloudProject),
+        // nie im Repo. Ohne Angabe (0) bleibt der Nachweis der App aus, und sie meldet sich ohne Ticket an.
+        val playCloudProject = providers.gradleProperty("ceviPlayCloudProject").orNull
+            ?.let { requireNotNull(it.toLongOrNull()) { "ceviPlayCloudProject muss eine Zahl sein" } } ?: 0L
+        buildConfigField("long", "PLAY_CLOUD_PROJECT", "${playCloudProject}L")
     }
 
     buildFeatures {
@@ -67,6 +73,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.biometric)
+    implementation(libs.play.integrity)
     // Die Abfrage braucht FragmentActivity; biometric bringt nur eine alte Fassung mit.
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.compose.material3)

@@ -119,6 +119,8 @@ fun writeErrorRes(error: ActionError): Int = when (error.code) {
     "NICHT_DEINE_SCHICHT", "NICHT_DEINE_ANFRAGE" -> R.string.error_not_your_shift
     "BEREITS_ENTSCHIEDEN" -> R.string.error_swap_decided
     "SCHICHT_GEAENDERT" -> R.string.error_shift_changed
+    "SCHICHT_GEAENDERT_ZURUECK" -> R.string.error_shift_changed_revert
+    "NICHT_ENTSCHIEDEN" -> R.string.error_swap_not_decided
     "PERSON_NICHT_VERFUEGBAR" -> R.string.error_person_unavailable
     "MIT_SCHICHT_UNGUELTIG", "MIT_PERSON_UNGUELTIG" -> R.string.error_swap_invalid
     "DIENST_VORHANDEN" -> R.string.error_duty_exists

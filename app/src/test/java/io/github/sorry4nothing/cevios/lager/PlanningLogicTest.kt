@@ -124,6 +124,18 @@ class PlanningLogicTest {
     }
 
     @Test
+    fun revertIsOfferedOnlyAfterADecisionAndOnlyToThoseWhoMayDecide() {
+        fun swap(status: String) = Swap("s", 1, "p", "x", null, null, null, status, null, null, "t")
+        val leadership = PlanRights.of(defaultPermissions(CampRole.LEADERSHIP, false))
+        assertTrue(PlanRules.canRevert(swap("angenommen"), leadership))
+        assertTrue(PlanRules.canRevert(swap("abgelehnt"), leadership))
+        assertFalse(PlanRules.canRevert(swap("offen"), leadership))
+        assertFalse(PlanRules.canRevert(swap("zurueckgezogen"), leadership))
+        assertFalse(PlanRules.canRevert(swap("angenommen"), PlanRights.of(defaultPermissions(CampRole.TEAM, false))))
+        assertFalse(PlanRules.canRevert(swap("angenommen"), PlanRights.of(defaultPermissions(CampRole.LEADERSHIP, true))))
+    }
+
+    @Test
     fun swapActorFallsBackWhenThePersonIsUnknown() {
         val swap = Swap("s", 1, "p", "x", null, null, null, "offen", null, null, "t")
         assertEquals("Pia", PlanRules.swapActor(swap, null, mapOf("p" to "Pia"), "jemand"))

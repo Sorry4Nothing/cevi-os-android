@@ -198,6 +198,16 @@ class PlanningApi(private val api: ApiClient) {
             },
         )
 
+    /**
+     * Nimmt «Annehmen» oder «Ablehnen» zurück: Die Anfrage ist danach wieder offen. `SCHICHT_GEAENDERT` heisst hier etwas anderes als beim
+     * Entscheid (der Rat «ablehnen» passt nicht), darum der eigene Code für den Satz.
+     */
+    suspend fun revertSwap(campId: String, swap: Swap, version: Long): ApiResult<Swap> =
+        when (val result: ApiResult<Swap> = api.post("/api/v1/lager/$campId/diensttausch/${swap.id}/entscheid/zuruecknehmen", buildJsonObject { put("version", version) })) {
+            is ApiResult.Failure -> if (result.code == "SCHICHT_GEAENDERT") result.copy(code = REVERT_SHIFT_CHANGED).also { it.status = result.status } else result
+            else -> result
+        }
+
     suspend fun withdrawSwap(campId: String, swap: Swap, version: Long): ApiResult<Swap> =
         api.post("/api/v1/lager/$campId/diensttausch/${swap.id}/zurueckziehen", buildJsonObject { put("version", version) })
 
@@ -240,6 +250,7 @@ class PlanningApi(private val api: ApiClient) {
     private companion object {
         const val PAGE_SIZE = 200
         const val MAX_PAGES = 10
+        const val REVERT_SHIFT_CHANGED = "SCHICHT_GEAENDERT_ZURUECK"
     }
 }
 

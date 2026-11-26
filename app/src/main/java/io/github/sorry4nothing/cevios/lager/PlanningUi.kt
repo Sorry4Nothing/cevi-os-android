@@ -138,6 +138,7 @@ fun PlanNoticeBanner(vm: PlanningViewModel) {
         PlanNotice.SWAP_DECLINED -> R.string.plan_notice_swap_declined
         PlanNotice.SWAP_REQUESTED -> R.string.plan_notice_swap_requested
         PlanNotice.SWAP_WITHDRAWN -> R.string.plan_notice_swap_withdrawn
+        PlanNotice.SWAP_REVERTED -> R.string.plan_notice_swap_reverted
         PlanNotice.COUNT_RESET -> R.string.plan_notice_count_reset
         PlanNotice.MIX_APPLIED -> R.string.plan_notice_mix_applied
         PlanNotice.SUGGESTION_APPLIED -> R.string.plan_notice_suggestion_applied

@@ -99,6 +99,7 @@ fun SwapsScreen(
                                 onAccept = { if (swap.mitPersonId == null) choosing = swap else vm.decideSwap(swap, accept = true) },
                                 onDecline = { vm.decideSwap(swap, accept = false) },
                                 onWithdraw = { vm.withdrawSwap(swap) },
+                                onRevert = { vm.revertSwap(swap) },
                             )
                         }
                     }
@@ -129,6 +130,7 @@ private fun SwapCard(
     onAccept: () -> Unit,
     onDecline: () -> Unit,
     onWithdraw: () -> Unit,
+    onRevert: () -> Unit,
 ) {
     val unknown = stringResource(R.string.swaps_someone)
     val shift = plan?.shifts?.firstOrNull { it.id == swap.schichtId }
@@ -176,6 +178,11 @@ private fun SwapCard(
                     TextActionButton(withdraw, onWithdraw, Modifier.rowAction(withdraw, sentence))
                 }
             }
+        }
+        // Kein Dialog: «Rückgängig» ist selbst die Umkehr, und «Annehmen» oder «Ablehnen» geht danach wieder.
+        if (PlanRules.canRevert(swap, rights)) {
+            val revert = stringResource(R.string.swaps_revert)
+            TextActionButton(revert, onRevert, Modifier.rowAction(revert, sentence))
         }
     }
 }

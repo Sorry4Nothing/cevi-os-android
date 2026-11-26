@@ -25,6 +25,9 @@ class LiveApi(private val api: ApiClient) {
 
     suspend fun schedule(campId: String): ApiResult<Schedule> = api.get("/api/v1/lager/$campId/zeitplan")
 
+    /** Nur für `ort`: den Grund, warum «Heute» oder die Tagesseite kein Wetter zeigen. */
+    suspend fun weather(campId: String): ApiResult<Weather> = api.get("/api/v1/lager/$campId/wetter")
+
     suspend fun myWeek(campId: String): ApiResult<MyWeek> = api.get("/api/v1/lager/$campId/meine-woche")
 
     // ---- Anwesenheit ----

@@ -310,8 +310,16 @@ data class WeatherDay(
     @SerialName("boeen") val gusts: Double? = null,
 )
 
+/** Stand der Ortssuche für das Wetter (`ort`): `status` ist `gefunden`, `kein_ort`, `nicht_gefunden`, `mehrdeutig`, `nicht_erreichbar` oder `offen`. */
 @Serializable
-data class Weather(@SerialName("stand") val updatedAt: String? = null, @SerialName("tage") val days: List<WeatherDay> = emptyList())
+data class WeatherPlace(val status: String, val name: String? = null)
+
+@Serializable
+data class Weather(
+    @SerialName("stand") val updatedAt: String? = null,
+    @SerialName("tage") val days: List<WeatherDay> = emptyList(),
+    @SerialName("ort") val place: WeatherPlace? = null,
+)
 
 @Serializable
 data class TodayLagertag(val id: String, @SerialName("datum") val date: String, val label: String? = null)

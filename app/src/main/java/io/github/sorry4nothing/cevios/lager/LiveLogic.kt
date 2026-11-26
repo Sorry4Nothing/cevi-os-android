@@ -40,6 +40,8 @@ data class LiveRights(
     val todos: Boolean,
     /** Die Anwesenheit öffnen: die eigene oder die aller; auch im geschlossenen Lager (nur lesend). */
     val seesAttendance: Boolean,
+    /** `wetter.lesen`: das Wetter lesen. Standard: alle Rollen. */
+    val readWeather: Boolean = false,
 ) {
     companion object {
         fun of(p: CampPermissions) = LiveRights(
@@ -55,6 +57,7 @@ data class LiveRights(
             editInfos = p.mayWrite("infos.bearbeiten"),
             todos = !p.readOnly,
             seesAttendance = p.may("anwesenheit.eigene", "anwesenheit.lesen_alle"),
+            readWeather = p.may("wetter.lesen"),
         )
     }
 }

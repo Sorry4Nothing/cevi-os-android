@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +46,7 @@ import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
@@ -243,12 +243,12 @@ private fun AssignToRoomSheet(vm: PlanningViewModel, rooms: List<Room>, preselec
             verticalArrangement = Arrangement.spacedBy(Spacing.s2),
         ) {
             Text(stringResource(R.string.rooms_assign), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.group_people_or_team)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 PickPill(stringResource(R.string.rooms_tab_participants), !team, { team = false })
                 PickPill(stringResource(R.string.rooms_tab_team), team, { team = true })
             }
             Text(stringResource(R.string.rooms_pick_room), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.rooms_pick_room)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 rooms.forEach { room -> PickPill(room.name, roomId == room.id, { roomId = room.id }) }
             }
             when (val result = open) {
@@ -294,7 +294,7 @@ private fun RoomEditorSheet(initial: Room?, onSave: (String, RoomKind, Int, Stri
                 stringResource(R.string.rooms_field_name), name, { name = it }, 100, Modifier.fillMaxWidth(),
                 hint = if (showErrors && name.isBlank()) stringResource(R.string.error_field_required) else null,
             )
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.group_rooms_kind)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 PickPill(stringResource(R.string.rooms_kind_room), kind == RoomKind.ROOM, { kind = RoomKind.ROOM })
                 PickPill(stringResource(R.string.rooms_kind_tent), kind == RoomKind.TENT, { kind = RoomKind.TENT })
             }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +46,7 @@ import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
@@ -264,7 +264,7 @@ private fun AssignToTripSheet(vm: PlanningViewModel, target: TripAssign, trips: 
             Text(stringResource(titleRes), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             if (canEdit) {
                 Text(stringResource(R.string.trips_pick_trip), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.pickGroup(stringResource(R.string.trips_pick_trip)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     ofDirection.forEach { trip -> PickPill(tripTitle(trip), tripId == trip.id, { tripId = trip.id }) }
                 }
             }
@@ -326,11 +326,11 @@ private fun TripEditorSheet(
         ) {
             Text(stringResource(if (isNew) R.string.trips_add else R.string.trips_edit), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             if (isNew) {
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.pickGroup(stringResource(R.string.group_trip_direction)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     PickPill(stringResource(R.string.trips_there), direction == TripDirection.THERE, { direction = TripDirection.THERE })
                     PickPill(stringResource(R.string.trips_back), direction == TripDirection.BACK, { direction = TripDirection.BACK })
                 }
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.pickGroup(stringResource(R.string.group_trip_kind)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     PickPill(stringResource(R.string.trips_kind_car), car, { car = true })
                     PickPill(stringResource(R.string.trips_kind_pt), !car, { car = false })
                 }
@@ -338,7 +338,7 @@ private fun TripEditorSheet(
             LabeledTextField(stringResource(R.string.trips_field_name), name, { name = it }, 100, Modifier.fillMaxWidth())
             if (car) {
                 Text(stringResource(R.string.trips_field_driver), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.pickGroup(stringResource(R.string.trips_field_driver)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     PickPill(stringResource(R.string.trips_no_driver), driver == null, { driver = null })
                     people.forEach { person -> PickPill(person.display, driver == person.id, { driver = person.id }) }
                 }

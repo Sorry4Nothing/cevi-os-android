@@ -63,7 +63,9 @@ import io.github.sorry4nothing.cevios.lager.TeamStart
 import io.github.sorry4nothing.cevios.lager.CampInfo
 import io.github.sorry4nothing.cevios.lager.CampListScreen
 import io.github.sorry4nothing.cevios.lager.CampStartScreen
+import io.github.sorry4nothing.cevios.lager.CampCache
 import io.github.sorry4nothing.cevios.lager.CampViewModel
+import io.github.sorry4nothing.cevios.lager.LocalStaleSince
 import io.github.sorry4nothing.cevios.lager.ChangeState
 import io.github.sorry4nothing.cevios.lager.ConflictScreen
 import io.github.sorry4nothing.cevios.lager.ModeMenu
@@ -244,7 +246,7 @@ class MainActivity : FragmentActivity() {
         WidgetPreviews.publish(applicationContext)
         // Nach Drehen oder Prozess-Ende gilt der Push nicht noch einmal: Das Intent ist dann dasselbe wie beim ersten Start.
         if (savedInstanceState == null) pushTarget = targetOf(intent)
-        val client = ApiClient.create(applicationContext)
+        val client = ApiClient.create(applicationContext, CampCache.create(applicationContext))
         val lock = AppLock(applicationContext)
         val prompter = BiometricPrompter(this, lock)
         setContent { CeviTheme { Root(client, lock, prompter, pushTarget) { pushTarget = null } } }
@@ -339,7 +341,8 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                         // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
                         val images = viewModel { ProfileImages(ProfileImageApi(client)) }
                         val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
-                        CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
+                        val staleSince by client.staleSince.collectAsState()
+                        CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos, LocalStaleSince provides staleSince) {
                             MainContent(
                                 ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
                                 passwordSaved, form, imageForm, auth,

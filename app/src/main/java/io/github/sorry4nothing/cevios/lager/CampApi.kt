@@ -2,9 +2,13 @@ package io.github.sorry4nothing.cevios.lager
 
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.net.ResponseCache
 
 /** Die Lager-Routen des Grundgerüsts. Jedes Modul (Aufgaben, Pinnwand, …) bringt seine eigenen Aufrufe mit. */
 class CampApi(private val api: ApiClient) : QueueSender {
+    /** Der Zwischenspeicher mit dem zuletzt geladenen Stand der Lager; `null`, wenn der Client keinen hat. */
+    val cache: ResponseCache? get() = api.cache
+
     /** Meine Lager mit meiner Rolle, neueste zuerst. */
     suspend fun list(): ApiResult<CampList> = api.get("/api/v1/lager")
 

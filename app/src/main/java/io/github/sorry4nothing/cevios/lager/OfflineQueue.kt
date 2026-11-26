@@ -54,6 +54,9 @@ interface QueueStore {
     fun load(campId: String): List<QueuedChange>
 
     fun save(campId: String, changes: List<QueuedChange>)
+
+    /** Das Lager gibt es nicht mehr oder die Person hat keinen Zugriff mehr: Die wartenden Änderungen gehen weg. */
+    fun clear(campId: String)
 }
 
 /** Arbeitsspeicher der Sitzung: weg mit dem Prozess und beim Abmelden. */
@@ -64,6 +67,10 @@ class MemoryQueueStore : QueueStore {
 
     override fun save(campId: String, changes: List<QueuedChange>) {
         data[campId] = changes
+    }
+
+    override fun clear(campId: String) {
+        data.remove(campId)
     }
 }
 

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lager, Schnitt F1: Lager-Check «Sind wir bereit?» (kein Entwurf). Schweizer Schreibweise, «du», Buttons sind Verben. -->
+<resources>
+    <string name="field_done">Erledigt</string>
+
+    <string name="check_title">Lager-Check</string>
+    <string name="check_loading">Lager-Check wird geladen</string>
+    <string name="check_level_ready">Bereit</string>
+    <string name="check_level_notes">Hinweise</string>
+    <string name="check_level_open">Offen</string>
+    <string name="check_summary_ready">Das Lager ist bereit.</string>
+    <string name="check_summary_notes">Das Lager ist bereit. Es gibt Hinweise.</string>
+    <plurals name="check_summary_open">
+        <item quantity="one">%d Punkt ist noch offen.</item>
+        <item quantity="other">%d Punkte sind noch offen.</item>
+    </plurals>
+    <string name="check_as_of">Stand: %1$s</string>
+    <string name="check_nothing_to_note">Nichts zu melden.</string>
+    <string name="check_note_open">Offen</string>
+    <string name="check_note_hint">Hinweis</string>
+    <string name="check_example_dated">%1$s, %2$s</string>
+    <string name="check_more">und %1$d weitere</string>
+
+    <string name="check_own_title">Eigene Punkte</string>
+    <string name="check_own_empty">Es gibt keine eigenen Punkte.</string>
+    <string name="check_own_empty_edit">Noch keine eigenen Punkte. Halte hier fest, was vor dem Lager noch zu klären ist.</string>
+    <string name="check_add">Punkt hinzufügen</string>
+    <string name="check_add_title">Neuer Punkt</string>
+    <string name="check_add_save">Hinzufügen</string>
+    <string name="check_point_label">Was ist zu klären?</string>
+    <string name="check_point_actions">Aktionen für %1$s</string>
+    <string name="check_rename">Umbenennen</string>
+    <string name="check_rename_save">Speichern</string>
+    <string name="check_delete_title">Punkt löschen?</string>
+    <string name="check_delete_text">«%1$s» wird endgültig gelöscht.</string>
+    <string name="check_limit">Mehr als %1$d eigene Punkte gehen nicht.</string>
+    <string name="check_notice_added">Der Punkt ist gespeichert.</string>
+    <string name="check_notice_deleted">Der Punkt ist gelöscht.</string>
+</resources>

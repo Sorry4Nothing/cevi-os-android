@@ -134,7 +134,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- Nur für «Höck als Kalendereintrag teilen»: Die Datei liegt kurz im Cache und geht über die Systemauswahl weiter. -->
+        <!-- Geteilte Dateien (Kalendereintrag, Aushang) liegen kurz im Cache und gehen über die Systemauswahl weiter; gezielt heruntergeladene Dateien liegen in files/downloads und öffnen sich über diesen Provider (file_paths.xml). -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

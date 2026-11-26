@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path name="shared" path="shared/" />
+    <!-- Gezielt heruntergeladene Dateien: nur dieser Ordner, nie der ganze Ordner der App. -->
+    <files-path name="downloads" path="downloads/" />
 </paths>

@@ -44,6 +44,23 @@ class ProgramsApiTest {
          "anlass":{"id":"e1","anmeldeschluss":"2027-06-01T20:00:00Z","anmeldungOffen":true,"angemeldet":false},"kinder":[]}
     """.trimIndent()
 
+    @Test
+    fun theCalendarFileOfATermComesFromTheServerAsBytes() {
+        val ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:abc@cevi-os\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+        server.enqueue(MockResponse.Builder().code(200).addHeader("Content-Type", "text/calendar").body(ics).build())
+        val bytes = (runBlocking { programs.calendarFile("abc") } as ApiResult.Ok).value
+        assertEquals("GET /api/v1/termine/abc.ics HTTP/1.1", server.takeRequest().requestLine)
+        assertEquals(ics, String(bytes))
+    }
+
+    @Test
+    fun anUnknownTermHasNoCalendarFileAndAHugeAnswerIsRefused() {
+        server.enqueue(json(404, """{"code":"NICHT_GEFUNDEN","message":"x"}"""))
+        assertEquals(ApiResult.Failure(ApiError.NOT_FOUND), runBlocking { programs.calendarFile("abc") })
+        server.enqueue(MockResponse.Builder().code(200).body("x".repeat(70 * 1024)).build())
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN), runBlocking { programs.calendarFile("abc") })
+    }
+
     private fun page(vararg entries: String, more: Boolean = false, next: String? = null) =
         """{"termine":[${entries.joinToString(",")}],"weitere":$more,"naechste":${next?.let { "\"$it\"" } ?: "null"}}"""
 

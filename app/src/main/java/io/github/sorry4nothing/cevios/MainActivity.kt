@@ -1061,6 +1061,7 @@ private fun MainContent(
                             onEvent = { openedEvent = it },
                             onBack = { openedProgram = null },
                             onRetry = { programs.loadDetail(programId) },
+                            calendarFile = programs::calendarFile,
                         )
                     }
                 }

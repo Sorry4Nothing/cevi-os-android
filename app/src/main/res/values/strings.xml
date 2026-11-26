@@ -116,6 +116,7 @@
     <string name="state_session_text">Du warst länger nicht aktiv. Zu deiner Sicherheit haben wir dich abgemeldet.</string>
     <string name="program_add_to_calendar">Zum Kalender hinzufügen</string>
     <string name="program_no_calendar_app">Auf diesem Gerät gibt es keine Kalender-App.</string>
+    <string name="program_calendar_loading">Kalendereintrag wird geholt</string>
     <string name="event_section">Anmeldung</string>
     <string name="event_registered">Angemeldet</string>
     <string name="event_not_registered">Noch nicht angemeldet</string>

@@ -58,6 +58,7 @@ import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.TextActionButton
@@ -532,7 +533,7 @@ private fun FilterDialog(
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
             if (view == TaskView.MINE) {
                 Text(stringResource(R.string.tasks_sort_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.pickGroup(stringResource(R.string.tasks_sort_title)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     PickPill(stringResource(R.string.sort_due), mineSort == MineSort.DUE, { onSort(MineSort.DUE) })
                     PickPill(stringResource(R.string.sort_order), mineSort == MineSort.ORDER, { onSort(MineSort.ORDER) })
                     PickPill(stringResource(R.string.sort_ressort), mineSort == MineSort.RESSORT, { onSort(MineSort.RESSORT) })

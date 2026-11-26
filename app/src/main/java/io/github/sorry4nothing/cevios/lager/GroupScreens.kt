@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +43,7 @@ import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.TextActionButton
@@ -306,7 +306,7 @@ private fun GroupAssignSheet(vm: PlanningViewModel, group: Group, groups: GroupL
             verticalArrangement = Arrangement.spacedBy(Spacing.s2),
         ) {
             Text(stringResource(R.string.groups_assign_title, group.name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.group_assign_kind)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 PickPill(stringResource(R.string.groups_tab_children), !leaders, { leaders = false; picked = emptySet() })
                 PickPill(stringResource(R.string.groups_tab_leaders), leaders, { leaders = true; picked = emptySet() })
             }

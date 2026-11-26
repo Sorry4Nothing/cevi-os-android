@@ -156,8 +156,8 @@ class RoomsViewModel(
 }
 
 /**
- * «Raumanfragen entscheiden» für das zuständige Team. Die Antwort von `…/offen` ist die einzige Auskunft, ob die Person zuständig ist:
- * Eine leere Liste heisst «über nichts zuständig» oder «nichts offen»; der Einstieg im Profil steht nur bei offenen Anfragen.
+ * «Raumanfragen entscheiden» für die Zuständigen. Ob die Person zuständig ist, sagt `raumAnfragenEntscheiden` in `GET /ich`; die Liste
+ * `…/offen` liefert nur die offenen Anfragen (leer heisst «nichts offen») und gibt den Zähler im Profil.
  * Ein Entscheid geht genau einmal hinaus (keine `clientOpId`): Bei Netzfehler wiederholt nichts von selbst, die Person prüft zuerst die Liste.
  */
 class RoomDecisionsViewModel(private val api: TermineApi) : ViewModel() {

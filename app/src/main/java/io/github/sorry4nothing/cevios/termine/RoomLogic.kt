@@ -123,7 +123,7 @@ enum class DecisionNotice(val reloads: Boolean) {
     /** 404: Die Anfrage gibt es nicht mehr. */
     GONE(true),
 
-    /** 403 ohne zweiten Faktor: Entscheiden mit einer Gruppenrolle geht nur am Computer. */
+    /** 403 mit zweitem Faktor: trifft nur noch Plattformrolle und Entwickler (Team, Gruppenrollen und Abteilungsleitung brauchen ihn nicht), das geht nur am Computer. */
     SECOND_FACTOR(false),
 
     /** Sonst 403 (auch `EIGENE_ANFRAGE`): kein Recht für diesen Raum. */
@@ -131,6 +131,12 @@ enum class DecisionNotice(val reloads: Boolean) {
     OFFLINE(false),
     FAILED(false),
 }
+
+/**
+ * Die Zeile «Raumanfragen entscheiden» im Profil: `null` ohne Zeile (die Person entscheidet nicht über Räume, `GET /ich`), sonst die Zahl
+ * der offenen Anfragen; 0 heisst Zeile ohne Zähler.
+ */
+fun decisionRowCount(decides: Boolean, open: Int): Int? = if (decides) open.coerceAtLeast(0) else null
 
 /** Der Hinweis zum Ergebnis eines Entscheids (`approve`: annehmen, sonst ablehnen). */
 fun decisionNotice(approve: Boolean, result: ApiResult<*>): DecisionNotice = when (result) {

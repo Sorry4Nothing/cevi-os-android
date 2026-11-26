@@ -119,6 +119,7 @@ class RoomLogicTest {
         assertEquals(DecisionNotice.BUSY, decisionNotice(true, failure(ApiError.REGISTRATION_CLOSED, "RAUM_BELEGT")))
         assertEquals(DecisionNotice.GONE, decisionNotice(true, failure(ApiError.NOT_FOUND)))
         assertEquals(DecisionNotice.SECOND_FACTOR, decisionNotice(true, failure(ApiError.SECOND_FACTOR_MISSING, "ZWEITER_FAKTOR_FEHLT")))
+        assertEquals(DecisionNotice.SECOND_FACTOR, decisionNotice(true, failure(ApiError.SECOND_FACTOR_MISSING, "ZWEITER_FAKTOR_SITZUNG")))
         assertEquals(DecisionNotice.NOT_ALLOWED, decisionNotice(true, failure(ApiError.FORBIDDEN, "EIGENE_ANFRAGE")))
         assertEquals(DecisionNotice.OFFLINE, decisionNotice(true, failure(ApiError.NETWORK)))
         assertEquals(DecisionNotice.FAILED, decisionNotice(true, failure(ApiError.UNKNOWN)))
@@ -146,5 +147,14 @@ class RoomLogicTest {
     fun theDayIsNamedInFull() {
         assertEquals("Samstag, 12.12.", roomDayLong(LocalDate.of(2026, 12, 12)))
         assertEquals("So", dayNameShort(LocalDate.of(2026, 12, 13)))
+    }
+
+    @Test
+    fun theDecisionRowFollowsTheProfileFlagNotTheList() {
+        assertNull(decisionRowCount(false, 0))
+        // Ohne Zuständigkeit fehlt die Zeile auch dann, wenn die Liste Anfragen zeigen würde.
+        assertNull(decisionRowCount(false, 3))
+        assertEquals(0, decisionRowCount(true, 0))
+        assertEquals(3, decisionRowCount(true, 3))
     }
 }

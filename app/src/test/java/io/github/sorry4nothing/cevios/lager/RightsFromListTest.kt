@@ -19,7 +19,7 @@ class RightsFromListTest {
     fun noRightsMeansNoButtonWhateverTheRole() {
         val p = CampPermissions(CampRole.LEADERSHIP, readOnly = false)
         assertEquals(TaskRights(false, false, false, false, false, false, true), TaskRights.of(p))
-        assertEquals(PlanRights(false, false, true, false, false, false), PlanRights.of(p))
+        assertEquals(PlanRights(false, false, true, false, false), PlanRights.of(p))
         assertFalse(LiveRights.of(p).let { it.ownAttendance || it.editShopping || it.tickPacking || it.editInfos || it.seesAttendance })
         assertFalse(MeetingRights.of(p).let { it.editMeetings || it.editPinboard || it.readInbox || it.sendInbox || it.interact })
         assertFalse(ArchiveRights.of(p).let { it.editDocuments || it.readAddressBook || it.editSchedule })
@@ -58,7 +58,6 @@ class RightsFromListTest {
     @Test
     fun eachPlanActionHasItsOwnRight() {
         assertTrue(PlanRights.of(only("teilnehmer.bearbeiten")).editParticipants)
-        assertTrue(PlanRights.of(only("abzaehlen.schreiben")).count)
         assertTrue(PlanRights.of(only("diensttausch.anfragen")).requestSwap)
         assertTrue(PlanRights.of(only("diensttausch.entscheiden")).decideSwap)
         assertFalse(PlanRights.of(only("diensttausch.entscheiden")).requestSwap)

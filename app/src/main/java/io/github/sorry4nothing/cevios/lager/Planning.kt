@@ -375,7 +375,8 @@ data class CountEntry(
     @SerialName("stufe") val stage: String? = null,
     val name: String? = null,
     val ceviName: String? = null,
-    @SerialName("geprueft") val checked: Boolean,
+    /** Der gemeinsame Haken des Servers: Die App liest ihn nicht (die Haken sind lokal, siehe [CountRules.page]). */
+    @SerialName("geprueft") val checked: Boolean = false,
     @SerialName("geprueftAm") val checkedAt: String? = null,
 ) {
     val display: String
@@ -390,9 +391,3 @@ data class CountPage(
     @SerialName("da") val present: Int,
     @SerialName("gesamt") val total: Int,
 )
-
-@Serializable
-data class CountChanged(@SerialName("geaendert") val changed: Int)
-
-@Serializable
-data class CountReset(@SerialName("zurueckgesetzt") val reset: Int)

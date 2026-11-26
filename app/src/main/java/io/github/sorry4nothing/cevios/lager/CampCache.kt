@@ -35,7 +35,18 @@ class CampCache(
 
     @Synchronized
     override fun store(path: String, body: String) {
-        val file = fileFor(path) ?: return
+        write(fileFor(path) ?: return, path, body)
+    }
+
+    @Synchronized
+    override fun storeLocal(campId: String, key: String, text: String) {
+        write(localFile(campId, key) ?: return, localContext(campId, key), text)
+    }
+
+    @Synchronized
+    override fun loadLocal(campId: String, key: String): String? = localFile(campId, key)?.let { read(it, localContext(campId, key))?.text }
+
+    private fun write(file: File, path: String, body: String) {
         val bytes = body.toByteArray(Charsets.UTF_8)
         if (bytes.size > MAX_BYTES) return
         try {
@@ -55,8 +66,10 @@ class CampCache(
     }
 
     @Synchronized
-    override fun load(path: String): CachedBody? {
-        val file = fileFor(path)?.takeIf { it.isFile } ?: return null
+    override fun load(path: String): CachedBody? = fileFor(path)?.let { read(it, path) }
+
+    private fun read(file: File, path: String): CachedBody? {
+        if (!file.isFile) return null
         val plain = try {
             sealer.open(file.readBytes(), path)
         } catch (e: IOException) {
@@ -93,6 +106,12 @@ class CampCache(
         dir.deleteRecursively()
     }
 
+    /** Die Datei zu einer eigenen Angabe: nur mit gültiger Lager-ID (UUID) und einem Schlüssel aus Kleinbuchstaben, sonst nie ein Pfad. */
+    private fun localFile(campId: String, key: String): File? =
+        if (UUID.matches(campId) && KEY.matches(key)) File(File(dir, campId.lowercase()), "local-$key.bin") else null
+
+    private fun localContext(campId: String, key: String) = "local/${campId.lowercase()}/$key"
+
     private fun fileFor(path: String): File? {
         val folder = if (path == CAMP_LIST_PATH) ROOT else campOf(path) ?: return null
         val name = MessageDigest.getInstance("SHA-256").digest(path.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
@@ -104,6 +123,7 @@ class CampCache(
         private const val TEMP = ".tmp"
         private const val MAX_BYTES = 1 shl 20
         private const val MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
+        private val KEY = Regex("[a-z]{1,20}(-[a-z]{1,20})*")
         private val UUID = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
         private val CAMP_PATH = Regex("^/api/v1/lager/($UUID)(?:/([a-z-]+)(?:/([A-Za-z0-9-]+))?)?(?:/[A-Za-z0-9-]+)*(?:\\?.*)?$")
 

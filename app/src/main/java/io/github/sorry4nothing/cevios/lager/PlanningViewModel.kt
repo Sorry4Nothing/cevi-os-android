@@ -4,9 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.net.Background
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
@@ -18,9 +24,6 @@ import kotlinx.serialization.json.put
 
 /** Ein Hinweis nach einer Aktion (kein Rückgängig: Der Server bietet dafür keine Route). */
 enum class PlanNotice { SWAP_ACCEPTED, SWAP_DECLINED, SWAP_REQUESTED, SWAP_WITHDRAWN, COUNT_RESET, MIX_APPLIED, SUGGESTION_APPLIED, IMPORTED }
-
-/** Was die Abzählliste zeigt: Teilnehmende oder Team, optional eine Stufe oder eine Gruppe. */
-data class CountFilter(val team: Boolean = false, val stage: String? = null, val groupId: String? = null)
 
 /**
  * Die Einteilung eines Lagers: Teilnehmende, Zimmer, Fahrten, Gruppen, Schichtplan, Diensttausch und Abzählliste. Der Stand kommt vom
@@ -81,11 +84,20 @@ class PlanningViewModel(
     private val _swaps = MutableStateFlow<ApiResult<List<Swap>>?>(null)
     val swaps: StateFlow<ApiResult<List<Swap>>?> = _swaps.asStateFlow()
 
+    /** Wer in der Abzählliste steht (vom Server, nur Lesen). */
     private val _count = MutableStateFlow<ApiResult<CountPage>?>(null)
-    val count: StateFlow<ApiResult<CountPage>?> = _count.asStateFlow()
 
-    private val _filter = MutableStateFlow(CountFilter())
-    val filter: StateFlow<CountFilter> = _filter.asStateFlow()
+    /** Die eigenen Haken: nur IDs, nur auf diesem Gerät (siehe [CountStore]), nie beim Server. */
+    private val _checked = MutableStateFlow<Set<String>>(emptySet())
+    private val store = CountStore(api.cache)
+
+    /** Die Liste mit den eigenen Haken; «x von y» zählt über die ganze Liste. */
+    val count: StateFlow<ApiResult<CountPage>?> =
+        combine(_count, _checked) { list, checked -> if (list is ApiResult.Ok) ApiResult.Ok(CountRules.page(list.value.entries, checked)) else list }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private val _selection = MutableStateFlow(CountSelection())
+    val selection: StateFlow<CountSelection> = _selection.asStateFlow()
 
     private val _importPreview = MutableStateFlow<ImportResult?>(null)
     val importPreview: StateFlow<ImportResult?> = _importPreview.asStateFlow()
@@ -117,6 +129,7 @@ class PlanningViewModel(
         if (openCamp.value == id) return
         reset()
         openCamp.value = id
+        _checked.value = store.load(id)
     }
 
     fun close() {
@@ -127,7 +140,7 @@ class PlanningViewModel(
     private fun reset() {
         _participants.value = null; _rooms.value = null; _openPeople.value = null; _trips.value = null; _withoutTrip.value = emptyMap()
         _groups.value = null; _mix.value = null; _plan.value = null; _schedule.value = null; _suggestion.value = null; _swaps.value = null
-        _count.value = null; _filter.value = CountFilter(); _importPreview.value = null; _notice.value = null; _busy.value = false
+        _count.value = null; _checked.value = emptySet(); _selection.value = CountSelection(); _importPreview.value = null; _notice.value = null; _busy.value = false
         _people.value = emptyList(); _members.value = null
         writer.clear()
     }
@@ -172,7 +185,8 @@ class PlanningViewModel(
         if (touches("gruppe", "teilnehmer") && _groups.value != null) loadGroups(silent = true)
         if (touches("dienst", "schicht") && _plan.value != null) loadPlan(silent = true)
         if (touches("diensttausch", "schicht") && _swaps.value != null) loadSwaps(silent = true)
-        if (touches("abzaehlen", "teilnehmer") && _count.value != null) loadCount(silent = true)
+        // Wer in der Liste steht, ändert sich mit den Teilnehmenden und Gruppen; die Haken anderer gehen uns nichts an.
+        if (touches("teilnehmer", "gruppe") && _count.value != null) loadCount(silent = true)
     }
 
     fun dismissNotice() {
@@ -471,52 +485,41 @@ class PlanningViewModel(
 
     // ---- Abzählliste ----
 
+    /** Holt, wer gezählt wird, aus den gewählten Quellen (nur Lesen beim Server). Die Haken stehen nur hier auf dem Gerät. */
     fun loadCount(silent: Boolean = false) {
-        val f = _filter.value
-        launchLoad(_count, silent, { api.count(it, f.team, f.stage, f.groupId) }, current = { _filter.value == f })
+        val selection = _selection.value
+        launchLoad(_count, silent, { id -> fetchCount(id, selection) }, current = { _selection.value == selection })
     }
 
-    fun setFilter(filter: CountFilter) {
-        if (filter == _filter.value) return
-        _filter.value = filter
+    private suspend fun fetchCount(campId: String, selection: CountSelection): ApiResult<CountPage> = coroutineScope {
+        val results = CountRules.queries(selection).map { q -> async { api.count(campId, q.team, q.stage, q.groupId) } }.awaitAll()
+        results.filterIsInstance<ApiResult.Failure>().firstOrNull()
+            ?: ApiResult.Ok(CountPage(CountRules.merge(results.mapNotNull { (it as? ApiResult.Ok)?.value }), null, 0, 0))
+    }
+
+    /** Wählt eine Quelle an oder ab; mehrere zugleich, mindestens eine bleibt. */
+    fun toggleSource(source: CountSource) {
+        val next = _selection.value.toggled(source)
+        if (next == _selection.value) return
+        _selection.value = next
         loadCount(silent = false)
     }
 
-    /** Haken sofort sichtbar; scheitert das Senden, springt er zurück und der Fehler erscheint. */
+    /** Der Haken ist sofort da und bleibt auf diesem Gerät: kein Aufruf beim Server, nichts in der Warteschlange, kein Konflikt. */
     fun toggleCount(entry: CountEntry) {
         val id = campId ?: return
-        val checked = !entry.checked
-        writer.dismissError()
-        updateEntry(entry.id, checked)
-        viewModelScope.launch {
-            val result = api.setChecked(id, listOfNotNull(entry.teilnehmerId), listOfNotNull(entry.personId), checked)
-            if (result is ApiResult.Failure) {
-                updateEntry(entry.id, !checked)
-                writer.fail(result) { toggleCount(entry.copy(checked = !checked)) }
-            }
-        }
+        val next = CountRules.toggle(_checked.value, entry.id)
+        _checked.value = next
+        store.save(id, next)
     }
 
-    private fun updateEntry(entryId: String, checked: Boolean) {
-        _count.update { state ->
-            val ok = state as? ApiResult.Ok ?: return@update state
-            val page = ok.value
-            val before = page.entries.firstOrNull { it.id == entryId } ?: return@update state
-            if (before.checked == checked) return@update state
-            ApiResult.Ok(
-                page.copy(
-                    entries = page.entries.map { if (it.id == entryId) it.copy(checked = checked) else it },
-                    present = (page.present + if (checked) 1 else -1).coerceIn(0, page.total),
-                ),
-            )
-        }
+    /** Nimmt nur die eigenen Haken zurück; niemand sonst merkt es. */
+    fun resetCount() {
+        val id = campId ?: return
+        _checked.value = emptySet()
+        store.save(id, emptySet())
+        _notice.value = PlanNotice.COUNT_RESET
     }
-
-    fun resetCount(): Unit =
-        send({ resetCount() }, { api.resetCount(it) }) {
-            _notice.value = PlanNotice.COUNT_RESET
-            loadCount(silent = true)
-        }
 }
 
 private fun nullableString(value: String?): JsonElement = value?.takeIf { it.isNotBlank() }?.let { JsonPrimitive(it.trim()) } ?: JsonNull

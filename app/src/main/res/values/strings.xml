@@ -731,7 +731,6 @@
 
     <!-- Gruppennamen für den Screenreader (kurz, als Satzteil) -->
     <string name="group_people_or_team">Teilnehmende oder Team</string>
-    <string name="group_count_filter">Nach Stufe oder Gruppe filtern</string>
     <string name="group_filter_stage">Nach Stufe filtern</string>
     <string name="group_assign_kind">Kinder oder Leitende</string>
     <string name="group_inbox_kind">Art des Eintrags</string>

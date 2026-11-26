@@ -920,6 +920,8 @@ private fun MainContent(
                         onDismiss = shop::dismissListNotice,
                         onBack = leave,
                         onRetry = shop::reloadOrders,
+                    )
+                }
                 Screen.RoomDecisions -> {
                     val leave = { roomDecideOpen = false; roomDecisions.dismissNotice() }
                     BackHandler(onBack = leave)

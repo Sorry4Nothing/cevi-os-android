@@ -41,6 +41,9 @@ data class Profile(
     @SerialName("pushProgramme") val pushPrograms: Boolean = true,
     /** Der Server liefert ihn nur Personen mit Stufenrolle; `null`: kein Schalter anzeigen. */
     @SerialName("pushAnmeldungen") val pushRegistrations: Boolean? = null,
+    /** Push «Entscheid zu deinem Terminvorschlag» und «Entscheid zu deiner Raumanfrage»; standardmässig an. */
+    @SerialName("pushTerminEntscheid") val pushProposalDecision: Boolean = true,
+    @SerialName("pushRaumEntscheid") val pushRoomDecision: Boolean = true,
     /** Cevi-Name (Spitzname); `null` oder leer ohne Angabe. */
     val ceviName: String? = null,
 ) {

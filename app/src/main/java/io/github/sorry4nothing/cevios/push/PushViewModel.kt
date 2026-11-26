@@ -16,9 +16,17 @@ import kotlinx.coroutines.launch
 /** Die Push-Schalter der Person und das Hinterlegen des Tokens dieses Geräts. */
 class PushViewModel(private val api: PushApi, profile: Profile) : ViewModel() {
     /** `registrations` ist `null` bei Personen ohne Stufenrolle: Sie haben den Schalter nicht. */
-    data class Switches(val chat: Boolean, val programs: Boolean, val registrations: Boolean? = null)
+    data class Switches(
+        val chat: Boolean,
+        val programs: Boolean,
+        val registrations: Boolean? = null,
+        val proposalDecision: Boolean = true,
+        val roomDecision: Boolean = true,
+    )
 
-    private val _switches = MutableStateFlow(Switches(profile.pushChat, profile.pushPrograms, profile.pushRegistrations))
+    private val _switches = MutableStateFlow(
+        Switches(profile.pushChat, profile.pushPrograms, profile.pushRegistrations, profile.pushProposalDecision, profile.pushRoomDecision),
+    )
     val switches: StateFlow<Switches> = _switches.asStateFlow()
 
     private val _form = MutableStateFlow(FormState())
@@ -29,6 +37,10 @@ class PushViewModel(private val api: PushApi, profile: Profile) : ViewModel() {
     fun setPrograms(on: Boolean) = save(PushSwitchesRequest(programs = on)) { it.copy(programs = on) }
 
     fun setRegistrations(on: Boolean) = save(PushSwitchesRequest(registrations = on)) { it.copy(registrations = on) }
+
+    fun setProposalDecision(on: Boolean) = save(PushSwitchesRequest(proposalDecision = on)) { it.copy(proposalDecision = on) }
+
+    fun setRoomDecision(on: Boolean) = save(PushSwitchesRequest(roomDecision = on)) { it.copy(roomDecision = on) }
 
     /** Der Schalter springt erst um, wenn der Server zugestimmt hat. */
     private fun save(request: PushSwitchesRequest, apply: (Switches) -> Switches) {

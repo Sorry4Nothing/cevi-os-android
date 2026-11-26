@@ -15,6 +15,8 @@ data class PushSwitchesRequest(
     @SerialName("pushChat") val chat: Boolean? = null,
     @SerialName("pushProgramme") val programs: Boolean? = null,
     @SerialName("pushAnmeldungen") val registrations: Boolean? = null,
+    @SerialName("pushTerminEntscheid") val proposalDecision: Boolean? = null,
+    @SerialName("pushRaumEntscheid") val roomDecision: Boolean? = null,
 )
 
 class PushApi(private val api: ApiClient) {

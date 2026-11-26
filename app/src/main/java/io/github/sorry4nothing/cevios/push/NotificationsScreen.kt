@@ -68,6 +68,10 @@ fun NotificationsScreen(
     onPrograms: (Boolean) -> Unit,
     onRegistrations: (Boolean) -> Unit,
     onBack: () -> Unit,
+    /** Wer Termine vorschlagen darf, bekommt den Entscheid dazu; für alle anderen fehlt der Schalter. */
+    mayPropose: Boolean = false,
+    onProposalDecision: (Boolean) -> Unit = {},
+    onRoomDecision: (Boolean) -> Unit = {},
     /** Die Schalter der Lager-Arten (`GET /api/v1/ich/lager-benachrichtigungen`); `null`, solange sie laden. */
     lager: ApiResult<Map<String, Boolean>>? = null,
     onLager: (kind: String, active: Boolean) -> Unit = { _, _ -> },
@@ -117,6 +121,20 @@ fun NotificationsScreen(
                         it, enabled = !form.running, onChange = onRegistrations,
                     )
                 }
+                if (mayPropose) {
+                    SettingsDivider()
+                    SwitchRow(
+                        R.drawable.ic_calendar_plus, stringResource(R.string.notifications_proposal_decision),
+                        stringResource(R.string.notifications_proposal_decision_hint),
+                        switches.proposalDecision, enabled = !form.running, onChange = onProposalDecision,
+                    )
+                }
+                SettingsDivider()
+                SwitchRow(
+                    R.drawable.ic_door, stringResource(R.string.notifications_room_decision),
+                    stringResource(R.string.notifications_room_decision_hint),
+                    switches.roomDecision, enabled = !form.running, onChange = onRoomDecision,
+                )
             }
             SlowHint(form.running)
             formErrorText(form)?.let { NoticeBanner(NoticeKind.ERROR, it) }

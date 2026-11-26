@@ -207,6 +207,10 @@
     <string name="notifications_programs_hint">Von der Leitung und zu offenen Zusagen</string>
     <string name="notifications_registrations">An- und Abmeldungen</string>
     <string name="notifications_registrations_hint">Wenn sich jemand für ein Programm an- oder abmeldet</string>
+    <string name="notifications_proposal_decision">Entscheid zu deinem Terminvorschlag</string>
+    <string name="notifications_proposal_decision_hint">Wenn die Abteilungsleitung deinen Vorschlag freigibt oder ablehnt</string>
+    <string name="notifications_room_decision">Entscheid zu deiner Raumanfrage</string>
+    <string name="notifications_room_decision_hint">Wenn das Team deine Anfrage bestätigt oder ablehnt</string>
     <string name="notifications_device_off">Dein Gerät lässt dieser App keine Benachrichtigungen zeigen. Du bekommst keine, auch wenn die Schalter an sind.</string>
     <string name="notifications_open_settings">In den Einstellungen erlauben</string>
     <string name="notifications_privacy">Eine Benachrichtigung sagt nur, dass es etwas Neues gibt. Der Text einer Nachricht und Namen stehen nie darin.</string>

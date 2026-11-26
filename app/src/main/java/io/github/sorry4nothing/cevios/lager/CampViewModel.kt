@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.net.Background
+import io.github.sorry4nothing.cevios.net.ResponseCache
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,8 +20,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Der Lagerbereich einer Sitzung: meine Lager, das offene Lager mit Rolle, die Warteschlange und der Stand der Verbindung. Alles
- * bleibt im Arbeitsspeicher der Sitzung (Entscheid des Nutzers zum lokalen Speicher steht aus). `null` heisst: wird geladen.
+ * Der Lagerbereich einer Sitzung: meine Lager, das offene Lager mit Rolle, die Warteschlange und der Stand der Verbindung. Die
+ * Warteschlange bleibt im Arbeitsspeicher; der zuletzt geladene Stand liegt verschlüsselt im Zwischenspeicher des Clients
+ * ([CampApi.cache]) und nur, solange es das Lager offen gibt (siehe [forget]). `null` heisst: wird geladen.
  */
 class CampViewModel(
     private val api: CampApi,
@@ -62,6 +64,7 @@ class CampViewModel(
     /** Wahr, wenn das Ziel eines Pushes nicht (mehr) zu sehen ist. */
     val pushMissing: StateFlow<Boolean> = _pushMissing.asStateFlow()
 
+    private val cache: ResponseCache? = api.cache
     private val queues = mutableMapOf<String, OfflineQueue>()
     private var openedId: String? = null
     private val rightsReads = RightsReads()
@@ -84,13 +87,20 @@ class CampViewModel(
             when (result) {
                 is ApiResult.Ok -> {
                     _camps.value = ApiResult.Ok(result.value.camps)
+                    // Lager, die es nicht mehr gibt, verlieren Warteschlange und Stand; abgeschlossene bleiben sichtbar (ihre Ablehnungen auch), ihr Stand nicht.
+                    cache?.applyList(result.value.camps)
+                    val listed = result.value.camps.map { it.id }.toSet()
+                    queues.keys.filter { it !in listed }.forEach(::forget)
                     launch(Background()) { refreshNews() }
                     result.value.camps.filter { !it.readOnly }.forEach { camp ->
                         launch(Background()) { refreshUnread(camp.id) }
                     }
                 }
-                // Eine stille Aktualisierung lässt den alten Stand stehen.
-                is ApiResult.Failure -> if (!background || _camps.value == null) _camps.value = result
+                // Eine stille Aktualisierung lässt den alten Stand stehen; ohne Netz kommt die zuletzt gespeicherte Liste der offenen Lager.
+                is ApiResult.Failure -> if (!background || _camps.value == null) {
+                    val saved = if (result.error == ApiError.NETWORK) cache?.loadList() else null
+                    _camps.value = saved?.let { ApiResult.Ok(it) } ?: result
+                }
             }
         }
     }
@@ -117,6 +127,7 @@ class CampViewModel(
         queueFor(campId)
         viewModelScope.launch {
             val result = api.read(campId)
+            if (result.campGone()) forget(campId)
             // Eine späte Antwort für ein früher geöffnetes Lager gibt dem jetzigen nicht seine Rechte.
             if (openedId == campId) _detail.value = result
         }
@@ -131,6 +142,17 @@ class CampViewModel(
 
     /** Die Objekttypen, die die Rolle im offenen Lager lesen darf (aus dem Feed); `null`, bis sie da sind. */
     val readableTypes: StateFlow<Set<String>?> = _readable.asStateFlow()
+
+    /**
+     * Das Lager gibt es für diese Person nicht mehr (aus der Liste verschwunden, gelöscht, Zugriff entzogen): Der gespeicherte Stand
+     * und die wartenden Änderungen gehen weg. Die Warteschlange würde sonst nie ankommen.
+     */
+    fun forget(campId: String) {
+        cache?.deleteCamp(campId)
+        queues.remove(campId)
+        store.clear(campId)
+        _unread.update { it - campId }
+    }
 
     fun queueFor(campId: String): OfflineQueue = queues.getOrPut(campId) { OfflineQueue(campId, store, api) }
 
@@ -212,6 +234,7 @@ class CampViewModel(
                 when (error) {
                     // coroutineScope wartet auf seine Kinder: Ohne Abbruch liefe die Sendeschleife weiter und fragte ein verlorenes Lager ab.
                     ApiError.NOT_FOUND, ApiError.FORBIDDEN -> {
+                        forget(campId)
                         _lostAccess.value = campId
                         resend.cancel()
                         return@coroutineScope
@@ -252,6 +275,7 @@ class CampViewModel(
     /** Liest die Rechte der Rolle still neu; ein Fehler lässt die bisherigen stehen. */
     private suspend fun refreshRights(campId: String) {
         val result = api.read(campId)
+        if (result.campGone()) forget(campId)
         if (openedId == campId && result is ApiResult.Ok) _detail.value = result
     }
 

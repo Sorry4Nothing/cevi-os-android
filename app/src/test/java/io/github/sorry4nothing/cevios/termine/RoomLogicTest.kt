@@ -1,5 +1,7 @@
 package io.github.sorry4nothing.cevios.termine
 
+import io.github.sorry4nothing.cevios.net.ApiError
+import io.github.sorry4nothing.cevios.net.ApiResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -105,6 +107,39 @@ class RoomLogicTest {
         assertEquals("Samstag, 11. Dezember, 14:00 bis 18:00", roomWhenSpoken("2027-12-11T13:00:00Z", "2027-12-11T17:00:00Z"))
         assertEquals("Mittwoch, 2. Juni, 22:00 bis Donnerstag, 3. Juni, 02:00", roomWhenSpoken("2027-06-02T20:00:00Z", "2027-06-03T00:00:00Z"))
         assertEquals("", roomWhenSpoken("morgen", "später"))
+    }
+
+    private fun failure(error: ApiError, code: String? = null) = ApiResult.Failure(error, code)
+
+    @Test
+    fun aDecisionNoticeFollowsTheCodeFirstThenTheError() {
+        assertEquals(DecisionNotice.CONFIRMED, decisionNotice(true, ApiResult.Ok(Unit)))
+        assertEquals(DecisionNotice.REJECTED, decisionNotice(false, ApiResult.Ok(Unit)))
+        assertEquals(DecisionNotice.ALREADY_DECIDED, decisionNotice(true, failure(ApiError.REGISTRATION_CLOSED, "STATUS_UNGUELTIG")))
+        assertEquals(DecisionNotice.BUSY, decisionNotice(true, failure(ApiError.REGISTRATION_CLOSED, "RAUM_BELEGT")))
+        assertEquals(DecisionNotice.GONE, decisionNotice(true, failure(ApiError.NOT_FOUND)))
+        assertEquals(DecisionNotice.SECOND_FACTOR, decisionNotice(true, failure(ApiError.SECOND_FACTOR_MISSING, "ZWEITER_FAKTOR_FEHLT")))
+        assertEquals(DecisionNotice.NOT_ALLOWED, decisionNotice(true, failure(ApiError.FORBIDDEN, "EIGENE_ANFRAGE")))
+        assertEquals(DecisionNotice.OFFLINE, decisionNotice(true, failure(ApiError.NETWORK)))
+        assertEquals(DecisionNotice.FAILED, decisionNotice(true, failure(ApiError.UNKNOWN)))
+    }
+
+    @Test
+    fun onlyAClearOutcomeReloadsTheListAndNothingIsResent() {
+        // Bei Netz und unbekanntem Fehler ist der Ausgang offen: kein Nachladen von selbst, sonst sähe die Person einen Stand, der täuscht.
+        assertFalse(DecisionNotice.OFFLINE.reloads)
+        assertFalse(DecisionNotice.FAILED.reloads)
+        assertTrue(DecisionNotice.CONFIRMED.reloads && DecisionNotice.ALREADY_DECIDED.reloads && DecisionNotice.GONE.reloads)
+        // Nach «belegt» steht die Anfrage weiter offen (nur Ablehnen bleibt).
+        assertFalse(DecisionNotice.BUSY.reloads)
+    }
+
+    @Test
+    fun aRejectionNeedsAReasonOfOneToFiveHundredCharacters() {
+        assertNull(rejectionReason("   "))
+        assertEquals("Schon vergeben", rejectionReason("  Schon vergeben \n"))
+        assertEquals(ROOM_REASON_MAX, rejectionReason("x".repeat(ROOM_REASON_MAX))?.length)
+        assertNull(rejectionReason("x".repeat(ROOM_REASON_MAX + 1)))
     }
 
     @Test

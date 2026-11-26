@@ -123,8 +123,9 @@ class PushApiTest {
         assertEquals(PushTarget.RoomDecision(id), PushTarget.from("raum_entscheid", id))
         assertNull(PushTarget.from("raum_entscheid", "../../admin"))
         assertNull(PushTarget.from("raum_entscheid", null))
-        // `raum_anfrage` geht ans Team; dafür gibt es keinen Bildschirm.
-        assertNull(PushTarget.from("raum_anfrage", id))
+        // `raum_anfrage` geht ans Team und führt zu den offenen Anfragen.
+        assertEquals(PushTarget.RoomToDecide(id), PushTarget.from("raum_anfrage", id))
+        assertNull(PushTarget.from("raum_anfrage", "../../admin"))
         assertEquals(Notifications.ROOMS_CHANNEL, Notifications.channelOf("raeume"))
     }
 }

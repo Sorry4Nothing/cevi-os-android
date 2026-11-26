@@ -175,6 +175,8 @@ import io.github.sorry4nothing.cevios.termine.EventViewModel
 import io.github.sorry4nothing.cevios.termine.GroupsSection
 import io.github.sorry4nothing.cevios.termine.ProposalScreen
 import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
+import io.github.sorry4nothing.cevios.termine.RoomDecisionScreen
+import io.github.sorry4nothing.cevios.termine.RoomDecisionsViewModel
 import io.github.sorry4nothing.cevios.termine.RoomListScreen
 import io.github.sorry4nothing.cevios.termine.RoomRequestScreen
 import io.github.sorry4nothing.cevios.termine.RoomsViewModel
@@ -408,6 +410,7 @@ private sealed interface Screen {
     data object Shop : Screen { override val depth = 1 }
     data object ShopCart : Screen { override val depth = 2 }
     data object ShopOrders : Screen { override val depth = 2 }
+    data object RoomDecisions : Screen { override val depth = 1 }
 }
 
 @Composable
@@ -455,6 +458,7 @@ private fun MainContent(
     val proposals = viewModel { ProposalsViewModel(termineApi) }
     val rooms = viewModel { RoomsViewModel(termineApi) }
     val shop = viewModel { ShopViewModel(shopApi) }
+    val roomDecisions = viewModel { RoomDecisionsViewModel(termineApi) }
     val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
@@ -495,6 +499,7 @@ private fun MainContent(
     var shopOpen by rememberSaveable { mutableStateOf(false) }
     var shopCartOpen by rememberSaveable { mutableStateOf(false) }
     var shopOrdersOpen by rememberSaveable { mutableStateOf(false) }
+    var roomDecideOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
@@ -524,10 +529,11 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false; shopOpen = false; shopCartOpen = false; shopOrdersOpen = false
+        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false; shopOpen = false; shopCartOpen = false; shopOrdersOpen = false; roomDecideOpen = false
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.RoomDecision -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomsOpen = true }
+            is PushTarget.RoomToDecide -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomDecideOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
             is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
             // Widgets: die Liste der Programme, die Chatliste oder eine Lager-Seite (das Lager kennt das Widget, sonst zeigt die Lagerwahl).
@@ -610,11 +616,13 @@ private fun MainContent(
     // Das Lädeli und die Bestellungen laden beim Öffnen neu; der Warenkorb bleibt im Arbeitsspeicher.
     LaunchedEffect(shopOpen) { if (shopOpen) shop.reload() }
     LaunchedEffect(shopOrdersOpen) { if (shopOrdersOpen) shop.reloadOrders() }
+    LaunchedEffect(roomDecideOpen) { if (roomDecideOpen) roomDecisions.reload() }
     // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
     LaunchedEffect(destination) {
         if (destination == Destination.PROFILE) {
             calendarLink.load()
             proposals.loadOptions()
+            roomDecisions.check()
         }
     }
     LaunchedEffect(viewingRegistrations, openedProgram) {
@@ -791,6 +799,7 @@ private fun MainContent(
             shopOpen -> Screen.Shop
             roomRequestOpen -> Screen.RoomRequest
             roomsOpen -> Screen.Rooms
+            roomDecideOpen -> Screen.RoomDecisions
             proposalOpen -> Screen.Proposal
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
@@ -911,6 +920,18 @@ private fun MainContent(
                         onDismiss = shop::dismissListNotice,
                         onBack = leave,
                         onRetry = shop::reloadOrders,
+                Screen.RoomDecisions -> {
+                    val leave = { roomDecideOpen = false; roomDecisions.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    RoomDecisionScreen(
+                        open = roomDecisions.open.collectAsState().value,
+                        state = roomDecisions.state.collectAsState().value,
+                        blocked = roomDecisions.blocked.collectAsState().value,
+                        onDecide = { request, approve, reason -> roomDecisions.decide(request, approve, reason) },
+                        onDismiss = roomDecisions::dismissNotice,
+                        onCheck = roomDecisions::refresh,
+                        onBack = leave,
+                        onRetry = roomDecisions::reload,
                     )
                 }
                 Screen.Proposal -> {
@@ -1288,6 +1309,13 @@ private fun MainContent(
                                     // Das Lädeli darf jede angemeldete Person lesen und bestellen (Vertrag `holeLaden`, `bestelleImLaden`).
                                     SettingsCard {
                                         SettingsRow(R.drawable.ic_bag, stringResource(R.string.store_row), onClick = { shopOpen = true }, chevron = true)
+                                    }
+                                    // Zuständig ist, wem der Server offene Anfragen liefert; sonst fehlt die Zeile.
+                                    val toDecide = (roomDecisions.open.collectAsState().value as? ApiResult.Ok)?.value?.requests?.size ?: 0
+                                    if (toDecide > 0) {
+                                        SettingsCard {
+                                            SettingsRow(R.drawable.ic_door, stringResource(R.string.decide_row), value = stringResource(R.string.decide_row_count, toDecide), onClick = { roomDecideOpen = true }, chevron = true)
+                                        }
                                     }
                                 },
                                 lockAvailable = lockAvailable,

@@ -34,8 +34,19 @@ data class RoomRequestBody(
     @SerialName("zweck") val purpose: String,
 )
 
+/** Der Stand nach dem Anfragen oder nach dem Entscheid (`RaumAnfrageStand`). */
 @Serializable
 data class RoomRequestCreated(val id: String, val status: String)
+
+/** Der Entscheid des Teams: `annehmen` oder `ablehnen`; die Begründung gehört nur zu `ablehnen` und ist dort Pflicht (1 bis 500 Zeichen). */
+@Serializable
+data class RoomDecisionBody(
+    @SerialName("entscheid") val decision: String,
+    @SerialName("begruendung") val reason: String? = null,
+)
+
+/** Höchstlänge der Begründung (Vertrag `RaumAnfrageEntscheid`). */
+const val ROOM_REASON_MAX = 500
 
 /** Eine eigene Anfrage; `status`: `angefragt`, `bestaetigt`, `abgelehnt` oder `storniert`. Bestätigt ist die Buchung. */
 @Serializable
@@ -51,6 +62,8 @@ data class RoomRequest(
     @SerialName("begruendung") val reason: String? = null,
     @SerialName("entschiedenAm") val decidedAt: String? = null,
     @SerialName("erstelltAm") val createdAt: String? = null,
+    /** Nur in der Liste der offenen Anfragen: die anfragende Person. */
+    @SerialName("vonName") val requesterName: String? = null,
 )
 
 @Serializable

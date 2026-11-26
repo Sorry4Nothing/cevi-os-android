@@ -318,6 +318,29 @@ class PlanningApiTest {
     }
 
     @Test
+    fun revertSwapPostsTheVersionAndReturnsTheOpenRequest() {
+        server.enqueue(json(200, swap))
+        val decided = Swap(a, 5, b, a, null, null, null, "angenommen", b, "2027-07-17T08:00:00.000Z", "x")
+        val reopened = (runBlocking { api.revertSwap(camp, decided, 5) } as ApiResult.Ok).value
+        val request = server.takeRequest()
+        assertEquals("POST /api/v1/lager/$camp/diensttausch/$a/entscheid/zuruecknehmen HTTP/1.1", request.requestLine)
+        assertEquals(setOf("version"), bodyOf(request).keys)
+        assertEquals(5L, bodyOf(request)["version"]!!.jsonPrimitive.content.toLong())
+        assertEquals(SwapStatus.OPEN, reopened.status)
+    }
+
+    @Test
+    fun revertSwapKeepsTheServerCodesAndGivesChangedShiftsItsOwnCode() {
+        val decided = Swap(a, 5, b, a, null, null, null, "angenommen", b, null, "x")
+        server.enqueue(json(409, """{"code":"SCHICHT_GEAENDERT","message":"x"}"""))
+        assertEquals("SCHICHT_GEAENDERT_ZURUECK", (runBlocking { api.revertSwap(camp, decided, 5) } as ApiResult.Failure).code)
+        server.enqueue(json(409, """{"code":"NICHT_ENTSCHIEDEN","message":"x"}"""))
+        assertEquals("NICHT_ENTSCHIEDEN", (runBlocking { api.revertSwap(camp, decided, 5) } as ApiResult.Failure).code)
+        server.enqueue(json(409, """{"code":"VERSION_KONFLIKT","message":"x","aktuell":{"version":7},"abweichend":[]}"""))
+        assertEquals(ApiError.VERSION_CONFLICT, (runBlocking { api.revertSwap(camp, decided, 5) } as ApiResult.Failure).error)
+    }
+
+    @Test
     fun ownSwapsUnwrapTheList() {
         server.enqueue(json(200, """{"tausche":[$swap]}"""))
         val own = (runBlocking { api.ownSwaps(camp) } as ApiResult.Ok).value

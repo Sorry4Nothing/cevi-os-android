@@ -124,6 +124,9 @@ object PlanRules {
     fun sortedSwaps(swaps: List<Swap>): List<Swap> =
         swaps.filter { it.status == SwapStatus.OPEN }.sortedBy { it.createdAt } + swaps.filter { it.status != SwapStatus.OPEN }.sortedByDescending { it.createdAt }
 
+    /** «Rückgängig» gibt es nur nach «Annehmen» oder «Ablehnen» und nur mit dem Recht zu entscheiden (im geschlossenen Lager fehlt es). */
+    fun canRevert(swap: Swap, rights: PlanRights): Boolean = rights.decideSwap && (swap.status == SwapStatus.ACCEPTED || swap.status == SwapStatus.DECLINED)
+
     /** Wie viele Personen von `total` den Haken haben, als Anteil für die Anzeige. */
     fun percent(present: Int, total: Int): Int = if (total <= 0) 0 else (present * 100) / total
 }

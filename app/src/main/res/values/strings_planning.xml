@@ -20,6 +20,7 @@
     <string name="plan_notice_swap_declined">Anfrage abgelehnt. Der Schichtplan bleibt, wie er ist.</string>
     <string name="plan_notice_swap_requested">Anfrage gesendet. Die Lagerleitung entscheidet.</string>
     <string name="plan_notice_swap_withdrawn">Anfrage zurückgezogen.</string>
+    <string name="plan_notice_swap_reverted">Entscheid zurückgenommen. Die Anfrage ist wieder offen.</string>
     <string name="plan_notice_count_reset">Deine Haken sind zurückgesetzt.</string>
     <string name="plan_notice_mix_applied">Gruppen gemischt und übernommen.</string>
     <string name="plan_notice_suggestion_applied">Vorschlag übernommen. Die leeren Dienste sind gefüllt.</string>
@@ -282,6 +283,7 @@
     <string name="swaps_accept">Annehmen</string>
     <string name="swaps_decline">Ablehnen</string>
     <string name="swaps_withdraw">Zurückziehen</string>
+    <string name="swaps_revert">Rückgängig</string>
     <string name="swaps_who_takes">Wer übernimmt die Schicht?</string>
     <string name="swaps_request_title">Tausch anfragen: %1$s, %2$s</string>
     <string name="swaps_request_hint">Die Lagerleitung entscheidet. Ob die Wunschperson zustimmt, klärst du selbst mit ihr.</string>
@@ -331,6 +333,8 @@
     <string name="error_not_your_shift">Das ist nicht deine Schicht.</string>
     <string name="error_swap_decided">Die Anfrage ist schon entschieden.</string>
     <string name="error_shift_changed">Die Schichten stehen nicht mehr wie bei der Anfrage. Du kannst die Anfrage ablehnen.</string>
+    <string name="error_shift_changed_revert">Seit dem Entscheid wurden Schichten geändert. Der Entscheid lässt sich nicht mehr zurücknehmen.</string>
+    <string name="error_swap_not_decided">Die Anfrage ist nicht entschieden. Es gibt nichts zurückzunehmen.</string>
     <string name="error_person_unavailable">Die Person kann die Schicht nicht übernehmen.</string>
     <string name="error_swap_invalid">Mit dieser Person oder Schicht geht der Tausch nicht.</string>
     <string name="error_duty_exists">Einen Dienst mit diesem Namen gibt es in diesem Abschnitt schon.</string>

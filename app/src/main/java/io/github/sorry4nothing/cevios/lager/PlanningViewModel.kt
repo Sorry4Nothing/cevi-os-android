@@ -23,7 +23,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 /** Ein Hinweis nach einer Aktion (kein Rückgängig: Der Server bietet dafür keine Route). */
-enum class PlanNotice { SWAP_ACCEPTED, SWAP_DECLINED, SWAP_REQUESTED, SWAP_WITHDRAWN, COUNT_RESET, MIX_APPLIED, SUGGESTION_APPLIED, IMPORTED }
+enum class PlanNotice { SWAP_ACCEPTED, SWAP_DECLINED, SWAP_REQUESTED, SWAP_WITHDRAWN, SWAP_REVERTED, COUNT_RESET, MIX_APPLIED, SUGGESTION_APPLIED, IMPORTED }
 
 /**
  * Die Einteilung eines Lagers: Teilnehmende, Zimmer, Fahrten, Gruppen, Schichtplan, Diensttausch und Abzählliste. Der Stand kommt vom
@@ -472,6 +472,17 @@ class PlanningViewModel(
             _notice.value = if (accept) PlanNotice.SWAP_ACCEPTED else PlanNotice.SWAP_DECLINED
             loadSwaps(silent = true)
             if (accept) loadPlan(silent = true)
+        }
+    }
+
+    /** «Rückgängig»: Die Anfrage ist wieder offen; war sie angenommen, stehen die Schichten wieder wie vorher. */
+    fun revertSwap(swap: Swap) {
+        val id = campId ?: return
+        val wasAccepted = swap.status == SwapStatus.ACCEPTED
+        writer.submit("", emptyMap(), swap.version, call = { v -> api.revertSwap(id, swap, v) }, onCurrent = { loadSwaps() }) {
+            _notice.value = PlanNotice.SWAP_REVERTED
+            loadSwaps(silent = true)
+            if (wasAccepted) loadPlan(silent = true)
         }
     }
 

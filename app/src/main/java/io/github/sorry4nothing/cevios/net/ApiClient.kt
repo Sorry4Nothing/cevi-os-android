@@ -261,8 +261,8 @@ class ApiClient(
     companion object {
         private const val SIGN_IN_PATH = "/api/auth/sign-in"
         private const val PROOF_PATH = "/api/v1/app/nachweis"
-        /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed) und 503 (Wartung). */
-        private val CODE_STATUSES = setOf(400, 403, 409, 410, 503)
+        /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed), 422 (Lädeli: Grösse nicht mehr zu haben) und 503 (Wartung). */
+        private val CODE_STATUSES = setOf(400, 403, 409, 410, 422, 503)
         private val SECOND_FACTOR_CODES = setOf("ZWEITER_FAKTOR_FEHLT", "ZWEITER_FAKTOR_SITZUNG")
         private const val VERSION_CONFLICT_CODE = "VERSION_KONFLIKT"
         private const val STREAM_TIMEOUT_SECONDS = 70L

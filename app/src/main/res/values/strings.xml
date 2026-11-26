@@ -722,4 +722,21 @@
     <string name="field_snooze">Später erinnern ab</string>
     <string name="field_part">Teilbereich</string>
     <string name="field_repeat">Wiederholung</string>
+
+    <!-- Gruppennamen für den Screenreader (kurz, als Satzteil) -->
+    <string name="group_people_or_team">Teilnehmende oder Team</string>
+    <string name="group_count_filter">Nach Stufe oder Gruppe filtern</string>
+    <string name="group_filter_stage">Nach Stufe filtern</string>
+    <string name="group_assign_kind">Kinder oder Leitende</string>
+    <string name="group_inbox_kind">Art des Eintrags</string>
+    <string name="group_inbox_status">Status</string>
+    <string name="group_inbox_meeting">Höck</string>
+    <string name="group_reaction">Reaktion</string>
+    <string name="group_rooms_kind">Art des Raums</string>
+    <string name="group_swap_form">Art des Tauschs</string>
+    <string name="group_swap_person">Wunschperson</string>
+    <string name="group_swap_shift">Dienst zum Tauschen</string>
+    <string name="group_task_status">Status der Aufgabe</string>
+    <string name="group_trip_direction">Richtung</string>
+    <string name="group_trip_kind">Art der Fahrt</string>
 </resources>

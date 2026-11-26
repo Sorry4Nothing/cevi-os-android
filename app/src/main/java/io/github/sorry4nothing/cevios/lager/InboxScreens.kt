@@ -52,6 +52,7 @@ import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
@@ -314,7 +315,7 @@ private fun InboxComposeSheet(onSend: (InboxKind, String, Boolean) -> Unit, onDi
             verticalArrangement = Arrangement.spacedBy(Spacing.s3),
         ) {
             Text(stringResource(R.string.inbox_new), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.group_inbox_kind)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 InboxKind.entries.forEach { PickPill(stringResource(kindText(it)), kind == it, { kind = it }) }
             }
             LabeledTextField(
@@ -377,7 +378,7 @@ private fun AnswerSheet(entry: InboxEntry, onSave: (String, InboxStatus) -> Unit
             Text(stringResource(R.string.inbox_answer), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Text(entry.text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             LabeledTextField(stringResource(R.string.inbox_field_reply), reply, { reply = it }, 5000, Modifier.fillMaxWidth(), minLines = 3, hint = stringResource(R.string.inbox_reply_hint))
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.group_inbox_status)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 InboxStatus.entries.forEach { PickPill(stringResource(statusText(it)), status == it, { status = it }) }
             }
             PrimaryButton(stringResource(R.string.save), { onSave(reply.trim(), status) }, Modifier.fillMaxWidth())
@@ -404,7 +405,7 @@ private fun AgendaFromInboxSheet(meetings: List<Meeting>, onSave: (String, Strin
                 stringResource(R.string.agenda_field_title), title, { title = it }, 200, Modifier.fillMaxWidth(),
                 hint = if (showErrors && title.isBlank()) stringResource(R.string.error_field_required) else null,
             )
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.group_inbox_meeting)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 PickPill(stringResource(R.string.inbox_next_meeting), meetingId == null, { meetingId = null })
                 meetings.take(3).forEach { PickPill(it.title + " " + formatMeetingDay(it.date), meetingId == it.id, { meetingId = it.id }) }
             }

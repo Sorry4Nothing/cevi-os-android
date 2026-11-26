@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
@@ -60,6 +59,7 @@ import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
@@ -161,7 +161,7 @@ fun TaskDetailScreen(
             // Status: wer ihn setzen darf, wählt; sonst steht er als Etikett da.
             if (canTick) {
                 Row(
-                    Modifier.fillMaxWidth().selectableGroup().semantics { contentDescription = "" },
+                    Modifier.fillMaxWidth().pickGroup(stringResource(R.string.group_task_status)),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
                 ) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {

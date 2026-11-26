@@ -82,8 +82,8 @@ class WidgetLoader(private val client: ApiClient, private val choice: String?) {
         }
 
     private suspend fun chat(): LoadOutcome =
-        when (val result = ChatApi(client).chats()) {
-            is ApiResult.Ok -> LoadOutcome.Loaded(chatContent(result.value.chats))
+        when (val result = ChatApi(client).unread()) {
+            is ApiResult.Ok -> LoadOutcome.Loaded(chatContent(result.value))
             is ApiResult.Failure -> failure(result)
         }
 

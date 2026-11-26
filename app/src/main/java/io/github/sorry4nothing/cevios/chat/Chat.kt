@@ -43,6 +43,14 @@ data class Chat(
 @Serializable
 data class ChatList(val chats: List<Chat>)
 
+/** Ein Chat mit mindestens einer ungelesenen Nachricht in `GET /api/v1/chats/ungelesen`: nur die ID und die Zahl. */
+@Serializable
+data class ChatUnreadEntry(val id: String, @SerialName("ungelesen") val unread: Int)
+
+/** `GET /api/v1/chats/ungelesen`: nur Zahlen, ohne Vorschautexte, Namen oder Stufen. `count` ist die Summe über alle Chats. */
+@Serializable
+data class ChatUnread(@SerialName("anzahl") val count: Int = 0, val chats: List<ChatUnreadEntry> = emptyList())
+
 /** Vorschau der letzten Nachricht in der Chatliste. `own` heisst: Die angemeldete Person hat sie geschrieben. */
 @Serializable
 data class LastMessage(

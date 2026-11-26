@@ -27,22 +27,22 @@ class PlanningLogicTest {
     @Test
     fun rightsFollowTheDefaultRoles() {
         val leadership = PlanRights.of(defaultPermissions(CampRole.LEADERSHIP, false))
-        assertTrue(leadership.editParticipants && leadership.edit && leadership.decideSwap && leadership.count && leadership.seeAll)
+        assertTrue(leadership.editParticipants && leadership.edit && leadership.decideSwap && leadership.seeAll)
         val leader = PlanRights.of(defaultPermissions(CampRole.LEADER, false))
         assertFalse(leader.editParticipants)
         assertTrue(leader.edit && leader.decideSwap && leader.requestSwap)
         val team = PlanRights.of(defaultPermissions(CampRole.TEAM, false))
         assertFalse(team.edit || team.decideSwap || team.seeAll)
-        assertTrue(team.count && team.requestSwap)
+        assertTrue(team.requestSwap)
         val reading = PlanRights.of(defaultPermissions(CampRole.READ_ONLY, false))
-        assertFalse(reading.edit || reading.count || reading.requestSwap)
+        assertFalse(reading.edit || reading.requestSwap)
         assertTrue(reading.seeAll)
     }
 
     @Test
     fun aClosedCampOffersNothingToChange() {
         val closed = PlanRights.of(defaultPermissions(CampRole.LEADERSHIP, true))
-        assertFalse(closed.editParticipants || closed.edit || closed.count || closed.requestSwap || closed.decideSwap)
+        assertFalse(closed.editParticipants || closed.edit || closed.requestSwap || closed.decideSwap)
     }
 
     @Test

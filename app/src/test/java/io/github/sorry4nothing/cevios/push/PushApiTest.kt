@@ -90,6 +90,24 @@ class PushApiTest {
     }
 
     @Test
+    fun theDecisionSwitchesAreOnByDefaultAndGoOutOneAtATime() {
+        val json = Json { ignoreUnknownKeys = true }
+        val plain = json.decodeFromString<Profile>("""{"id":"u1"}""")
+        assertTrue(plain.pushProposalDecision && plain.pushRoomDecision)
+        val off = json.decodeFromString<Profile>("""{"id":"u1","pushTerminEntscheid":false,"pushRaumEntscheid":false}""")
+        assertEquals(false, off.pushProposalDecision)
+        assertEquals(false, off.pushRoomDecision)
+        server.enqueue(reply(204))
+        server.enqueue(reply(204))
+        runBlocking {
+            push.setSwitches(PushSwitchesRequest(proposalDecision = false))
+            push.setSwitches(PushSwitchesRequest(roomDecision = true))
+        }
+        assertEquals("""{"pushTerminEntscheid":false}""", server.takeRequest().body?.utf8())
+        assertEquals("""{"pushRaumEntscheid":true}""", server.takeRequest().body?.utf8())
+    }
+
+    @Test
     fun theRegistrationSwitchGoesOutAsPushAnmeldungen() {
         server.enqueue(reply(204))
         runBlocking { push.setSwitches(PushSwitchesRequest(registrations = false)) }

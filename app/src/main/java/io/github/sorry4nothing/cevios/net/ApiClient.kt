@@ -300,7 +300,7 @@ class ApiClient(
         val code = if (response.code == 403 && read !in SECOND_FACTOR_CODES) null else read
         val retryAfter = if (response.code == 429) response.header(RETRY_AFTER)?.toIntOrNull()?.coerceIn(1, MAX_RETRY_AFTER) else null
         val conflict = if (code == VERSION_CONFLICT_CODE && body?.current != null) VersionConflict(body.current, body.differing) else null
-        return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter, conflict).also { it.status = response.code }
+        return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter, conflict, body?.fieldErrors.orEmpty()).also { it.status = response.code }
     }
 
     private fun <T> evaluate(response: Response, accept: (Response) -> Boolean, decode: (Response) -> T): ApiResult<T> {
@@ -330,13 +330,14 @@ class ApiClient(
         val code: String? = null,
         @kotlinx.serialization.SerialName("aktuell") val current: kotlinx.serialization.json.JsonObject? = null,
         @kotlinx.serialization.SerialName("abweichend") val differing: List<String> = emptyList(),
+        @kotlinx.serialization.SerialName("fehler") val fieldErrors: List<FieldProblem> = emptyList(),
     )
 
     companion object {
         private const val SIGN_IN_PATH = "/api/auth/sign-in"
         private const val PROOF_PATH = "/api/v1/app/nachweis"
         /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed), 422 (Lädeli: Grösse nicht mehr zu haben) und 503 (Wartung). */
-        private val CODE_STATUSES = setOf(400, 403, 409, 410, 422, 503)
+        private val CODE_STATUSES = setOf(400, 403, 409, 410, 422, 423, 503)
         private val SECOND_FACTOR_CODES = setOf("ZWEITER_FAKTOR_FEHLT", "ZWEITER_FAKTOR_SITZUNG")
         private const val VERSION_CONFLICT_CODE = "VERSION_KONFLIKT"
         private const val STREAM_TIMEOUT_SECONDS = 70L

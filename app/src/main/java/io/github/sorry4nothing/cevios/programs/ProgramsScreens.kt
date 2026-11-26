@@ -31,7 +31,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import io.github.sorry4nothing.cevios.lager.openCalendarFile
+import io.github.sorry4nothing.cevios.ui.Spinner
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -252,6 +259,8 @@ fun ProgramDetailScreen(
     onEvent: (String) -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    /** Die Kalenderdatei des Termins vom Server (`GET /termine/{id}.ics`); `null`, wenn es sie nicht gibt: Dann trägt die App über den Kalender des Geräts ein. */
+    calendarFile: suspend (String) -> ByteArray? = { null },
 ) {
     val back = HeaderButton(R.drawable.ic_back, stringResource(R.string.back_to_programs), onBack)
     Column(Modifier.fillMaxSize()) {
@@ -264,7 +273,7 @@ fun ProgramDetailScreen(
                 Header(title = null, back = back)
                 ErrorState(state.error, onRetry, onToPrograms = onBack)
             }
-            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canSeeRegistrations, contacts, account, back, onChild, onLeader, onRegistrations, onEvent)
+            is ApiResult.Ok -> ProgramContent(state.value, rsvp, canSeeRegistrations, contacts, account, back, onChild, onLeader, onRegistrations, onEvent, calendarFile)
         }
     }
 }
@@ -281,13 +290,27 @@ private fun ProgramContent(
     onLeader: (attending: Boolean) -> Unit,
     onRegistrations: () -> Unit,
     onEvent: (String) -> Unit,
+    calendarFile: suspend (String) -> ByteArray?,
 ) {
     val date = program.startDay()?.let { "${weekdayLong(it)}, ${dayAndMonth(it)}" }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var noCalendar by remember(program.id) { mutableStateOf(false) }
-    // Ohne lesbare Zeit gibt es nichts einzutragen: Der Knopf fehlt.
+    var adding by remember(program.id) { mutableStateOf(false) }
+    // Ohne lesbare Zeit gibt es nichts einzutragen: Der Knopf fehlt. Erst die Datei des Servers (gleiche Kennung wie im Kalenderabo, also
+    // kein Doppel), fehlt sie oder nimmt keine App sie an, der Eintrag aus den Daten der App. Ein zweiter Tipp während des Ladens tut nichts.
     val addAction = program.calendarEntry()?.let {
-        HeaderButton(R.drawable.ic_calendar_plus, stringResource(R.string.program_add_to_calendar)) { noCalendar = !addToCalendar(context, program) }
+        HeaderButton(R.drawable.ic_calendar_plus, stringResource(R.string.program_add_to_calendar)) {
+            if (!adding) {
+                adding = true
+                noCalendar = false
+                scope.launch {
+                    val opened = calendarFile(program.id)?.let { openCalendarFile(context, it) } == true
+                    noCalendar = !opened && !addToCalendar(context, program)
+                    adding = false
+                }
+            }
+        }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Header(
@@ -300,6 +323,15 @@ private fun ProgramContent(
             focusOnTitle = true,
         )
         Column(Modifier.padding(horizontal = Spacing.s5), verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+            if (adding) {
+                Row(
+                    Modifier.heightIn(min = 48.dp).semantics { liveRegion = LiveRegionMode.Polite },
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Spinner(size = 20.dp, color = MaterialTheme.cevi.accent)
+                    Text(stringResource(R.string.program_calendar_loading), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
             if (noCalendar) NoticeBanner(NoticeKind.ERROR, stringResource(R.string.program_no_calendar_app))
             ProgramStatus(program)
             Tiles(program)

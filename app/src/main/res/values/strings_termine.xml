@@ -101,7 +101,7 @@
     <string name="anlass_closed_title">Anmeldung geschlossen</string>
     <string name="anlass_closed_text">Die Anmeldung ist geschlossen. Frag die Leitung.</string>
     <string name="anlass_no_participants_title">Niemand zum Anmelden</string>
-    <string name="anlass_no_participants_text">Für diesen Anlass melden Eltern ihr Kind an. Auf deinem Konto ist kein Kind hinterlegt.</string>
+    <string name="anlass_no_participants_text">Dieser Anlass richtet sich weder an dich noch an deine Kinder.</string>
     <string name="anlass_deadline">Anmeldeschluss: %1$s</string>
 
     <!-- Benachrichtigungen -->

@@ -140,7 +140,7 @@ private fun ParticipantSection(
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
         Text(person.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
         if (registered) StatusChip(ChipKind.YES, stringResource(R.string.anlass_registered))
-        ResultBanner(person, state, form.registerFor, { onSubmit(id) }, { onUnregister(id) }, { onDismiss(id) })
+        ResultBanner(person, state, { onSubmit(id) }, { onUnregister(id) }, { onDismiss(id) })
         if (state.problems?.isNotEmpty() == true) NoticeBanner(NoticeKind.ERROR, stringResource(R.string.anlass_check))
         if (person.account.isNotEmpty()) AccountCard(person.account)
         if (form.open) {
@@ -169,7 +169,6 @@ private fun ParticipantSection(
 private fun ResultBanner(
     person: EventParticipant,
     state: EventViewModel.ParticipantState,
-    registerFor: String,
     onRetry: () -> Unit,
     onUndo: () -> Unit,
     onClose: () -> Unit,

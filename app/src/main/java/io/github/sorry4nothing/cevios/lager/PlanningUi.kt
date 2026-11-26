@@ -172,6 +172,6 @@ fun PlanScreen(
         PlanArea.GROUPS -> GroupsScreen(vm, camp, rights, queue, online, onOpenQueue, onBack)
         PlanArea.SHIFTS -> ShiftPlanScreen(vm, camp, rights, queue, online, onOpenQueue, onOpenSwaps = { onOpenArea(PlanArea.SWAPS) }, onBack = onBack)
         PlanArea.SWAPS -> SwapsScreen(vm, camp, rights, queue, online, onOpenQueue, onOpenShifts = { onOpenArea(PlanArea.SHIFTS) }, onBack = onBack)
-        PlanArea.COUNT -> CountScreen(vm, camp, rights, queue, online, onOpenQueue, onBack)
+        PlanArea.COUNT -> CountScreen(vm, camp, queue, online, onOpenQueue, onBack)
     }
 }

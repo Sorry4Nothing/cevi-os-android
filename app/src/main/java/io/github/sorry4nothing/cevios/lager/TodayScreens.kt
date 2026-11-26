@@ -115,6 +115,7 @@ fun TodayScreen(frame: LiveFrame, nav: LiveNav, taskList: List<CampTask>, tasks:
                         weather?.let { weatherLine(it).takeIf { line -> line.isNotBlank() } }?.let { line ->
                             Text(line, style = MaterialTheme.typography.bodyLarge)
                         }
+                        WeatherMissing(vm, missing = frame.rights.readWeather && weather == null)
                         view.day?.page?.tageschef?.let { lead ->
                             Text(stringResource(R.string.day_lead_line, lead.display), style = MaterialTheme.typography.bodyLarge)
                         }
@@ -254,6 +255,7 @@ fun DayScreen(frame: LiveFrame, nav: LiveNav, dayId: String, tasks: TasksViewMod
                             if (weather.warnings.isNotEmpty()) NoticeBanner(NoticeKind.WARNING, stringResource(R.string.today_weather_warning, weatherWarnings(weather)))
                             if (line.isNotBlank()) Text(line, style = MaterialTheme.typography.bodyLarge)
                         }
+                        WeatherMissing(vm, missing = frame.rights.readWeather && value.weather == null)
                         value.page?.note?.takeIf { it.isNotBlank() }?.let { note ->
                             LiveSection(stringResource(R.string.day_note)) { Text(note, style = MaterialTheme.typography.bodyLarge) }
                         }

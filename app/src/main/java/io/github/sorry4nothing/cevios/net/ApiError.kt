@@ -82,6 +82,10 @@ enum class ApiError(@StringRes val text: Int) {
     }
 }
 
+/** Ein Fehler an einem Feld der Antwort (`fehler[]` bei 422): `field` ist die Feld-ID, `code` zum Beispiel `PFLICHT` oder `ZU_LANG`. */
+@kotlinx.serialization.Serializable
+data class FieldProblem(@kotlinx.serialization.SerialName("feld") val field: String, val code: String)
+
 /** Der Stand, den der Server bei `VERSION_KONFLIKT` mitliefert (`aktuell`, `abweichend`). */
 data class VersionConflict(val current: kotlinx.serialization.json.JsonObject, val differing: List<String>)
 
@@ -98,6 +102,8 @@ sealed interface ApiResult<out T> {
         val retryAfterSeconds: Int? = null,
         /** Nur bei `VERSION_KONFLIKT`: der aktuelle Stand der Zeile und die Felder, die jetzt anders stehen. */
         val conflict: VersionConflict? = null,
+        /** Nur bei 422 `ANTWORTEN_UNGUELTIG` (Formulare): je Feld die ID und ein Code, nie der Wert. */
+        val fieldErrors: List<FieldProblem> = emptyList(),
     ) : ApiResult<Nothing> {
         /** Der HTTP-Status der Antwort; `null`, wenn es keine gab. Bewusst ausserhalb von `equals` und `copy`. */
         var status: Int? = null

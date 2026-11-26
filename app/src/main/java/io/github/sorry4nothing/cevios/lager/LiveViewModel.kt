@@ -55,6 +55,11 @@ class LiveViewModel(
     private val _todos = MutableStateFlow<ApiResult<CampTodoList>?>(null)
     val todos: StateFlow<ApiResult<CampTodoList>?> = _todos.asStateFlow()
 
+    private val _weatherPlace = MutableStateFlow<WeatherPlace?>(null)
+
+    /** Der Stand des Wetterorts; nur gefüllt, wenn eine Seite erklären muss, warum es kein Wetter gibt. */
+    val weatherPlace: StateFlow<WeatherPlace?> = _weatherPlace.asStateFlow()
+
     private val _myWeek = MutableStateFlow<MyWeek?>(null)
     val myWeek: StateFlow<MyWeek?> = _myWeek.asStateFlow()
 
@@ -138,7 +143,7 @@ class LiveViewModel(
     }
 
     private fun reset() {
-        _schedule.value = null; _today.value = null; _todos.value = null; _myWeek.value = null; _day.value = null; dayId = null; _days.value = null
+        _schedule.value = null; _today.value = null; _todos.value = null; _myWeek.value = null; _weatherPlace.value = null; _day.value = null; dayId = null; _days.value = null
         _own.value = null; _draft.value = emptyMap(); _summary.value = null; _requests.value = null
         _shopping.value = null; _onlyMine.value = false; _suggestions.value = emptyList(); _shopUndo.value = null
         _pack.value = null; _templates.value = null; _emergency.value = null; _emergencyStale.value = false; _infos.value = null
@@ -224,6 +229,14 @@ class LiveViewModel(
     fun loadSchedule(silent: Boolean = false): Unit = launchLoad(_schedule, silent, api::schedule)
 
     fun loadToday(silent: Boolean = false): Unit = launchLoad(_today, silent, api::today)
+
+    fun loadWeatherPlace() {
+        val id = campId ?: return
+        viewModelScope.launch(Background()) {
+            val result = api.weather(id)
+            if (campId == id) _weatherPlace.value = (result as? ApiResult.Ok)?.value?.place
+        }
+    }
 
     /** Die eigenen Dienste der nächsten sieben Tage («Mein Bereich» des Teams); fehlt das Recht, bleibt es leer. */
     fun loadMyWeek() {

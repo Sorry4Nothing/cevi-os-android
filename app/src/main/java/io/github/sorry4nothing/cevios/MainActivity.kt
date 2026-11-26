@@ -190,6 +190,11 @@ import io.github.sorry4nothing.cevios.termine.RoomDecisionsViewModel
 import io.github.sorry4nothing.cevios.termine.RoomListScreen
 import io.github.sorry4nothing.cevios.termine.RoomRequestScreen
 import io.github.sorry4nothing.cevios.termine.RoomsViewModel
+import io.github.sorry4nothing.cevios.formulare.FormListScreen
+import io.github.sorry4nothing.cevios.formulare.FormRules
+import io.github.sorry4nothing.cevios.formulare.FormScreen
+import io.github.sorry4nothing.cevios.formulare.FormsApi
+import io.github.sorry4nothing.cevios.formulare.FormsViewModel
 import io.github.sorry4nothing.cevios.laden.CartScreen
 import io.github.sorry4nothing.cevios.laden.OrdersScreen
 import io.github.sorry4nothing.cevios.laden.ShopApi
@@ -375,6 +380,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,
                                 shopApi = ShopApi(client),
+                                formsApi = FormsApi(client),
                             )
                         }
                     }
@@ -421,6 +427,8 @@ private sealed interface Screen {
     data object ShopCart : Screen { override val depth = 2 }
     data object ShopOrders : Screen { override val depth = 2 }
     data object RoomDecisions : Screen { override val depth = 1 }
+    data object Forms : Screen { override val depth = 1 }
+    data object FormFill : Screen { override val depth = 2 }
 }
 
 @Composable
@@ -449,6 +457,7 @@ private fun MainContent(
     lockEnabled: Boolean,
     onLockChange: (Boolean) -> Unit,
     shopApi: ShopApi,
+    formsApi: FormsApi,
 ) {
     val context = LocalContext.current
     val resolver = context.contentResolver
@@ -469,6 +478,7 @@ private fun MainContent(
     val proposals = viewModel { ProposalsViewModel(termineApi) }
     val rooms = viewModel { RoomsViewModel(termineApi) }
     val shop = viewModel { ShopViewModel(shopApi) }
+    val forms = viewModel { FormsViewModel(formsApi) }
     val roomDecisions = viewModel { RoomDecisionsViewModel(termineApi) }
     val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
@@ -511,6 +521,9 @@ private fun MainContent(
     var shopCartOpen by rememberSaveable { mutableStateOf(false) }
     var shopOrdersOpen by rememberSaveable { mutableStateOf(false) }
     var roomDecideOpen by rememberSaveable { mutableStateOf(false) }
+    // Formulare der Website: die Liste und das gerade ausgefüllte Formular (nur die ID; Eingaben bleiben im ViewModel und nie auf dem Gerät).
+    var formsOpen by rememberSaveable { mutableStateOf(false) }
+    var openedForm by rememberSaveable { mutableStateOf<String?>(null) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
@@ -540,7 +553,7 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false; shopOpen = false; shopCartOpen = false; shopOrdersOpen = false; roomDecideOpen = false
+        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false; shopOpen = false; shopCartOpen = false; shopOrdersOpen = false; roomDecideOpen = false; formsOpen = false; openedForm = null
         info.close()
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
@@ -629,12 +642,16 @@ private fun MainContent(
     LaunchedEffect(shopOpen) { if (shopOpen) shop.reload() }
     LaunchedEffect(shopOrdersOpen) { if (shopOrdersOpen) shop.reloadOrders() }
     LaunchedEffect(roomDecideOpen) { if (roomDecideOpen) roomDecisions.reload() }
+    // Formulare laden beim Öffnen neu; ein geschlossenes Formular vergisst seine Eingaben.
+    LaunchedEffect(formsOpen) { if (formsOpen) forms.reloadList() }
+    LaunchedEffect(openedForm) { openedForm?.let { forms.open(it) } ?: forms.close() }
     // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
     LaunchedEffect(destination) {
         if (destination == Destination.PROFILE) {
             calendarLink.load()
             proposals.loadOptions()
             roomDecisions.check()
+            forms.check()
         }
     }
     LaunchedEffect(viewingRegistrations, openedProgram) {
@@ -689,13 +706,13 @@ private fun MainContent(
     LaunchedEffect(campList) { (campList as? ApiResult.Ok)?.let { list -> downloads.retainOnly(list.value.filterNot { it.readOnly }.map { it.id }.toSet()) } }
     val lostCamp by camp.lostAccess.collectAsState()
     LaunchedEffect(lostCamp) { lostCamp?.let(downloads::deleteCamp) }
-    // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
-    // fragt sie nur, solange sie sichtbar ist.
+    // Der Zähler im Dock liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: auf den anderen Reitern nur die Zahl
+    // (`GET /chats/ungelesen`, kein Inhalt), auf dem Chat-Reiter die Liste, die dort ohnehin steht. Im Takt fragt nur die sichtbare Liste.
     LaunchedEffect(destination, openedChat, phoneOpen) {
         // Der Punkt an der Pille veraltet sonst auf den anderen Reitern: einmal still neu bei jedem Wechsel, ohne eigenen Takt.
         launch { camp.refreshNews() }
         if (openedChat == null && !phoneOpen) {
-            chat.loadList(silent = true)
+            if (destination != Destination.CHAT) chat.refreshUnread() else chat.loadList(silent = true)
             if (destination == Destination.CHAT) {
                 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     while (true) {
@@ -715,7 +732,7 @@ private fun MainContent(
         val detail by programs.detail.collectAsState()
         val programProfile = (programs.profile.collectAsState().value as? ApiResult.Ok)?.value
         val assignedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
-        val chatUnread = (chat.list.collectAsState().value as? ApiResult.Ok)?.value?.chats?.sumOf { it.unread } ?: 0
+        val chatUnread = chat.unread.collectAsState().value ?: (chat.list.collectAsState().value as? ApiResult.Ok)?.value?.chats?.sumOf { it.unread } ?: 0
         val tabState = rememberSaveableStateHolder()
         val cropping = croppingImage
         val camps = (camp.camps.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
@@ -820,6 +837,8 @@ private fun MainContent(
             campArea && campId != null && inboxOpen -> Screen.Inbox
             campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
             openedEvent != null -> Screen.Event(openedEvent!!)
+            openedForm != null -> Screen.FormFill
+            formsOpen -> Screen.Forms
             shopOrdersOpen -> Screen.ShopOrders
             shopCartOpen -> Screen.ShopCart
             shopOpen -> Screen.Shop
@@ -949,6 +968,32 @@ private fun MainContent(
                         onRetry = shop::reloadOrders,
                     )
                 }
+                Screen.Forms -> {
+                    val leave = { formsOpen = false }
+                    BackHandler(onBack = leave)
+                    FormListScreen(
+                        list = forms.list.collectAsState().value,
+                        onOpen = { openedForm = it.id },
+                        onBack = leave,
+                        onRetry = forms::reloadList,
+                    )
+                }
+                Screen.FormFill -> {
+                    val leave = { openedForm = null }
+                    BackHandler(onBack = leave)
+                    FormScreen(
+                        definition = forms.definition.collectAsState().value,
+                        values = forms.values.collectAsState().value,
+                        send = forms.send.collectAsState().value,
+                        onText = forms::setText,
+                        onFlag = forms::setFlag,
+                        onToggle = forms::toggleChoice,
+                        onSubmit = forms::submit,
+                        onDismiss = forms::dismiss,
+                        onBack = leave,
+                        onRetry = { openedForm?.let(forms::open) },
+                    )
+                }
                 Screen.RoomDecisions -> {
                     val leave = { roomDecideOpen = false; roomDecisions.dismissNotice() }
                     BackHandler(onBack = leave)
@@ -1016,6 +1061,7 @@ private fun MainContent(
                             onEvent = { openedEvent = it },
                             onBack = { openedProgram = null },
                             onRetry = { programs.loadDetail(programId) },
+                            calendarFile = programs::calendarFile,
                         )
                     }
                 }
@@ -1259,6 +1305,9 @@ private fun MainContent(
                         onPrograms = push::setPrograms,
                         onRegistrations = push::setRegistrations,
                         onBack = leave,
+                        mayPropose = (proposals.options.collectAsState().value as? ApiResult.Ok)?.value?.mayPropose == true,
+                        onProposalDecision = push::setProposalDecision,
+                        onRoomDecision = push::setRoomDecision,
                         lager = comms.settings.collectAsState().value,
                         onLager = comms::setSetting,
                         onLagerRetry = comms::loadSettings,
@@ -1340,6 +1389,18 @@ private fun MainContent(
                                     // Das Lädeli darf jede angemeldete Person lesen und bestellen (Vertrag `holeLaden`, `bestelleImLaden`).
                                     SettingsCard {
                                         SettingsRow(R.drawable.ic_bag, stringResource(R.string.store_row), onClick = { shopOpen = true }, chevron = true)
+                                    }
+                                    // Formulare der Website: Die Zeile gibt es nur, wenn der Server mindestens ein offenes Formular liefert.
+                                    val openForms = (forms.list.collectAsState().value as? ApiResult.Ok)?.value?.forms.orEmpty()
+                                    if (openForms.isNotEmpty()) {
+                                        val unanswered = FormRules.unanswered(openForms)
+                                        SettingsCard {
+                                            SettingsRow(
+                                                R.drawable.ic_list_check, stringResource(R.string.forms_row),
+                                                value = if (unanswered > 0) stringResource(R.string.forms_row_open, unanswered) else null,
+                                                onClick = { formsOpen = true }, chevron = true,
+                                            )
+                                        }
                                     }
                                     // Zuständig ist, wem der Server offene Anfragen liefert; sonst fehlt die Zeile.
                                     val toDecide = (roomDecisions.open.collectAsState().value as? ApiResult.Ok)?.value?.requests?.size ?: 0

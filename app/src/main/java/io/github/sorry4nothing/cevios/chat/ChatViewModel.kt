@@ -27,6 +27,11 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     private val _list = MutableStateFlow<ApiResult<ChatList>?>(null)
     val list: StateFlow<ApiResult<ChatList>?> = _list.asStateFlow()
 
+    private val _unread = MutableStateFlow<Int?>(null)
+
+    /** Die Zahl der ungelesenen Nachrichten aus `GET /chats/ungelesen`; `null`, solange sie fehlt (dann zählt die Chatliste). */
+    val unread: StateFlow<Int?> = _unread.asStateFlow()
+
     private val _conversation = MutableStateFlow<ApiResult<Conversation>?>(null)
     val conversation: StateFlow<ApiResult<Conversation>?> = _conversation.asStateFlow()
 
@@ -91,7 +96,17 @@ class ChatViewModel(private val api: ChatApi) : ViewModel() {
     /** Mit `silent` bleibt die alte Liste sichtbar, bis die neue da ist. */
     fun loadList(silent: Boolean = false) {
         if (!silent) _list.value = null
-        viewModelScope.launch(if (silent) Background() else EmptyCoroutineContext) { _list.value = api.chats() }
+        viewModelScope.launch(if (silent) Background() else EmptyCoroutineContext) {
+            val result = api.chats()
+            _list.value = result
+            // Die Liste ist genauer als der letzte Zähler: Er gilt ab jetzt wieder von ihr.
+            if (result is ApiResult.Ok) _unread.value = result.value.chats.sumOf { it.unread }
+        }
+    }
+
+    /** Liest still nur den Zähler (kleiner Aufruf statt der Liste); ein Fehler lässt den letzten Stand stehen. */
+    fun refreshUnread() {
+        viewModelScope.launch(Background()) { (api.unread() as? ApiResult.Ok)?.let { _unread.value = it.value.count } }
     }
 
     fun openChat(id: String) {

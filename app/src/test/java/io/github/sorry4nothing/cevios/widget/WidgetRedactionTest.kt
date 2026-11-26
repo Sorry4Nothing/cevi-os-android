@@ -1,9 +1,7 @@
 package io.github.sorry4nothing.cevios.widget
 
-import io.github.sorry4nothing.cevios.chat.Chat
-import io.github.sorry4nothing.cevios.chat.ChatAgeGroup
-import io.github.sorry4nothing.cevios.chat.ChatPerson
-import io.github.sorry4nothing.cevios.chat.LastMessage
+import io.github.sorry4nothing.cevios.chat.ChatUnread
+import io.github.sorry4nothing.cevios.chat.ChatUnreadEntry
 import io.github.sorry4nothing.cevios.lager.CampTask
 import io.github.sorry4nothing.cevios.programs.Program
 import io.github.sorry4nothing.cevios.programs.ProgramChild
@@ -70,13 +68,8 @@ class WidgetRedactionTest {
         children = listOf(ProgramChild("1", childName, null), ProgramChild("2", otherChild, "ja")),
         ownRegistration = "ja",
     )
-    private val chats = listOf(
-        Chat(
-            id = "c", type = "stufe", ageGroup = ChatAgeGroup("s", "Wölfe", "W"), unread = 3,
-            lastMessage = LastMessage(chatText, "2026-11-21T10:00:00Z", own = false, author = ChatPerson("x", chatAuthor)),
-        ),
-        Chat(id = "d", type = "direkt", ageGroup = ChatAgeGroup("s", "Wölfe", "W"), unread = 0, lastMessage = LastMessage(chatText, "2026-11-21T10:00:00Z", own = false, author = ChatPerson("x", chatAuthor))),
-    )
+    // Die Antwort von `GET /chats/ungelesen` hat nur IDs und Zahlen; ein Chat ohne Ungelesenes steht gar nicht darin.
+    private val chats = ChatUnread(3, listOf(ChatUnreadEntry("c", 3)))
     private val task = CampTask(id = "t", version = 1, title = "Offerte Lagerhaus einholen", due = "2027-03-15", assigneeId = "me", assignee = io.github.sorry4nothing.cevios.lager.TaskPerson("me", personName, personName))
 
     private val contents: List<Pair<WidgetKind, WidgetContent>> = listOf(

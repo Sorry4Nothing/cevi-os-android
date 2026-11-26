@@ -106,6 +106,9 @@ class ProgramsViewModel(private val api: ProgramsApi, private val onAnswered: ()
         }
     }
 
+    /** Die Kalenderdatei des Termins; `null`, wenn der Server sie nicht liefert (Netz, 404): Dann bleibt der Weg über den Kalender des Geräts. */
+    suspend fun calendarFile(id: String): ByteArray? = (api.calendarFile(id) as? ApiResult.Ok)?.value
+
     fun loadDetail(id: String) {
         detailJob?.cancel()
         openedId = id

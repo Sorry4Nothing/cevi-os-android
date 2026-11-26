@@ -48,7 +48,7 @@ class ShopApiTest {
         "artikel": [
           {"id":"$shirt","name":"Beispiel-Shirt","preisRappen":2500,"mediumId":null,"groessenart":"liste","varianten":["S","M","L"],
            "nichtVerfuegbar":["L"],"hinweis":"Fällt klein aus","verfuegbar":true,"verfuegbarGesetzt":true,"reihenfolge":0},
-          {"id":"$mug","name":"Beispiel-Tasse","preisRappen":0,"mediumId":null,"groessenart":"einheit","varianten":[],
+          {"id":"$mug","name":"Beispiel-Tasse","preisRappen":0,"mediumId":"22222222-2222-4222-8222-222222222222","groessenart":"einheit","varianten":[],
            "nichtVerfuegbar":[],"hinweis":null,"verfuegbar":false,"verfuegbarGesetzt":false,"reihenfolge":1}
         ],
         "uebergabearten": ["Abholung im Lädeli", "Übergabe am Anlass"],
@@ -70,6 +70,8 @@ class ShopApiTest {
         assertEquals(listOf("S", "M"), shirtItem.orderableVariants())
         assertEquals("Fällt klein aus", shirtItem.note)
         assertFalse(shop.items[1].available)
+        assertNull(shirtItem.mediumId)
+        assertEquals("22222222-2222-4222-8222-222222222222", shop.items[1].mediumId)
         assertEquals(listOf("Abholung im Lädeli", "Übergabe am Anlass"), shop.handovers)
         assertEquals(5, shop.limits.openOrders)
         assertEquals(1000L, shop.settings.minimumCents)

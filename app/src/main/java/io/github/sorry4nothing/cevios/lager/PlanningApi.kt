@@ -2,6 +2,7 @@ package io.github.sorry4nothing.cevios.lager
 
 import io.github.sorry4nothing.cevios.net.ApiClient
 import io.github.sorry4nothing.cevios.net.ApiResult
+import io.github.sorry4nothing.cevios.net.ResponseCache
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -17,6 +18,9 @@ import kotlinx.serialization.json.put
  * auf genau den genannten Wert; eine Wiederholung ändert nichts.
  */
 class PlanningApi(private val api: ApiClient) {
+    /** Der verschlüsselte Speicher des Lagers auf dem Gerät (für die eigenen Haken der Abzählliste); `null` ohne Zwischenspeicher. */
+    val cache: ResponseCache? get() = api.cache
+
     /** Liest alle Seiten einer Liste (Cursor `nach`); `page` baut den Pfad zu einer Seite, `next` und `items` lesen die Antwort. */
     private suspend fun <P, T> all(page: suspend (String?) -> ApiResult<P>, next: (P) -> String?, items: (P) -> List<T>): ApiResult<List<T>> {
         val all = mutableListOf<T>()
@@ -199,7 +203,10 @@ class PlanningApi(private val api: ApiClient) {
 
     // ---- Abzählliste ----
 
-    /** Die Abzählliste mit Filtern (`stage`, `groupId`); `team` zählt die Mitglieder statt der Teilnehmenden. */
+    /**
+     * Wer in der Abzählliste steht, mit Filtern (`stage`, `groupId`); `team` zählt die Mitglieder statt der Teilnehmenden. Die Haken gehören
+     * der Person allein und gehen nie an den Server: Die Schreib-Routen `PUT …/abzaehlen` und `POST …/abzaehlen/zuruecksetzen` ruft die App nicht auf.
+     */
     suspend fun count(campId: String, team: Boolean, stage: String?, groupId: String?): ApiResult<CountPage> {
         val all = mutableListOf<CountEntry>()
         var after: String? = null
@@ -222,18 +229,6 @@ class PlanningApi(private val api: ApiClient) {
         }
         return ApiResult.Ok(last!!.copy(entries = all))
     }
-
-    suspend fun setChecked(campId: String, participantIds: List<String>, personIds: List<String>, checked: Boolean): ApiResult<CountChanged> =
-        api.putJson(
-            "/api/v1/lager/$campId/abzaehlen",
-            buildJsonObject {
-                put("geprueft", checked)
-                if (participantIds.isNotEmpty()) put("teilnehmerIds", strings(participantIds))
-                if (personIds.isNotEmpty()) put("personIds", strings(personIds))
-            },
-        )
-
-    suspend fun resetCount(campId: String): ApiResult<CountReset> = api.post("/api/v1/lager/$campId/abzaehlen/zuruecksetzen", buildJsonObject { put("bestaetigt", true) })
 
     private fun people(participantIds: List<String>, personIds: List<String>) = buildJsonObject {
         if (participantIds.isNotEmpty()) put("teilnehmerIds", strings(participantIds))

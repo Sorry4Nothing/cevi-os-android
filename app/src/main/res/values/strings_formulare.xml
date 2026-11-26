@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Formulare der Website ausfüllen -->
+    <string name="forms_row">Formulare</string>
+    <string name="forms_row_open">%1$d offen</string>
+    <string name="forms_title">Formulare</string>
+    <string name="forms_title_fallback">Formular</string>
+    <string name="forms_back_profile">Zurück zu Profil</string>
+    <string name="forms_back">Zurück zu Formulare</string>
+    <string name="forms_loading">Formulare werden geladen</string>
+    <string name="forms_loading_one">Formular wird geladen</string>
+    <string name="forms_empty_title">Keine offenen Formulare</string>
+    <string name="forms_empty_text">Im Moment gibt es nichts auszufüllen.</string>
+    <string name="forms_closes">Offen bis %1$s</string>
+    <string name="forms_open_label">Formular öffnen</string>
+    <string name="forms_answered">Beantwortet</string>
+    <string name="forms_not_answered">Offen</string>
+    <string name="forms_card_page">Auf der Seite «%1$s»</string>
+
+    <string name="forms_closed_title">Geschlossen</string>
+    <string name="forms_closed_text">Dieses Formular nimmt keine Antworten mehr an.</string>
+    <string name="forms_answered_title">Schon beantwortet</string>
+    <string name="forms_answered_text">Du hast dieses Formular schon ausgefüllt. Es gilt nur eine Antwort pro Person.</string>
+    <string name="forms_answered_again">Du hast dieses Formular schon beantwortet. Du kannst nochmals antworten.</string>
+    <string name="forms_done_title">Gesendet</string>
+    <string name="forms_thanks_default">Danke, deine Antwort ist angekommen.</string>
+    <string name="forms_unsupported">Dieses Formular hat Felder, die in der App nicht gehen. Fülle es auf der Website aus.</string>
+    <string name="forms_unsupported_field">Dieses Feld geht in der App nicht.</string>
+    <string name="forms_privacy_title">Datenschutz</string>
+    <string name="forms_optional">%1$s (freiwillig)</string>
+    <string name="forms_check">Prüfe die markierten Felder.</string>
+    <string name="forms_sending">Wird gesendet</string>
+    <string name="forms_submit_default">Senden</string>
+    <string name="forms_no_health">Bitte keine Gesundheitsdaten eintragen, ausser das Formular verlangt sie ausdrücklich.</string>
+    <string name="forms_date_clear">Datum entfernen</string>
+    <string name="forms_yes">Ja</string>
+    <string name="forms_no">Nein</string>
+    <string name="forms_consent_yes">Ja, einverstanden</string>
+    <string name="forms_choose_between">Wähle %1$d bis %2$d</string>
+    <string name="forms_choose_at_least">Wähle mindestens %1$d</string>
+    <string name="forms_choose_at_most">Wähle höchstens %1$d</string>
+    <string name="forms_number_hint">Eine Zahl, zum Beispiel 12 oder 12.5</string>
+    <string name="forms_whole_hint">Eine ganze Zahl, zum Beispiel 12</string>
+
+    <string name="forms_problem_required">Bitte ausfüllen.</string>
+    <string name="forms_problem_consent">Ohne Zustimmung geht es nicht weiter.</string>
+    <string name="forms_problem_format">Das Format stimmt nicht.</string>
+    <string name="forms_problem_too_long">Der Text ist zu lang.</string>
+    <string name="forms_problem_too_long_n">Der Text ist zu lang. Höchstens %1$d Zeichen.</string>
+    <string name="forms_problem_too_short">Der Text ist zu kurz.</string>
+    <string name="forms_problem_too_short_n">Der Text ist zu kurz. Mindestens %1$d Zeichen.</string>
+    <string name="forms_problem_range">Der Wert liegt ausserhalb des erlaubten Bereichs.</string>
+    <string name="forms_problem_option">Diese Auswahl gibt es nicht mehr. Öffne das Formular neu.</string>
+    <string name="forms_problem_count">Die Anzahl der gewählten Antworten stimmt nicht.</string>
+    <string name="forms_problem_control">Das Feld enthält Zeichen, die nicht erlaubt sind.</string>
+    <string name="forms_problem_unknown">Dieses Feld stimmt nicht mehr mit dem Formular überein. Öffne es neu.</string>
+
+    <string name="forms_fail_network">Ohne Netz. Deine Angaben sind noch da. Sende sie nochmals, sobald du wieder Netz hast.</string>
+    <string name="forms_fail_too_fast">Das ging sehr schnell. Prüfe deine Angaben und sende sie nochmals.</string>
+    <string name="forms_fail_already">Du hast dieses Formular schon beantwortet. Es gilt nur eine Antwort pro Person.</string>
+    <string name="forms_fail_full">Das Formular ist voll. Es nimmt keine Antworten mehr an.</string>
+    <string name="forms_fail_closed">Das Formular ist geschlossen. Es nimmt keine Antworten mehr an.</string>
+    <string name="forms_fail_too_often">Es wurde zu oft gesendet. Warte ein paar Minuten und versuche es dann nochmals.</string>
+    <string name="forms_fail_locked">Die Website ist gerade gesperrt. Versuche es später nochmals.</string>
+    <string name="forms_fail_maintenance">Die Website ist in Wartung. Versuche es später nochmals.</string>
+    <string name="forms_fail_forbidden">Dieses Formular kannst du in der App nicht senden. Öffne es auf der Website.</string>
+    <string name="forms_fail_not_found">Dieses Formular gibt es nicht mehr.</string>
+    <string name="forms_fail_invalid">Ein paar Angaben stimmen nicht. Prüfe die markierten Felder.</string>
+    <string name="forms_fail_other">Das Senden hat nicht geklappt. Deine Angaben sind noch da.</string>
+</resources>

@@ -131,7 +131,7 @@ class TermineApiTest {
 
     private val event = """
         {"id":"e1","terminId":"t1","titel":"Sommerlager","ganztaegig":true,"beginn":null,"ende":null,"tagVon":"2027-07-17","tagBis":"2027-07-24",
-         "anmeldungOffen":true,"frist":"2027-06-01T20:00:00Z","anmeldungFuer":"kind",
+         "anmeldungOffen":true,"frist":"2027-06-01T20:00:00Z",
          "felder":[{"schluessel":"schwimmt","beschriftung":"Mein Kind schwimmt sicher","typ":"ja_nein","optionen":[],"pflicht":true},
                    {"schluessel":"shirt","beschriftung":"T-Shirt-Grösse","typ":"auswahl","optionen":["128","140"],"pflicht":false}],
          "teilnehmende":[{"kindId":"k1","name":"Mia","konto":[{"schluessel":"vorname","beschriftung":"Vorname","wert":"Mia"}],"anmeldung":null}]}
@@ -142,7 +142,6 @@ class TermineApiTest {
         server.enqueue(json(200, event))
         val form = (runBlocking { api.event("e1") } as ApiResult.Ok).value
         assertEquals("GET /api/v1/anlaesse/e1 HTTP/1.1", server.takeRequest().requestLine)
-        assertEquals("kind", form.registerFor)
         assertEquals(listOf("ja_nein", "auswahl"), form.fields.map { it.type })
         assertEquals(listOf("128", "140"), form.fields[1].options)
         assertEquals("Mia", form.participants.single().account.single().value)

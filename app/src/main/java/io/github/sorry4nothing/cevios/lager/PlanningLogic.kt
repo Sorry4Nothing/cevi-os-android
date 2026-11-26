@@ -17,8 +17,6 @@ data class PlanRights(
     val edit: Boolean,
     /** Das Team sieht nur das eigene Zimmer und die eigene Fahrt und keine Liste «ohne Fahrt». */
     val seeAll: Boolean,
-    /** `abzaehlen.schreiben`: Haken setzen und zurücksetzen. Standard: Lagerleitung, Leitung und Team. */
-    val count: Boolean,
     /** `diensttausch.anfragen`: für eine eigene Schicht anfragen. Standard: Lagerleitung, Leitung und Team. */
     val requestSwap: Boolean,
     /** `diensttausch.entscheiden`: Anfragen annehmen oder ablehnen. Standard: Lagerleitung und Leitung. */
@@ -30,7 +28,6 @@ data class PlanRights(
             edit = p.mayWrite("einteilung.bearbeiten"),
             // Der Server zeigt dem Team nur das Eigene (Zeilenfilter nach Rolle, kein Recht dafür im Katalog).
             seeAll = p.role != CampRole.TEAM || p.may("einteilung.bearbeiten"),
-            count = p.mayWrite("abzaehlen.schreiben"),
             requestSwap = p.mayWrite("diensttausch.anfragen"),
             decideSwap = p.mayWrite("diensttausch.entscheiden"),
         )

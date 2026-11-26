@@ -350,20 +350,13 @@ class PlanningApiTest {
     }
 
     @Test
-    fun setCheckedAndResetUseTheDocumentedBodies() {
-        server.enqueue(json(200, """{"geaendert":1}"""))
-        runBlocking { api.setChecked(camp, listOf(a), emptyList(), true) }
-        val set = server.takeRequest()
-        assertEquals("PUT /api/v1/lager/$camp/abzaehlen HTTP/1.1", set.requestLine)
-        assertTrue(bodyOf(set)["geprueft"]!!.jsonPrimitive.boolean)
-        assertEquals(setOf("geprueft", "teilnehmerIds"), bodyOf(set).keys)
-
-        server.enqueue(json(200, """{"zurueckgesetzt":4}"""))
-        val reset = (runBlocking { api.resetCount(camp) } as ApiResult.Ok).value
-        val request = server.takeRequest()
-        assertEquals("POST /api/v1/lager/$camp/abzaehlen/zuruecksetzen HTTP/1.1", request.requestLine)
-        assertTrue(bodyOf(request)["bestaetigt"]!!.jsonPrimitive.boolean)
-        assertEquals(4, reset.reset)
+    fun theCountListIsOnlyReadAndTheServerCheckmarkIsIgnored() {
+        server.enqueue(json(200, """{"eintraege":[{"id":"$a","teilnehmerId":"$a","vorname":"Anna","nachname":"Beispiel","geprueft":true}],"naechster":null,"da":1,"gesamt":1}"""))
+        val page = (runBlocking { api.count(camp, team = false, stage = null, groupId = null) } as ApiResult.Ok).value
+        assertEquals("GET", server.takeRequest().requestLine.substringBefore(' '))
+        // Die Haken sind lokal: Der gemeinsame Haken des Servers zählt nie (`CountRules.page` setzt ihn aus den eigenen).
+        assertEquals(0, CountRules.page(page.entries, emptySet()).present)
+        assertEquals(1, CountRules.page(page.entries, setOf(a)).present)
     }
 
     @Test

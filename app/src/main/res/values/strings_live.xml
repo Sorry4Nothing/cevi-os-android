@@ -219,4 +219,9 @@
     <string name="team_my_duties">Meine Dienste</string>
     <string name="team_duty_line">%1$s, %2$s</string>
     <string name="team_pack_row">%1$d von %2$d gepackt</string>
+    <string name="weather_place_none">Zum Lager ist noch kein Ort eingetragen, darum gibt es kein Wetter. Die Lagerleitung kann ihn im Web ergänzen.</string>
+    <string name="weather_place_not_found">Zum Ort des Lagers gibt es keine Wetterdaten. Prüfe im Web, ob der Ort richtig geschrieben ist.</string>
+    <string name="weather_place_ambiguous">Der Ort des Lagers passt auf mehrere Orte. Ergänze im Web die Postleitzahl, dann erscheint das Wetter.</string>
+    <string name="weather_place_unreachable">Der Wetterdienst antwortet gerade nicht. Versuche es in einer Viertelstunde nochmals.</string>
+    <string name="weather_place_pending">Der Ort fürs Wetter wird noch gesucht. Schau in ein paar Minuten nochmals vorbei.</string>
 </resources>

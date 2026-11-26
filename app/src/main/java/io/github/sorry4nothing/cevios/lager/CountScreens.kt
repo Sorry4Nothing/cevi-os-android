@@ -1,7 +1,6 @@
 package io.github.sorry4nothing.cevios.lager
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import io.github.sorry4nothing.cevios.R
@@ -31,27 +31,25 @@ import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
 import io.github.sorry4nothing.cevios.ui.pickGroup
-import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
 /**
- * Die Abzählliste (Entwurf L25): eine gemeinsame Liste für alle, die abzählen. Ein Haken gilt sofort für alle («18 von 22 abgezählt,
- * für alle sichtbar»); der Filter zeigt Teilnehmende oder Team, eine Stufe oder eine Gruppe. «Zurücksetzen» nimmt alle Haken zurück
- * und fragt vorher. Der Server kennt dafür keine Warteschlange: Ohne Netz springt ein Haken zurück und der Fehler erscheint.
+ * Die Abzählliste (Entwurf L25), nur für dich: Wer in der Liste steht, kommt vom Server (nur Lesen), die Haken liegen verschlüsselt auf diesem
+ * Gerät und gehen an niemanden. Du wählst, wen du zählst: Teilnehmende, Leitende, eine Stufe oder eine Gruppe, mehrere zugleich.
+ * «Zurücksetzen» löscht nur deine Haken und fragt vorher. Ohne Netz bleiben die Haken, die Liste lädt neu, sobald es wieder Netz gibt.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CountScreen(
     vm: PlanningViewModel,
     camp: Camp?,
-    rights: PlanRights,
     queue: QueueState,
     online: Boolean,
     onOpenQueue: () -> Unit,
     onBack: () -> Unit,
 ) {
     val state by vm.count.collectAsState()
-    val filter by vm.filter.collectAsState()
+    val selection by vm.selection.collectAsState()
     val groupsState by vm.groups.collectAsState()
     val participants by vm.participants.collectAsState()
     var resetting by remember { mutableStateOf(false) }
@@ -62,6 +60,8 @@ fun CountScreen(
     }
     val stages = PlanRules.stages((participants as? ApiResult.Ok)?.value.orEmpty())
     val groups = (groupsState as? ApiResult.Ok)?.value?.groups.orEmpty()
+    // Im abgeschlossenen Lager bleibt nichts zum Ändern (und nichts auf dem Gerät: Es wird dort gelöscht).
+    val writable = camp != null && !camp.readOnly
 
     CampPage(
         title = stringResource(R.string.count_title),
@@ -75,51 +75,47 @@ fun CountScreen(
             is ApiResult.Failure -> ErrorState(result.error, { vm.loadCount() })
             is ApiResult.Ok -> {
                 val page = result.value
-                val filtered = filter.stage != null || filter.groupId != null
-                if (page.entries.isEmpty() && !filtered) {
-                    StatePage(R.drawable.ic_group, stringResource(R.string.count_empty_title), stringResource(R.string.count_empty_text))
-                } else {
-                    LazyColumn(
-                        Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(start = Spacing.s3, end = Spacing.s3, bottom = Spacing.s6),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.s1),
-                    ) {
+                LazyColumn(
+                    Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(start = Spacing.s3, end = Spacing.s3, bottom = Spacing.s6),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+                ) {
+                    item {
+                        Text(
+                            stringResource(R.string.count_summary, page.present, page.total),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                    }
+                    // Wer gezählt wird: mehrere zugleich, darum Kästchen statt Auswahl (Role.Checkbox); die Gruppe trägt den Namen für TalkBack.
+                    item {
+                        FlowRow(
+                            Modifier.pickGroup(stringResource(R.string.count_who)).padding(vertical = Spacing.s2),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+                        ) {
+                            PickPill(stringResource(R.string.count_kind_children), selection.has(CountSource.Participants), { vm.toggleSource(CountSource.Participants) }, role = Role.Checkbox)
+                            PickPill(stringResource(R.string.count_kind_team), selection.has(CountSource.Team), { vm.toggleSource(CountSource.Team) }, role = Role.Checkbox)
+                        }
+                    }
+                    if (stages.isNotEmpty() || groups.isNotEmpty()) item {
+                        FlowRow(
+                            Modifier.pickGroup(stringResource(R.string.count_more_groups)).padding(bottom = Spacing.s2),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+                        ) {
+                            stages.forEach { s -> CountSource.Stage(s).let { PickPill(s, selection.has(it), { vm.toggleSource(it) }, role = Role.Checkbox) } }
+                            groups.forEach { g -> CountSource.Group(g.id).let { PickPill(g.name, selection.has(it), { vm.toggleSource(it) }, role = Role.Checkbox) } }
+                        }
+                    }
+                    if (page.entries.isEmpty()) {
                         item {
-                            Text(
-                                stringResource(R.string.count_summary, page.present, page.total),
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                            )
-                        }
-                        item {
-                            FlowRow(Modifier.pickGroup(stringResource(R.string.group_people_or_team)).padding(vertical = Spacing.s2), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                                PickPill(stringResource(R.string.count_kind_children), !filter.team, { vm.setFilter(CountFilter()) })
-                                PickPill(stringResource(R.string.count_kind_team), filter.team, { vm.setFilter(CountFilter(team = true)) })
-                            }
-                        }
-                        if (!filter.team && (stages.isNotEmpty() || groups.isNotEmpty())) item {
-                            FlowRow(Modifier.pickGroup(stringResource(R.string.group_count_filter)).padding(bottom = Spacing.s2), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                                PickPill(stringResource(R.string.filter_all), !filtered, { vm.setFilter(CountFilter()) })
-                                stages.forEach { s -> PickPill(s, filter.stage == s, { vm.setFilter(CountFilter(stage = s)) }) }
-                                groups.forEach { g -> PickPill(g.name, filter.groupId == g.id, { vm.setFilter(CountFilter(groupId = g.id)) }) }
-                            }
-                        }
-                        if (page.entries.isEmpty()) item {
                             Text(stringResource(R.string.count_no_match), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            OutlinedPillButton(stringResource(R.string.count_filter_reset), { vm.setFilter(CountFilter(team = filter.team)) })
                         }
-                        items(page.entries, key = { it.id }) { entry ->
-                            CheckRow(
-                                entry.display,
-                                joinDetail(entry.stage),
-                                entry.checked,
-                                { vm.toggleCount(entry) },
-                                enabled = rights.count,
-                            )
-                        }
-                        if (rights.count && page.total > 0) item {
-                            OutlinedPillButton(stringResource(R.string.count_reset), { resetting = true }, Modifier.fillMaxWidth().padding(top = Spacing.s3))
-                        }
+                    }
+                    items(page.entries, key = { it.id }) { entry ->
+                        CheckRow(entry.display, joinDetail(entry.stage), entry.checked, { vm.toggleCount(entry) }, enabled = writable)
+                    }
+                    if (writable && page.total > 0) item {
+                        OutlinedPillButton(stringResource(R.string.count_reset), { resetting = true }, Modifier.fillMaxWidth().padding(top = Spacing.s3))
                     }
                 }
             }

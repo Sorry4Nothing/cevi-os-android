@@ -20,7 +20,7 @@
     <string name="plan_notice_swap_declined">Anfrage abgelehnt. Der Schichtplan bleibt, wie er ist.</string>
     <string name="plan_notice_swap_requested">Anfrage gesendet. Die Lagerleitung entscheidet.</string>
     <string name="plan_notice_swap_withdrawn">Anfrage zurückgezogen.</string>
-    <string name="plan_notice_count_reset">Liste zurückgesetzt.</string>
+    <string name="plan_notice_count_reset">Deine Haken sind zurückgesetzt.</string>
     <string name="plan_notice_mix_applied">Gruppen gemischt und übernommen.</string>
     <string name="plan_notice_suggestion_applied">Vorschlag übernommen. Die leeren Dienste sind gefüllt.</string>
     <string name="plan_notice_imported">Personen übernommen.</string>
@@ -296,16 +296,15 @@
     <!-- Abzählliste (L25) -->
     <string name="count_title">Abzählen</string>
     <string name="count_loading">Liste wird geladen</string>
-    <string name="count_empty_title">Keine Personen</string>
-    <string name="count_empty_text">Sobald Personen im Lager sind, kannst du sie abzählen.</string>
-    <string name="count_summary">%1$d von %2$d abgezählt, für alle sichtbar</string>
+    <string name="count_summary">%1$d von %2$d abgezählt, nur auf diesem Gerät</string>
+    <string name="count_who">Wer wird gezählt</string>
+    <string name="count_more_groups">Stufen und Gruppen</string>
     <string name="count_kind_children">Teilnehmende</string>
-    <string name="count_kind_team">Team</string>
-    <string name="count_no_match">Niemand passt zu diesem Filter.</string>
-    <string name="count_filter_reset">Filter zurücksetzen</string>
+    <string name="count_kind_team">Leitende und Team</string>
+    <string name="count_no_match">Niemand in dieser Auswahl. Wähle oben noch jemanden dazu.</string>
     <string name="count_reset">Zurücksetzen</string>
-    <string name="count_reset_title">Abzählliste zurücksetzen?</string>
-    <string name="count_reset_text">Alle Haken verschwinden, für alle. Niemand wird gelöscht.</string>
+    <string name="count_reset_title">Deine Haken zurücksetzen?</string>
+    <string name="count_reset_text">Deine Haken auf diesem Gerät verschwinden. Bei anderen ändert sich nichts, und niemand wird gelöscht.</string>
 
     <!-- Feldnamen im Konfliktbildschirm -->
     <string name="field_name">Name</string>

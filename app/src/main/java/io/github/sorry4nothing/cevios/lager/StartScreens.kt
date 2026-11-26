@@ -97,6 +97,8 @@ fun ColumnScope.LeadershipStart(
                     Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }
+            // Ohne Wetter sagt der Satz, warum (Ort fehlt, nicht gefunden, Dienst nicht erreichbar); mit Wetter bleibt er weg.
+            if (data.weather?.days.isNullOrEmpty()) WeatherPlaceNotice(data.weather?.place)
             value.own?.let { own ->
                 StartSection(R.string.start_for_you) {
                     if (own.isEmpty()) {

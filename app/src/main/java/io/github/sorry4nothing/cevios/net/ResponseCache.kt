@@ -15,6 +15,15 @@ interface ResponseCache {
 
     fun load(path: String): CachedBody?
 
+    /**
+     * Eigene Angaben der Person zu einem Lager, die nie an den Server gehen (die Haken der Abzählliste): verschlüsselt im Ordner des Lagers,
+     * `key` nur aus Kleinbuchstaben und «-». Sie gehen mit [deleteCamp], [retainOnly] und [clear] weg wie der Stand der Antworten.
+     */
+    fun storeLocal(campId: String, key: String, text: String) = Unit
+
+    /** Was [storeLocal] gespeichert hat; `null`, wenn nichts da ist, die Datei kaputt oder älter als 30 Tage ist. */
+    fun loadLocal(campId: String, key: String): String? = null
+
     /** Löscht alles zu diesem Lager. */
     fun deleteCamp(campId: String)
 

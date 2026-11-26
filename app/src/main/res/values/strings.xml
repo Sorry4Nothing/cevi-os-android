@@ -116,6 +116,7 @@
     <string name="state_session_text">Du warst länger nicht aktiv. Zu deiner Sicherheit haben wir dich abgemeldet.</string>
     <string name="program_add_to_calendar">Zum Kalender hinzufügen</string>
     <string name="program_no_calendar_app">Auf diesem Gerät gibt es keine Kalender-App.</string>
+    <string name="program_calendar_loading">Kalendereintrag wird geholt</string>
     <string name="event_section">Anmeldung</string>
     <string name="event_registered">Angemeldet</string>
     <string name="event_not_registered">Noch nicht angemeldet</string>
@@ -206,6 +207,10 @@
     <string name="notifications_programs_hint">Von der Leitung und zu offenen Zusagen</string>
     <string name="notifications_registrations">An- und Abmeldungen</string>
     <string name="notifications_registrations_hint">Wenn sich jemand für ein Programm an- oder abmeldet</string>
+    <string name="notifications_proposal_decision">Entscheid zu deinem Terminvorschlag</string>
+    <string name="notifications_proposal_decision_hint">Wenn die Abteilungsleitung deinen Vorschlag freigibt oder ablehnt</string>
+    <string name="notifications_room_decision">Entscheid zu deiner Raumanfrage</string>
+    <string name="notifications_room_decision_hint">Wenn das Team deine Anfrage bestätigt oder ablehnt</string>
     <string name="notifications_device_off">Dein Gerät lässt dieser App keine Benachrichtigungen zeigen. Du bekommst keine, auch wenn die Schalter an sind.</string>
     <string name="notifications_open_settings">In den Einstellungen erlauben</string>
     <string name="notifications_privacy">Eine Benachrichtigung sagt nur, dass es etwas Neues gibt. Der Text einer Nachricht und Namen stehen nie darin.</string>
@@ -726,7 +731,6 @@
 
     <!-- Gruppennamen für den Screenreader (kurz, als Satzteil) -->
     <string name="group_people_or_team">Teilnehmende oder Team</string>
-    <string name="group_count_filter">Nach Stufe oder Gruppe filtern</string>
     <string name="group_filter_stage">Nach Stufe filtern</string>
     <string name="group_assign_kind">Kinder oder Leitende</string>
     <string name="group_inbox_kind">Art des Eintrags</string>

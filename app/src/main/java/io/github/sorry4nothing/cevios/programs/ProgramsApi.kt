@@ -16,7 +16,16 @@ private const val PAGE_SIZE = 100
 /** Schutz vor einer Endlosschleife: Mit 100 Terminen je Seite sind 20 Seiten weit mehr als ein halbes Jahr. */
 private const val MAX_PAGES = 20
 
+/** Eine Kalenderdatei mit einem Termin ist ein paar hundert Bytes gross; alles über 64 KB ist keine. */
+private const val MAX_ICS_BYTES = 64 * 1024
+
 class ProgramsApi(private val api: ApiClient) {
+    /**
+     * Der Termin als Kalenderdatei (`text/calendar`, ein `VEVENT` wie im Kalenderabo, gleiche `UID`): «Zum Kalender hinzufügen» öffnet sie in
+     * der Kalender-App. Die Termin-ID ist die Programm-ID.
+     */
+    suspend fun calendarFile(id: String): ApiResult<ByteArray> = api.getBytes("/api/v1/termine/$id.ics", MAX_ICS_BYTES)
+
     /**
      * «Mein Kalender»: die Termine, die das Fenster `from` bis `until` (Schweizer Kalendertage, inklusive) berühren und die die
      * Person sieht. Der Server liefert sie seitenweise; die App holt alle Seiten (höchstens [MAX_PAGES]) und gibt eine Liste zurück.

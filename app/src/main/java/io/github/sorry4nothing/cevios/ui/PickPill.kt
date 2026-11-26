@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
@@ -24,6 +27,12 @@ import io.github.sorry4nothing.cevios.ui.theme.Pill
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
+
+/**
+ * Gruppe von Auswahlpillen mit Namen für den Screenreader: kurz, als Satzteil («Kommst du?»). Reiterleisten (`Role.Tab`) brauchen
+ * keinen Namen, wenn die Beschriftung schon im Titel steht: dort genügt `selectableGroup()`.
+ */
+fun Modifier.pickGroup(name: String): Modifier = selectableGroup().semantics { contentDescription = name }
 
 /**
  * Auswahlpille (Entwurf `cv-pickpill`): offen mit Rand, gewählt in `accent` mit Häkchen. Der Zustand steht in Farbe, Häkchen und

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +30,7 @@ import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
@@ -92,13 +92,13 @@ fun CountScreen(
                             )
                         }
                         item {
-                            FlowRow(Modifier.selectableGroup().padding(vertical = Spacing.s2), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                            FlowRow(Modifier.pickGroup(stringResource(R.string.group_people_or_team)).padding(vertical = Spacing.s2), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                                 PickPill(stringResource(R.string.count_kind_children), !filter.team, { vm.setFilter(CountFilter()) })
                                 PickPill(stringResource(R.string.count_kind_team), filter.team, { vm.setFilter(CountFilter(team = true)) })
                             }
                         }
                         if (!filter.team && (stages.isNotEmpty() || groups.isNotEmpty())) item {
-                            FlowRow(Modifier.selectableGroup().padding(bottom = Spacing.s2), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                            FlowRow(Modifier.pickGroup(stringResource(R.string.group_count_filter)).padding(bottom = Spacing.s2), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                                 PickPill(stringResource(R.string.filter_all), !filtered, { vm.setFilter(CountFilter()) })
                                 stages.forEach { s -> PickPill(s, filter.stage == s, { vm.setFilter(CountFilter(stage = s)) }) }
                                 groups.forEach { g -> PickPill(g.name, filter.groupId == g.id, { vm.setFilter(CountFilter(groupId = g.id)) }) }

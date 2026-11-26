@@ -81,6 +81,19 @@ class ProfileImagesTest {
     }
 
     @Test
+    fun anArticleImageComesFromTheMediaRouteAndMayBeBigger() {
+        assertEquals("/api/v1/medien/$id", mediumPath(id))
+        assertTrue(isProfileImagePath(mediumPath(id)))
+        assertFalse(isProfileImagePath("https://boese.example/api/v1/medien/$id"))
+        assertFalse(isProfileImagePath("/api/v1/medien/$id/../../ich"))
+        assertFalse(isProfileImagePath("/api/v1/admin/medien/$id"))
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(ByteArray(900 * 1024))).build())
+        assertEquals(900 * 1024, ((runBlocking { images.load(mediumPath(id)) }) as ApiResult.Ok).value.size)
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(ByteArray(1100 * 1024))).build())
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN), runBlocking { images.load(mediumPath(id)) })
+    }
+
+    @Test
     fun missingImageIsNotFound() {
         server.enqueue(MockResponse.Builder().code(404).body("""{"code":"NICHT_GEFUNDEN","message":"x"}""").build())
         assertEquals(ApiResult.Failure(ApiError.NOT_FOUND), runBlocking { images.load("/api/v1/personen/$id/bild") })

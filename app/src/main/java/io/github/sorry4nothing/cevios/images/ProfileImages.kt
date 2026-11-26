@@ -25,16 +25,25 @@ private const val CACHE_BYTES = 16 * 1024 * 1024
  * `/api/v1/stufen/{id}/logo`, mit `?v=…` für die Fassung.
  * Alles andere (anderer Host, andere Route) lädt die App nicht: Ein fremder Host bekäme sonst das Sitzungscookie.
  */
-private val IMAGE_PATH = Regex("^/api/v1/(personen/[0-9a-fA-F-]{36}/bild|stufen/[0-9a-fA-F-]{36}/logo)(\\?[A-Za-z0-9=&._-]{0,64})?$")
+private val IMAGE_PATH = Regex("^/api/v1/(personen/[0-9a-fA-F-]{36}/bild|stufen/[0-9a-fA-F-]{36}/logo|medien/[0-9a-fA-F-]{36})(\\?[A-Za-z0-9=&._-]{0,64})?$")
 
 fun isProfileImagePath(path: String): Boolean = IMAGE_PATH.matches(path)
+
+/** Bilder aus dem Medienspeicher (Lädeli-Artikel) sind WebP und können grösser sein als ein Profilbild. */
+private const val MAX_MEDIUM_BYTES = 1024 * 1024
+
+/** Kürzeste Seite, auf die ein grosses Bild beim Laden verkleinert wird; für Vorschaubilder genügt das mehrfach. */
+private const val MAX_DECODED_SIDE = 512
+
+/** Die Adresse eines Bildes aus dem Medienspeicher (`GET /api/v1/medien/{id}`, öffentlich oder mit Sitzung); die ID kommt vom Server. */
+fun mediumPath(mediumId: String): String = "/api/v1/medien/$mediumId"
 
 /** Der Zugang zu den Profilbildern des Backends. */
 class ProfileImageApi(private val api: ApiClient) {
     /** Lädt ein Bild mit der Sitzung. Eine Adresse, die weder Profilbild noch Stufenlogo nennt, gilt als nicht gefunden. */
     suspend fun load(path: String): ApiResult<ByteArray> =
         if (isProfileImagePath(path)) {
-            api.getBytes(path, MAX_IMAGE_BYTES)
+            api.getBytes(path, if (path.startsWith("/api/v1/medien/")) MAX_MEDIUM_BYTES else MAX_IMAGE_BYTES)
         } else {
             ApiResult.Failure(ApiError.NOT_FOUND)
         }
@@ -61,9 +70,18 @@ class ProfileImages(private val api: ProfileImageApi) : ViewModel() {
 
     private suspend fun fetch(path: String): Bitmap? {
         val bytes = (api.load(path) as? ApiResult.Ok)?.value
-        val bitmap = bytes?.let { withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(it, 0, it.size) } }
+        val bitmap = bytes?.let { withContext(Dispatchers.Default) { decode(it) } }
         if (bitmap == null) failed += path else cache.put(path, bitmap)
         return bitmap
+    }
+
+    /** Liest das Bild, ein grosses verkleinert (ein Vorschaubild braucht keine 4000 Pixel im Speicher). */
+    private fun decode(bytes: ByteArray): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val options = BitmapFactory.Options().apply { inSampleSize = ProfileImageEncoder.sampleSize(bounds.outWidth, bounds.outHeight, MAX_DECODED_SIDE) }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }
 
     override fun onCleared() {

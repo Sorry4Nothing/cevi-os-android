@@ -175,18 +175,21 @@ private fun ItemCard(
             .padding(horizontal = 14.dp, vertical = Spacing.s3),
         verticalArrangement = Arrangement.spacedBy(Spacing.s2),
     ) {
-        // Name, Preis und Hinweis lesen sich als ein Satz; die Bedienelemente darunter bleiben einzeln.
-        Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
-                Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                val spoken = spokenChf(item.priceCents)
-                Text(
-                    formatChf(item.priceCents),
-                    Modifier.semantics { contentDescription = spoken },
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = TNUM),
-                )
+        // Name, Preis und Hinweis lesen sich als ein Satz; die Bedienelemente darunter bleiben einzeln. Das Bild steht daneben und ist dekorativ.
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
+            item.mediumId?.let { ItemImage(it) }
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
+                    Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    val spoken = spokenChf(item.priceCents)
+                    Text(
+                        formatChf(item.priceCents),
+                        Modifier.semantics { contentDescription = spoken },
+                        style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = TNUM),
+                    )
+                }
+                item.note?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant) }
             }
-            item.note?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant) }
         }
         if (!item.available) {
             StatusChip(ChipKind.REVIEW, stringResource(R.string.store_item_gone))
@@ -400,17 +403,20 @@ private fun LineCard(item: ShopItem, line: CartLine, maxQuantity: Int, enabled: 
     ) {
         val spokenSum = spokenChf(sum)
         val size = line.variant?.let { stringResource(R.string.store_line_size, it) }
-        Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
-                Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Text(
-                    formatChf(sum), Modifier.semantics { contentDescription = spokenSum },
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = TNUM),
-                )
-            }
-            size?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant) }
-            if (line.quantity > 1) {
-                Text(stringResource(R.string.store_line_each, formatChf(item.priceCents)), style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = TNUM), color = scheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
+            item.mediumId?.let { ItemImage(it, size = 56.dp) }
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(Spacing.s1)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
+                    Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    Text(
+                        formatChf(sum), Modifier.semantics { contentDescription = spokenSum },
+                        style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = TNUM),
+                    )
+                }
+                size?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant) }
+                if (line.quantity > 1) {
+                    Text(stringResource(R.string.store_line_each, formatChf(item.priceCents)), style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = TNUM), color = scheme.onSurfaceVariant)
+                }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {

@@ -17,6 +17,8 @@ data class ShopItem(
     @SerialName("hinweis") val note: String? = null,
     /** Schon unter Berücksichtigung der Grössen gerechnet (alle Grössen weg heisst `false`). */
     @SerialName("verfuegbar") val available: Boolean = true,
+    /** Das Bild aus dem Medienspeicher (`GET /api/v1/medien/{id}`, öffentlich); `null` ohne Bild. */
+    @SerialName("mediumId") val mediumId: String? = null,
 )
 
 const val SIZE_UNIT = "einheit"

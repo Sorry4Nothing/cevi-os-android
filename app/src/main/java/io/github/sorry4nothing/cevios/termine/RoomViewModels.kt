@@ -154,3 +154,76 @@ class RoomsViewModel(
         if (_list.value.cancelling == null) _list.value = ListState()
     }
 }
+
+/**
+ * «Raumanfragen entscheiden» für das zuständige Team. Die Antwort von `…/offen` ist die einzige Auskunft, ob die Person zuständig ist:
+ * Eine leere Liste heisst «über nichts zuständig» oder «nichts offen»; der Einstieg im Profil steht nur bei offenen Anfragen.
+ * Ein Entscheid geht genau einmal hinaus (keine `clientOpId`): Bei Netzfehler wiederholt nichts von selbst, die Person prüft zuerst die Liste.
+ */
+class RoomDecisionsViewModel(private val api: TermineApi) : ViewModel() {
+    data class DecideState(val deciding: String? = null, val notice: DecisionNotice? = null)
+
+    private val _open = MutableStateFlow<ApiResult<RoomRequestPage>?>(null)
+    val open: StateFlow<ApiResult<RoomRequestPage>?> = _open.asStateFlow()
+
+    private val _state = MutableStateFlow(DecideState())
+    val state: StateFlow<DecideState> = _state.asStateFlow()
+
+    /** Anfragen, deren Zeit der Server als belegt gemeldet hat: Dort bleibt nur «Ablehnen». */
+    private val _blocked = MutableStateFlow<Set<String>>(emptySet())
+    val blocked: StateFlow<Set<String>> = _blocked.asStateFlow()
+
+    /** Zählt die Abfragen: Nur die jüngste Antwort gilt, eine ältere würde eine schon entschiedene Anfrage zurückbringen. */
+    private var generation = 0
+
+    /** Fürs Profil: lädt still, die Liste bleibt stehen, bis die neue da ist. */
+    fun check() = fetch()
+
+    /** Beim Öffnen und bei «Nochmals versuchen»: zeigt bis dahin das Skelett. */
+    fun reload() {
+        _open.value = null
+        _state.value = DecideState()
+        _blocked.value = emptySet()
+        fetch(loud = true)
+    }
+
+    private fun fetch(loud: Boolean = false) {
+        val mine = ++generation
+        viewModelScope.launch {
+            val result = api.openRoomRequests()
+            if (mine != generation) return@launch
+            // Ein Fehler beim stillen Nachladen lässt die Liste stehen, statt sie durch eine Fehlerseite zu ersetzen.
+            if (!loud && result is ApiResult.Failure && _open.value is ApiResult.Ok) return@launch
+            _open.value = result
+        }
+    }
+
+    /** `reason` nur beim Ablehnen (Pflicht); beim Annehmen `null`. Läuft schon ein Entscheid, zählt der zweite Tipp nicht. */
+    fun decide(request: RoomRequest, approve: Boolean, reason: String? = null) {
+        if (_state.value.deciding != null) return
+        val body = if (approve) RoomDecisionBody("annehmen") else RoomDecisionBody("ablehnen", reason ?: return)
+        _state.value = DecideState(deciding = request.id)
+        viewModelScope.launch {
+            val result = api.decideRoomRequest(request.id, body)
+            val notice = decisionNotice(approve, result)
+            _state.value = DecideState(notice = notice)
+            if (notice == DecisionNotice.BUSY) _blocked.update { it + request.id }
+            // Entschieden, zurückgezogen oder weg: Die Karte fällt sofort weg, die Antwort des Servers bestätigt es danach.
+            if (notice.reloads) {
+                (_open.value as? ApiResult.Ok)?.let { ok -> _open.value = ApiResult.Ok(ok.value.copy(requests = ok.value.requests.filter { it.id != request.id })) }
+                fetch()
+            }
+        }
+    }
+
+    /** Lädt die Liste nach einem unklaren Ausgang neu (Netz oder Fehler), ohne das Skelett. */
+    fun refresh() {
+        _state.value = DecideState()
+        fetch(loud = true)
+    }
+
+    /** Schliesst den Hinweis. Läuft gerade ein Entscheid, bleibt der Stand, damit die Antwort nicht ins Leere geht. */
+    fun dismissNotice() {
+        if (_state.value.deciding == null) _state.value = DecideState()
+    }
+}

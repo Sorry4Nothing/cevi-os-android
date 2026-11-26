@@ -1,5 +1,7 @@
 package io.github.sorry4nothing.cevios.termine
 
+import io.github.sorry4nothing.cevios.net.ApiError
+import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.programs.SWISS_ZONE
 import java.time.DayOfWeek
 import java.time.Instant
@@ -104,6 +106,48 @@ private fun roomWhenText(startIso: String, endIso: String, spoken: Boolean): Str
 } catch (e: DateTimeParseException) {
     ""
 }
+
+/**
+ * Was nach einem Entscheid in der Liste steht. `RELOADS` laden die Liste neu, weil der Stand des Servers jetzt anders ist;
+ * `OFFLINE` und `FAILED` laden nicht von selbst und senden nie nochmals: Ob der Entscheid ankam, ist offen, die Person prüft zuerst die Liste.
+ */
+enum class DecisionNotice(val reloads: Boolean) {
+    CONFIRMED(true), REJECTED(true),
+
+    /** 409 `STATUS_UNGUELTIG`: schon entschieden, zurückgezogen oder vorbei. */
+    ALREADY_DECIDED(true),
+
+    /** 409 `RAUM_BELEGT`: Annehmen geht nicht mehr, Ablehnen schon. */
+    BUSY(false),
+
+    /** 404: Die Anfrage gibt es nicht mehr. */
+    GONE(true),
+
+    /** 403 ohne zweiten Faktor: Entscheiden mit einer Gruppenrolle geht nur am Computer. */
+    SECOND_FACTOR(false),
+
+    /** Sonst 403 (auch `EIGENE_ANFRAGE`): kein Recht für diesen Raum. */
+    NOT_ALLOWED(true),
+    OFFLINE(false),
+    FAILED(false),
+}
+
+/** Der Hinweis zum Ergebnis eines Entscheids (`approve`: annehmen, sonst ablehnen). */
+fun decisionNotice(approve: Boolean, result: ApiResult<*>): DecisionNotice = when (result) {
+    is ApiResult.Ok -> if (approve) DecisionNotice.CONFIRMED else DecisionNotice.REJECTED
+    is ApiResult.Failure -> when {
+        result.code == "STATUS_UNGUELTIG" -> DecisionNotice.ALREADY_DECIDED
+        result.code == "RAUM_BELEGT" -> DecisionNotice.BUSY
+        result.error == ApiError.NOT_FOUND -> DecisionNotice.GONE
+        result.error == ApiError.SECOND_FACTOR_MISSING -> DecisionNotice.SECOND_FACTOR
+        result.error == ApiError.FORBIDDEN -> DecisionNotice.NOT_ALLOWED
+        result.error == ApiError.NETWORK -> DecisionNotice.OFFLINE
+        else -> DecisionNotice.FAILED
+    }
+}
+
+/** Die Begründung für das Ablehnen: ohne Leerraum am Rand, 1 bis [ROOM_REASON_MAX] Zeichen, sonst `null`. */
+fun rejectionReason(text: String): String? = text.trim().takeIf { it.isNotEmpty() && it.length <= ROOM_REASON_MAX }
 
 /** «Samstag, 12.12.» für den Satz bei einer Überschneidung. */
 fun roomDayLong(date: LocalDate): String = "${dayNameLong(date.dayOfWeek)}, ${date.dayOfMonth}.${date.monthValue}."

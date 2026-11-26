@@ -131,13 +131,12 @@ data class EventForm(
     @SerialName("tagBis") val dayTo: String? = null,
     @SerialName("anmeldungOffen") val open: Boolean,
     @SerialName("frist") val deadline: String? = null,
-    /** `kind` (ein Elternteil meldet sein Kind an) oder `person` (man meldet sich selbst an). */
-    @SerialName("anmeldungFuer") val registerFor: String,
+    // `anmeldungFuer` ist veraltet (#844): Wer sich für wen anmeldet, folgt aus `teilnehmende`; die App liest das Feld nicht mehr.
     @SerialName("felder") val fields: List<EventField> = emptyList(),
     @SerialName("teilnehmende") val participants: List<EventParticipant> = emptyList(),
 )
 
-/** Die Antworten einer Anmeldung; `childId` nur bei `kind`, bei `person` wäre es ein Fehler (400). */
+/** Die Antworten einer Anmeldung; ohne `childId` meldet sich die Person selbst an. */
 @Serializable
 data class EventRegistrationRequest(
     @SerialName("kindId") val childId: String? = null,

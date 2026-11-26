@@ -106,7 +106,7 @@ class TermineLogicTest {
     }
 
     private fun form(allDay: Boolean, from: String?, to: String?, start: String? = null, end: String? = null) =
-        EventForm("e", "t", "Lager", allDay, start, end, from, to, true, null, "kind")
+        EventForm("e", "t", "Lager", allDay, start, end, from, to, true, null)
 
     @Test
     fun theDateLineNamesDaysAndTimes() {

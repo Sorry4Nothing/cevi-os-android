@@ -7,7 +7,7 @@ Diese Ordner enthält eine Kopie des Vertrags, an den sich die App hält. Die Qu
 | `openapi.yaml` | Routen, Request- und Response-Typen, Pflichtfelder, Nullability, Fehlercodes |
 | `endpunkte.md` | Pro Route: Zweck und welche Rolle welchen Status bekommt (2xx erlaubt, 401 nicht angemeldet, 403 kein Recht, 404 unsichtbar). Vom Backend aus der Rechte-Matrix erzeugt |
 
-**Stand der Kopie:** 26. November 2026, beide Dateien wie auf `develop` des Backends (`31fb03f`: Rechte-Umbau mit `abteilungsleitung` und `entwickler` statt `admin`, `clientArt`, Nachweis der App, `ort` des Wetters nur noch lesend; dazu Routen ohne Entwurf in der App: Lädeli, Fotoalben, Formulare, Cevi-DB, Website-Konto, Belegungsplan der Räume).
+**Stand der Kopie:** 26. November 2026, beide Dateien wie auf `develop` des Backends (`e030c7a`, zuletzt nachgeführt für die Seite des Lagers auf der Website, nur Verwaltung; davor `31fb03f`: Rechte-Umbau mit `abteilungsleitung` und `entwickler` statt `admin`, `clientArt`, Nachweis der App, `ort` des Wetters nur noch lesend; dazu Routen ohne Entwurf in der App: Lädeli, Fotoalben, Formulare, Cevi-DB, Website-Konto, Belegungsplan der Räume).
 
 Beide Dateien enthalten nur Platzhalter (`https://api.example.org`, `…@benutzer.invalid`): keine echten Adressen, Namen oder Zugangsdaten. Die Adresse des Servers steht nie im Repo, sondern in `~/.gradle/gradle.properties` (`ceviApiBaseUrl`).
 

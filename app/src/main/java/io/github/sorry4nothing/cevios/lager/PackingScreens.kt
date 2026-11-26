@@ -35,6 +35,7 @@ import io.github.sorry4nothing.cevios.ui.RoundButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
 /**
@@ -98,7 +99,10 @@ fun PackingScreen(frame: LiveFrame) {
                                     removed.forEach { item ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                             Text(item.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                                            if (tick) TextActionButton(stringResource(R.string.pack_restore), { vm.restorePackItem(item.id) })
+                                            if (tick) {
+                                                val restore = stringResource(R.string.pack_restore)
+                                                TextActionButton(restore, { vm.restorePackItem(item.id) }, Modifier.rowAction(restore, item.text))
+                                            }
                                         }
                                     }
                                 }

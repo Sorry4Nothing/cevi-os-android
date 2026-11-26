@@ -41,6 +41,7 @@ import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import java.time.Instant
@@ -169,7 +170,10 @@ private fun ChangeRow(change: QueuedChange, onDecide: (QueuedChange) -> Unit, on
             Text(listOfNotNull(time, reason).joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         StateChip(change)
-        if (change.state == ChangeState.REJECTED) TextActionButton(stringResource(R.string.change_discard), { onDiscard(change) })
+        if (change.state == ChangeState.REJECTED) {
+            val discard = stringResource(R.string.change_discard)
+            TextActionButton(discard, { onDiscard(change) }, Modifier.rowAction(discard, change.summary))
+        }
     }
 }
 

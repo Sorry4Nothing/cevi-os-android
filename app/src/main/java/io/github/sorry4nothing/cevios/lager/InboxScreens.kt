@@ -57,6 +57,7 @@ import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
@@ -249,9 +250,14 @@ private fun InboxCard(entry: InboxEntry, rights: MeetingRights, onAnswer: (Inbox
         entry.reply?.let { Text(stringResource(R.string.inbox_reply_is, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (rights.answerInbox) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                OutlinedPillButton(stringResource(R.string.inbox_answer), { onAnswer(entry) })
-                OutlinedPillButton(stringResource(R.string.inbox_assign), { onAssign(entry) })
-                if (entry.agendaItemId == null && rights.editMeetings) OutlinedPillButton(stringResource(R.string.inbox_to_agenda), { onAgenda(entry) })
+                val answer = stringResource(R.string.inbox_answer)
+                val assign = stringResource(R.string.inbox_assign)
+                OutlinedPillButton(answer, { onAnswer(entry) }, Modifier.rowAction(answer, entry.text))
+                OutlinedPillButton(assign, { onAssign(entry) }, Modifier.rowAction(assign, entry.text))
+                if (entry.agendaItemId == null && rights.editMeetings) {
+                    val toAgenda = stringResource(R.string.inbox_to_agenda)
+                    OutlinedPillButton(toAgenda, { onAgenda(entry) }, Modifier.rowAction(toAgenda, entry.text))
+                }
             }
         }
     }
@@ -532,7 +538,10 @@ fun LagerNotificationsScreen(
                                                 StatusChip(ChipKind.PENDING, stringResource(R.string.notif_unread))
                                             }
                                         }
-                                        if (!entry.read) TextActionButton(stringResource(R.string.notif_mark_read), { vm.markRead(listOf(entry.id)) })
+                                        if (!entry.read) {
+                                            val markRead = stringResource(R.string.notif_mark_read)
+                                            TextActionButton(markRead, { vm.markRead(listOf(entry.id)) }, Modifier.rowAction(markRead, text))
+                                        }
                                     }
                                 }
                             }

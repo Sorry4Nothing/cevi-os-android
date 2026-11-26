@@ -260,6 +260,7 @@ fun AgendaScreen(
     onOpenMinutes: () -> Unit,
     onShareCalendar: () -> Unit,
     onBack: () -> Unit,
+    onDownloadCalendar: (() -> Unit)? = null,
 ) {
     val state by vm.state.collectAsState()
     val members by vm.members.collectAsState()
@@ -312,6 +313,7 @@ fun AgendaScreen(
                     if (!rights.readAll) {
                         // Das Team sieht von einem Team-Höck nur Datum, Zeit, Titel und Ort.
                         item { OutlinedPillButton(stringResource(R.string.meeting_calendar), onShareCalendar, Modifier.fillMaxWidth(), icon = R.drawable.ic_calendar_plus) }
+                        onDownloadCalendar?.let { download -> item { OutlinedPillButton(stringResource(R.string.dl_calendar), download, Modifier.fillMaxWidth(), icon = R.drawable.ic_download) } }
                         return@LazyColumn
                     }
                     if (items.isEmpty()) {
@@ -371,6 +373,7 @@ fun AgendaScreen(
                                 add(stringResource(R.string.meeting_edit) to { meetingEdit = true })
                             }
                             add(stringResource(R.string.meeting_calendar) to onShareCalendar)
+                            onDownloadCalendar?.let { add(stringResource(R.string.dl_calendar) to it) }
                             if (rights.editMeetings) add(stringResource(R.string.meeting_delete) to { deleteMeeting = true })
                         },
                         onDismiss = { menu = false },

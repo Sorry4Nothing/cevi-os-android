@@ -63,8 +63,17 @@ import io.github.sorry4nothing.cevios.lager.TeamStart
 import io.github.sorry4nothing.cevios.lager.CampInfo
 import io.github.sorry4nothing.cevios.lager.CampListScreen
 import io.github.sorry4nothing.cevios.lager.CampStartScreen
+import io.github.sorry4nothing.cevios.lager.CampCache
 import io.github.sorry4nothing.cevios.lager.CampViewModel
+import io.github.sorry4nothing.cevios.lager.LocalDownloads
+import io.github.sorry4nothing.cevios.downloads.Downloads
+import io.github.sorry4nothing.cevios.downloads.DownloadsViewModel
+import io.github.sorry4nothing.cevios.downloads.LinkDownloader
+import io.github.sorry4nothing.cevios.lager.LocalStaleSince
 import io.github.sorry4nothing.cevios.lager.ChangeState
+import io.github.sorry4nothing.cevios.lager.CheckApi
+import io.github.sorry4nothing.cevios.lager.CheckRights
+import io.github.sorry4nothing.cevios.lager.CheckViewModel
 import io.github.sorry4nothing.cevios.lager.ConflictScreen
 import io.github.sorry4nothing.cevios.lager.ModeMenu
 import io.github.sorry4nothing.cevios.lager.MoreEntry
@@ -176,9 +185,16 @@ import io.github.sorry4nothing.cevios.termine.EventViewModel
 import io.github.sorry4nothing.cevios.termine.GroupsSection
 import io.github.sorry4nothing.cevios.termine.ProposalScreen
 import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
+import io.github.sorry4nothing.cevios.termine.RoomDecisionScreen
+import io.github.sorry4nothing.cevios.termine.RoomDecisionsViewModel
 import io.github.sorry4nothing.cevios.termine.RoomListScreen
 import io.github.sorry4nothing.cevios.termine.RoomRequestScreen
 import io.github.sorry4nothing.cevios.termine.RoomsViewModel
+import io.github.sorry4nothing.cevios.laden.CartScreen
+import io.github.sorry4nothing.cevios.laden.OrdersScreen
+import io.github.sorry4nothing.cevios.laden.ShopApi
+import io.github.sorry4nothing.cevios.laden.ShopScreen
+import io.github.sorry4nothing.cevios.laden.ShopViewModel
 import io.github.sorry4nothing.cevios.termine.TermineApi
 import io.github.sorry4nothing.cevios.auth.SettingsCard
 import io.github.sorry4nothing.cevios.auth.SettingsRow
@@ -245,7 +261,7 @@ class MainActivity : FragmentActivity() {
         WidgetPreviews.publish(applicationContext)
         // Nach Drehen oder Prozess-Ende gilt der Push nicht noch einmal: Das Intent ist dann dasselbe wie beim ersten Start.
         if (savedInstanceState == null) pushTarget = targetOf(intent)
-        val client = ApiClient.create(applicationContext)
+        val client = ApiClient.create(applicationContext, CampCache.create(applicationContext))
         val lock = AppLock(applicationContext)
         val prompter = BiometricPrompter(this, lock)
         setContent { CeviTheme { Root(client, lock, prompter, pushTarget) { pushTarget = null } } }
@@ -258,7 +274,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
     val widgetContext = LocalContext.current.applicationContext
     val authApi = remember(client) { AuthApi(client, PlayIntegrity.forBuild(widgetContext)) }
     // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets und geteilte Dateien im Cache verschwinden.
-    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext) }, lock, client::hasSession) }
+    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext); Downloads.clear(widgetContext) }, lock, client::hasSession) }
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()
@@ -348,15 +364,17 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                         // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
                         val images = viewModel { ProfileImages(ProfileImageApi(client)) }
                         val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
-                        CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
+                        val staleSince by client.staleSince.collectAsState()
+                        CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos, LocalStaleSince provides staleSince) {
                             MainContent(
-                                ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
+                                ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), CheckApi(client), TermineApi(client), current.profile,
                                 passwordSaved, form, imageForm, auth,
                                 pushTarget, onPushTargetHandled,
                                 info = info,
                                 lockAvailable = lockAvailable,
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,
+                                shopApi = ShopApi(client),
                             )
                         }
                     }
@@ -399,6 +417,10 @@ private sealed interface Screen {
     data object Proposal : Screen { override val depth = 1 }
     data object Rooms : Screen { override val depth = 1 }
     data object RoomRequest : Screen { override val depth = 2 }
+    data object Shop : Screen { override val depth = 1 }
+    data object ShopCart : Screen { override val depth = 2 }
+    data object ShopOrders : Screen { override val depth = 2 }
+    data object RoomDecisions : Screen { override val depth = 1 }
 }
 
 @Composable
@@ -413,6 +435,7 @@ private fun MainContent(
     planningApi: PlanningApi,
     liveApi: LiveApi,
     archiveApi: ArchiveApi,
+    checkApi: CheckApi,
     termineApi: TermineApi,
     account: Profile,
     passwordSaved: Boolean,
@@ -425,6 +448,7 @@ private fun MainContent(
     lockAvailable: Boolean,
     lockEnabled: Boolean,
     onLockChange: (Boolean) -> Unit,
+    shopApi: ShopApi,
 ) {
     val context = LocalContext.current
     val resolver = context.contentResolver
@@ -433,15 +457,19 @@ private fun MainContent(
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
     val camp = viewModel { CampViewModel(campApi) }
+    val downloads = viewModel { DownloadsViewModel(Downloads.create(appContext), LinkDownloader(Downloads.create(appContext))) }
     val tasks = viewModel { TasksViewModel(tasksApi, camp, TaskPerson(account.id, account.name, account.ceviName), AndroidTaskTexts(appContext)) }
     val meetings = viewModel { MeetingsViewModel(meetingsApi, camp, AndroidCommsTexts(appContext)) }
     val comms = viewModel { CommsViewModel(commsApi, camp, AndroidCommsTexts(appContext)) }
     val planning = viewModel { PlanningViewModel(planningApi, camp, AndroidCommsTexts(appContext), account.id) }
     val live = viewModel { LiveViewModel(liveApi, camp, AndroidCommsTexts(appContext), account.id) }
     val archive = viewModel { ArchiveViewModel(archiveApi, meetingsApi, tasksApi, camp, AndroidCommsTexts(appContext)) }
+    val check = viewModel { CheckViewModel(checkApi, camp) { AndroidCommsTexts(appContext).fieldLabels() + ("erledigt" to appContext.getString(R.string.field_done)) } }
     val calendarLink = viewModel { CalendarLinkViewModel(termineApi) }
     val proposals = viewModel { ProposalsViewModel(termineApi) }
     val rooms = viewModel { RoomsViewModel(termineApi) }
+    val shop = viewModel { ShopViewModel(shopApi) }
+    val roomDecisions = viewModel { RoomDecisionsViewModel(termineApi) }
     val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
@@ -478,6 +506,11 @@ private fun MainContent(
     // Räume: «Meine Raumanfragen» (K3) und davon aus «Raum anfragen» (K2).
     var roomsOpen by rememberSaveable { mutableStateOf(false) }
     var roomRequestOpen by rememberSaveable { mutableStateOf(false) }
+    // Lädeli: Artikel, Warenkorb und «Meine Bestellungen».
+    var shopOpen by rememberSaveable { mutableStateOf(false) }
+    var shopCartOpen by rememberSaveable { mutableStateOf(false) }
+    var shopOrdersOpen by rememberSaveable { mutableStateOf(false) }
+    var roomDecideOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
@@ -507,11 +540,12 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false
+        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false; shopOpen = false; shopCartOpen = false; shopOrdersOpen = false; roomDecideOpen = false
         info.close()
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.RoomDecision -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomsOpen = true }
+            is PushTarget.RoomToDecide -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomDecideOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
             is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
             // Widgets: die Liste der Programme, die Chatliste oder eine Lager-Seite (das Lager kennt das Widget, sonst zeigt die Lagerwahl).
@@ -564,8 +598,8 @@ private fun MainContent(
     // Der Kalendereintrag eines Höcks, den der Server erzeugt hat, geht über die Systemauswahl weiter.
     val calendarFile by meetings.calendar.collectAsState()
     LaunchedEffect(calendarFile) {
-        calendarFile?.let { bytes ->
-            shareCalendarFile(context, bytes)
+        calendarFile?.let { file ->
+            if (file.download) downloads.saveBytes("hoeck.ics", file.bytes) else shareCalendarFile(context, file.bytes)
             meetings.calendarShared()
         }
     }
@@ -573,7 +607,7 @@ private fun MainContent(
     val sharedPdf by archive.pdf.collectAsState()
     LaunchedEffect(sharedPdf) {
         sharedPdf?.let { pdf ->
-            sharePdf(context, pdf.bytes, pdf.name)
+            if (pdf.download) downloads.saveBytes(pdf.name + ".pdf", pdf.bytes) else sharePdf(context, pdf.bytes, pdf.name)
             archive.pdfShared()
         }
     }
@@ -591,11 +625,16 @@ private fun MainContent(
     // Die Räume laden beim Öffnen neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(roomsOpen) { if (roomsOpen) rooms.reloadMine() }
     LaunchedEffect(roomRequestOpen) { if (roomRequestOpen) rooms.reloadRooms() }
+    // Das Lädeli und die Bestellungen laden beim Öffnen neu; der Warenkorb bleibt im Arbeitsspeicher.
+    LaunchedEffect(shopOpen) { if (shopOpen) shop.reload() }
+    LaunchedEffect(shopOrdersOpen) { if (shopOrdersOpen) shop.reloadOrders() }
+    LaunchedEffect(roomDecideOpen) { if (roomDecideOpen) roomDecisions.reload() }
     // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
     LaunchedEffect(destination) {
         if (destination == Destination.PROFILE) {
             calendarLink.load()
             proposals.loadOptions()
+            roomDecisions.check()
         }
     }
     LaunchedEffect(viewingRegistrations, openedProgram) {
@@ -627,6 +666,7 @@ private fun MainContent(
             planning.close()
             live.close()
             archive.close()
+            check.close()
         } else {
             camp.open(id)
             tasks.open(id)
@@ -635,12 +675,20 @@ private fun MainContent(
             planning.open(id)
             live.open(id)
             archive.open(id)
+            check.open(id)
             pendingArea?.let { applyCampArea(it); pendingArea = null }
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { camp.follow(id) }
         }
     }
     // Die Lagerliste und die Zähler lesen still neu, wenn der Bereich wechselt.
     LaunchedEffect(campArea) { camp.refreshCamps() }
+    // Die Liste der heruntergeladenen Dateien gehört zum offenen Lager. Gibt es ein Lager nicht mehr offen (aus der Liste verschwunden,
+    // abgeschlossen, archiviert, Zugriff entzogen), gehen seine Downloads weg.
+    LaunchedEffect(campId) { downloads.open(campId) }
+    val campList by camp.camps.collectAsState()
+    LaunchedEffect(campList) { (campList as? ApiResult.Ok)?.let { list -> downloads.retainOnly(list.value.filterNot { it.readOnly }.map { it.id }.toSet()) } }
+    val lostCamp by camp.lostAccess.collectAsState()
+    LaunchedEffect(lostCamp) { lostCamp?.let(downloads::deleteCamp) }
     // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
     // fragt sie nur, solange sie sichtbar ist.
     LaunchedEffect(destination, openedChat, phoneOpen) {
@@ -660,6 +708,7 @@ private fun MainContent(
         }
     }
 
+    CompositionLocalProvider(LocalDownloads provides downloads) {
     Surface(Modifier.fillMaxSize()) {
         val programId = openedProgram
         val chatId = openedChat
@@ -684,7 +733,8 @@ private fun MainContent(
         val planRights = PlanRights.of(campPermissions)
         val liveRights = LiveRights.of(campPermissions)
         val archiveRights = ArchiveRights.of(campPermissions)
-        SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
+        val checkRights = CheckRights.of(campPermissions)
+        SideEffect { check.rights = checkRights; tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
         // Wer Mitteilungen schreibt, wählt auch Ressorts und Gruppen als Empfänger; ohne Recht bleiben die Listen leer.
         val recipientRessorts = (tasks.ressorts.collectAsState().value as? ApiResult.Ok)?.value
         val recipientGroups = (planning.groups.collectAsState().value as? ApiResult.Ok)?.value?.groups
@@ -704,7 +754,8 @@ private fun MainContent(
         val liveConflict by live.writer.conflict.collectAsState()
         val archiveConflict by archive.writer.conflict.collectAsState()
         val planPeople by planning.people.collectAsState()
-        val directConflict = meetingConflict ?: commsConflict ?: planConflict ?: liveConflict ?: archiveConflict
+        val checkConflict by check.writer.conflict.collectAsState()
+        val directConflict = meetingConflict ?: commsConflict ?: planConflict ?: liveConflict ?: archiveConflict ?: checkConflict
         val taskList = (tasks.tasks.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
         val memberList by meetings.members.collectAsState()
         // Namen für die Marken @{person:…} in Titeln und Texten: bekannte Personen aus Aufgaben und Mitgliedern.
@@ -769,8 +820,12 @@ private fun MainContent(
             campArea && campId != null && inboxOpen -> Screen.Inbox
             campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
             openedEvent != null -> Screen.Event(openedEvent!!)
+            shopOrdersOpen -> Screen.ShopOrders
+            shopCartOpen -> Screen.ShopCart
+            shopOpen -> Screen.Shop
             roomRequestOpen -> Screen.RoomRequest
             roomsOpen -> Screen.Rooms
+            roomDecideOpen -> Screen.RoomDecisions
             proposalOpen -> Screen.Proposal
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
@@ -843,6 +898,69 @@ private fun MainContent(
                         onDismiss = rooms::dismissNotice,
                         onBack = leave,
                         onRetry = rooms::reloadMine,
+                    )
+                }
+                Screen.Shop -> {
+                    val leave = { shopOpen = false }
+                    BackHandler(onBack = leave)
+                    ShopScreen(
+                        view = shop.view.collectAsState().value,
+                        cart = shop.cart.collectAsState().value,
+                        picked = shop.picked.collectAsState().value,
+                        sizeMissing = shop.sizeMissing.collectAsState().value,
+                        cartNotice = shop.cartNotice.collectAsState().value,
+                        onPick = shop::pick,
+                        onAdd = shop::add,
+                        onDismissNotice = shop::dismissCartNotice,
+                        onOpenCart = { shop.dismissCartNotice(); shopCartOpen = true },
+                        onOrders = { shopOrdersOpen = true },
+                        onBack = leave,
+                        onRetry = shop::reload,
+                    )
+                }
+                Screen.ShopCart -> {
+                    val leave = { shopCartOpen = false; shop.leaveCart(); shop.dismissCartNotice() }
+                    BackHandler(onBack = leave)
+                    CartScreen(
+                        view = shop.view.collectAsState().value,
+                        cart = shop.cart.collectAsState().value,
+                        handover = shop.handover.collectAsState().value,
+                        send = shop.send.collectAsState().value,
+                        cartNotice = shop.cartNotice.collectAsState().value,
+                        onChange = shop::change,
+                        onHandover = shop::chooseHandover,
+                        onSubmit = shop::submit,
+                        onDismissNotice = shop::dismissCartNotice,
+                        onDismissSend = shop::dismissSendNotice,
+                        onOrders = { shopCartOpen = false; shop.leaveCart(); shopOrdersOpen = true },
+                        onBack = leave,
+                        onRetry = shop::reload,
+                    )
+                }
+                Screen.ShopOrders -> {
+                    val leave = { shopOrdersOpen = false; shop.dismissListNotice() }
+                    BackHandler(onBack = leave)
+                    OrdersScreen(
+                        orders = shop.orders.collectAsState().value,
+                        list = shop.list.collectAsState().value,
+                        onCancel = { shop.cancel(it.id) },
+                        onDismiss = shop::dismissListNotice,
+                        onBack = leave,
+                        onRetry = shop::reloadOrders,
+                    )
+                }
+                Screen.RoomDecisions -> {
+                    val leave = { roomDecideOpen = false; roomDecisions.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    RoomDecisionScreen(
+                        open = roomDecisions.open.collectAsState().value,
+                        state = roomDecisions.state.collectAsState().value,
+                        blocked = roomDecisions.blocked.collectAsState().value,
+                        onDecide = { request, approve, reason -> roomDecisions.decide(request, approve, reason) },
+                        onDismiss = roomDecisions::dismissNotice,
+                        onCheck = roomDecisions::refresh,
+                        onBack = leave,
+                        onRetry = roomDecisions::reload,
                     )
                 }
                 Screen.Proposal -> {
@@ -970,6 +1088,7 @@ private fun MainContent(
                         onOpenMinutes = { minutesFor = screen.meetingId },
                         onShareCalendar = { meetings.loadCalendar(screen.meetingId) },
                         onBack = leave,
+                        onDownloadCalendar = { meetings.loadCalendar(screen.meetingId, download = true) },
                     )
                 }
                 is Screen.Minutes -> {
@@ -980,6 +1099,7 @@ private fun MainContent(
                         onOpenQueue = { queueOpen = true },
                         onShareCalendar = { meetings.loadCalendar(screen.meetingId) },
                         onBack = leave,
+                        onDownloadCalendar = { meetings.loadCalendar(screen.meetingId, download = true) },
                     )
                 }
                 is Screen.MeetingMode -> {
@@ -994,7 +1114,7 @@ private fun MainContent(
                     )
                 }
                 is Screen.Live -> {
-                    val leave = if (screen.area == LiveArea.DAY) ({ liveArea = LiveArea.TODAY; liveDay = null; live.closeDay() }) else ({ liveArea = null; live.dismissNotice(); archive.dismissNotice(); archive.clearSearch() })
+                    val leave = if (screen.area == LiveArea.DAY) ({ liveArea = LiveArea.TODAY; liveDay = null; live.closeDay() }) else ({ liveArea = null; live.dismissNotice(); archive.dismissNotice(); archive.clearSearch(); check.dismissNotice() })
                     BackHandler(onBack = leave)
                     LiveScreen(
                         screen.area, liveDay,
@@ -1019,7 +1139,7 @@ private fun MainContent(
                                 }
                             },
                         ),
-                        tasks, taskList, archive, archiveRights,
+                        tasks, taskList, archive, archiveRights, check, checkRights,
                     )
                 }
                 is Screen.Plan -> {
@@ -1217,6 +1337,17 @@ private fun MainContent(
                                     SettingsCard {
                                         SettingsRow(R.drawable.ic_door, stringResource(R.string.room_row), onClick = { roomsOpen = true }, chevron = true)
                                     }
+                                    // Das Lädeli darf jede angemeldete Person lesen und bestellen (Vertrag `holeLaden`, `bestelleImLaden`).
+                                    SettingsCard {
+                                        SettingsRow(R.drawable.ic_bag, stringResource(R.string.store_row), onClick = { shopOpen = true }, chevron = true)
+                                    }
+                                    // Zuständig ist, wem der Server offene Anfragen liefert; sonst fehlt die Zeile.
+                                    val toDecide = (roomDecisions.open.collectAsState().value as? ApiResult.Ok)?.value?.requests?.size ?: 0
+                                    if (toDecide > 0) {
+                                        SettingsCard {
+                                            SettingsRow(R.drawable.ic_door, stringResource(R.string.decide_row), value = stringResource(R.string.decide_row_count, toDecide), onClick = { roomDecideOpen = true }, chevron = true)
+                                        }
+                                    }
                                 },
                                 lockAvailable = lockAvailable,
                                 lockEnabled = lockEnabled,
@@ -1309,6 +1440,7 @@ private fun MainContent(
                     // Jeder Eintrag steht nur, wenn das Lesen erlaubt ist (Rechte aus dem Lagerdetail); fehlt das Detail, fehlen sie alle.
                     if (campPermissions.may("zeitplan.lesen")) MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE } else null,
                     if (campPermissions.may("hoecks.lesen_alle", "hoecks.team_lesen")) MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true } else null,
+                    if (checkRights.read) MoreEntry(R.string.check_title, R.drawable.ic_shield) { moreOpen = false; liveArea = LiveArea.CHECK } else null,
                     if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS } else null,
                     if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS } else null,
                     if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.groups_title, R.drawable.ic_group) { moreOpen = false; planArea = PlanArea.GROUPS } else null,
@@ -1338,6 +1470,7 @@ private fun MainContent(
                     if (campPermissions.may("dokumente.lesen_alle", "dokumente.team_lesen")) MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS } else null,
                     if (archiveRights.readAddressBook) MoreEntry(R.string.ab_title, R.drawable.ic_book) { moreOpen = false; liveArea = LiveArea.ADDRESSBOOK } else null,
                     MoreEntry(R.string.print_title, R.drawable.ic_send) { moreOpen = false; liveArea = LiveArea.PRINTOUTS },
+                    MoreEntry(R.string.dl_title, R.drawable.ic_download) { moreOpen = false; liveArea = LiveArea.DOWNLOADS },
                     MoreEntry(R.string.search_title, R.drawable.ic_search) { moreOpen = false; liveArea = LiveArea.SEARCH },
                 )
             } else {
@@ -1353,5 +1486,6 @@ private fun MainContent(
                 onDismiss = { moreOpen = false },
             )
         }
+    }
     }
 }

@@ -51,6 +51,8 @@ class ApiClient(
     private val http: OkHttpClient,
     val json: Json = Json { ignoreUnknownKeys = true },
     private val storage: SessionStorage? = null,
+    /** Zuletzt geladener Stand der Lager für den Fall ohne Netz; `null`: nichts wird gespeichert (Widgets, Push). */
+    val cache: ResponseCache? = null,
 ) {
     private val base: HttpUrl = baseUrl.toHttpUrl()
 
@@ -72,9 +74,16 @@ class ApiClient(
     /** Ob ein Sitzungs-Cookie da ist; ohne eins gibt es nichts zu entsperren. */
     fun hasSession(): Boolean = storage?.read() != null
 
-    /** Vergisst das gespeicherte Cookie, auch ein halbes (`two_factor`). */
+    private val _staleSince = MutableStateFlow<Long?>(null)
+
+    /** Wann der Stand ist, den die App zuletzt aus dem Zwischenspeicher zeigte (das Netz fehlte); `null`, sobald eine Antwort wieder frisch vom Server kommt. */
+    val staleSince: StateFlow<Long?> = _staleSince.asStateFlow()
+
+    /** Vergisst das gespeicherte Cookie, auch ein halbes (`two_factor`), und löscht den Zwischenspeicher mit den Lager-Daten. */
     fun forgetSession() {
         storage?.write(null)
+        cache?.clear()
+        _staleSince.value = null
     }
 
     /** Adresse einer Seite des Backends (z. B. `/datenschutz`), zum Öffnen im Browser. */
@@ -86,8 +95,28 @@ class ApiClient(
 
     fun jsonBody(text: String): RequestBody = text.toRequestBody(JSON_TYPE)
 
-    suspend inline fun <reified T> get(path: String): ApiResult<T> =
-        send(request(path).get().build()) { json.decodeFromString<T>(it) }
+    suspend inline fun <reified T> get(path: String): ApiResult<T> = getDecoded(path) { json.decodeFromString<T>(it) }
+
+    /**
+     * GET mit Zwischenspeicher: Eine gelesene Antwort eines erlaubten Pfades wird gespeichert; fehlt das Netz, kommt die letzte
+     * gespeicherte (siehe [staleSince]). Jeder andere Fehler, auch 404 und 403, bleibt ein Fehler.
+     */
+    suspend fun <T> getDecoded(path: String, decode: (String) -> T): ApiResult<T> {
+        val request = request(path).get().build()
+        val store = cache?.takeIf { it.accepts(path) } ?: return send(request, decode)
+        val result = send(request) { text -> decode(text).also { store.store(path, text) } }
+        if (result is ApiResult.Ok) {
+            _staleSince.value = null
+        } else if (result is ApiResult.Failure && result.error == ApiError.NETWORK) {
+            val cached = store.load(path) ?: return result
+            return try {
+                ApiResult.Ok(decode(cached.text)).also { _staleSince.value = cached.savedAt }
+            } catch (e: RuntimeException) { // Stand nicht lesbar (zum Beispiel nach einem Update): so tun, als gäbe es ihn nicht
+                result
+            }
+        }
+        return result
+    }
 
     suspend inline fun <reified B, reified T> post(path: String, body: B): ApiResult<T> =
         send(request(path).post(jsonBody(json.encodeToString(body))).build()) { json.decodeFromString<T>(it) }
@@ -306,8 +335,8 @@ class ApiClient(
     companion object {
         private const val SIGN_IN_PATH = "/api/auth/sign-in"
         private const val PROOF_PATH = "/api/v1/app/nachweis"
-        /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed) und 503 (Wartung). */
-        private val CODE_STATUSES = setOf(400, 403, 409, 410, 503)
+        /** Antworten, deren Fehlercode die App liest: 400, 403 (zweiter Faktor), 409, 410 (Feed), 422 (Lädeli: Grösse nicht mehr zu haben) und 503 (Wartung). */
+        private val CODE_STATUSES = setOf(400, 403, 409, 410, 422, 503)
         private val SECOND_FACTOR_CODES = setOf("ZWEITER_FAKTOR_FEHLT", "ZWEITER_FAKTOR_SITZUNG")
         private const val VERSION_CONFLICT_CODE = "VERSION_KONFLIKT"
         private const val STREAM_TIMEOUT_SECONDS = 70L
@@ -330,9 +359,10 @@ class ApiClient(
                 .addInterceptor(SessionInterceptor(storage, appVersion))
                 .build()
 
-        fun create(context: Context): ApiClient {
+        /** Mit `cache` merkt sich der Client den zuletzt geladenen Stand der Lager; Widgets und Push brauchen ihn nicht. */
+        fun create(context: Context, cache: ResponseCache? = null): ApiClient {
             val storage = KeystoreSessionStorage(context)
-            return ApiClient(BuildConfig.API_BASE_URL, httpClient(storage, BuildConfig.VERSION_NAME), storage = storage)
+            return ApiClient(BuildConfig.API_BASE_URL, httpClient(storage, BuildConfig.VERSION_NAME), storage = storage, cache = cache)
         }
     }
 }

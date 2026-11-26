@@ -79,6 +79,7 @@ fun CampPage(
             }
             writer?.let { WriteErrorBanner(it) }
             banners()
+            DownloadBanner()
         }
         Box(Modifier.weight(1f).fillMaxWidth(), content = content)
     }

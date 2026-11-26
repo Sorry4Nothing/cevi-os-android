@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lädeli: Artikel, Warenkorb, Bestellen und Meine Bestellungen -->
+    <string name="store_row">Lädeli</string>
+    <string name="store_title">Lädeli</string>
+    <string name="store_back_profile">Zurück zu Profil</string>
+    <string name="store_back">Zurück zum Lädeli</string>
+    <string name="store_back_cart">Zurück zum Warenkorb</string>
+    <string name="store_loading">Lädeli wird geladen</string>
+    <string name="store_orders_action">Meine Bestellungen</string>
+    <string name="store_empty_title">Noch keine Artikel</string>
+    <string name="store_empty_text">Im Lädeli liegt im Moment nichts.</string>
+    <string name="store_closed">Das Lädeli nimmt im Moment keine Bestellungen an.</string>
+    <string name="store_item_gone">Im Moment nicht zu haben</string>
+    <string name="store_sizes_gone">Nicht zu haben: %1$s</string>
+    <string name="store_size">Grösse</string>
+    <string name="store_size_missing">Wähle eine Grösse.</string>
+    <string name="store_add">In den Warenkorb</string>
+    <string name="store_add_label">In den Warenkorb, %1$s</string>
+    <string name="store_in_cart">%1$d im Warenkorb</string>
+    <string name="store_cart_summary">%1$d Stück, %2$s</string>
+    <string name="store_cart_open">Warenkorb ansehen</string>
+
+    <!-- Warenkorb -->
+    <string name="store_cart_title">Warenkorb</string>
+    <string name="store_cart_loading">Warenkorb wird geladen</string>
+    <string name="store_cart_empty_title">Der Warenkorb ist leer</string>
+    <string name="store_cart_empty_text">Lege Artikel aus dem Lädeli hinein.</string>
+    <string name="store_cart_empty_action">Zum Lädeli</string>
+    <string name="store_line_size">Grösse %1$s</string>
+    <string name="store_line_each">%1$s pro Stück</string>
+    <string name="store_more_label">Ein Stück mehr, %1$s</string>
+    <string name="store_less_label">Ein Stück weniger, %1$s</string>
+    <string name="store_remove">Entfernen</string>
+    <string name="store_remove_label">Entfernen, %1$s</string>
+    <string name="store_cart_too_many">Du kannst höchstens %1$d verschiedene Artikel bestellen.</string>
+    <string name="store_cart_too_much">Von einem Artikel geht höchstens %1$d Stück.</string>
+    <string name="store_handover">Übergabe</string>
+    <string name="store_handover_error">Wähle, wie du die Bestellung bekommst.</string>
+    <string name="store_total">Summe</string>
+    <string name="store_payment">Bezahlung: %1$s</string>
+    <string name="store_minimum">Die Mindestbestellung ist %1$s. Es fehlen noch %2$s.</string>
+    <string name="store_closed_cart">Das Lädeli nimmt im Moment keine Bestellungen an. Dein Warenkorb bleibt, bis du die App schliesst.</string>
+    <string name="store_terms">Bestellbedingungen</string>
+    <string name="store_order">Bestellen</string>
+    <string name="store_ordering">Bestellung wird gesendet</string>
+    <string name="store_check">Bitte prüfe die markierten Angaben.</string>
+
+    <!-- Nach dem Bestellen -->
+    <string name="store_sent_title">Bestellung gesendet</string>
+    <string name="store_sent_text">Deine Bestellung ist angekommen. Übergabe: %1$s. Die Summe ist %2$s.</string>
+    <string name="store_sent_orders">Meine Bestellungen</string>
+    <string name="store_sent_back">Zum Lädeli</string>
+
+    <!-- Meldungen beim Bestellen -->
+    <string name="store_notice_closed">Das Lädeli nimmt im Moment keine Bestellungen an. Es wurde nichts bestellt.</string>
+    <string name="store_notice_price">Ein Preis hat sich geändert. Es wurde nichts bestellt. Prüfe die neue Summe und bestelle nochmals.</string>
+    <string name="store_notice_minimum">Die Summe liegt unter der Mindestbestellung. Es wurde nichts bestellt.</string>
+    <string name="store_notice_unavailable">Ein Artikel oder eine Grösse ist nicht mehr zu haben. Es wurde nichts bestellt. Was fehlt, ist aus dem Warenkorb genommen.</string>
+    <string name="store_notice_limit">Du hast schon die höchste Zahl offener Bestellungen. Warte, bis die Abteilung sie übergeben hat, oder storniere eine.</string>
+    <string name="store_notice_lines">Das sind zu viele verschiedene Artikel. Nimm einige heraus.</string>
+    <string name="store_notice_much">Von einem Artikel ist die Menge zu gross. Verringere sie.</string>
+    <string name="store_notice_changed">Das Lädeli hat sich geändert. Es wurde nichts bestellt. Prüfe deinen Warenkorb und bestelle nochmals.</string>
+    <string name="store_notice_fast">Du hast zu oft versucht zu bestellen. Warte einen Moment.</string>
+    <string name="store_notice_unsure">Es kam keine Antwort. Die Bestellung ist vielleicht trotzdem angekommen. Sieh in «Meine Bestellungen» nach, bevor du nochmals bestellst.</string>
+    <string name="store_notice_unsure_action">Meine Bestellungen ansehen</string>
+    <string name="store_notice_failed">Das hat nicht geklappt. Dein Warenkorb ist noch da. Versuche es nochmals.</string>
+
+    <!-- Meine Bestellungen -->
+    <string name="store_orders_title">Meine Bestellungen</string>
+    <string name="store_orders_loading">Bestellungen werden geladen</string>
+    <string name="store_orders_empty_title">Keine Bestellungen</string>
+    <string name="store_orders_empty_text">Du hast noch nichts bestellt.</string>
+    <string name="store_status_open">Offen</string>
+    <string name="store_status_ready">Bereit zur Übergabe</string>
+    <string name="store_status_done">Übergeben</string>
+    <string name="store_status_cancelled">Storniert</string>
+    <string name="store_order_date">Bestellt am %1$s</string>
+    <string name="store_order_handover">Übergabe: %1$s</string>
+    <string name="store_order_line">%1$d × %2$s</string>
+    <string name="store_order_line_size">%1$d × %2$s, Grösse %3$s</string>
+    <string name="store_order_cancel">Stornieren</string>
+    <string name="store_order_cancel_label">Stornieren, Bestellung vom %1$s</string>
+    <string name="store_order_cancelling">Wird storniert</string>
+    <string name="store_order_cancel_title">Bestellung stornieren?</string>
+    <string name="store_order_cancel_text">Die Bestellung vom %1$s über %2$s ist danach storniert. Das lässt sich nicht rückgängig machen.</string>
+    <string name="store_order_cancel_confirm">Bestellung stornieren</string>
+    <string name="store_list_cancelled">Die Bestellung ist storniert.</string>
+    <string name="store_list_failed">Das hat nicht geklappt. Versuche es nochmals.</string>
+    <string name="store_list_not_possible">Das geht nicht mehr: Die Abteilung hat die Bestellung schon bereitgestellt. Die Liste ist aktuell.</string>
+</resources>

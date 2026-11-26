@@ -86,6 +86,7 @@ fun MinutesScreen(
     onOpenQueue: () -> Unit,
     onShareCalendar: () -> Unit,
     onBack: () -> Unit,
+    onDownloadCalendar: (() -> Unit)? = null,
 ) {
     val state by vm.state.collectAsState()
     val minutesState by vm.minutes.collectAsState()
@@ -185,6 +186,7 @@ fun MinutesScreen(
                     }
                     if (rights.editMinutes) item { OutlinedPillButton(stringResource(R.string.decision_add), { decisionAdd = true }, Modifier.fillMaxWidth(), icon = R.drawable.ic_plus) }
                     item { OutlinedPillButton(stringResource(R.string.meeting_calendar), onShareCalendar, Modifier.fillMaxWidth(), icon = R.drawable.ic_calendar_plus) }
+                    onDownloadCalendar?.let { download -> item { OutlinedPillButton(stringResource(R.string.dl_calendar), download, Modifier.fillMaxWidth(), icon = R.drawable.ic_download) } }
                 }
                 if (linking) {
                     MinutesLinkDialog(

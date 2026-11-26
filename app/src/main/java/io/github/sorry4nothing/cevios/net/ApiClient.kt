@@ -182,7 +182,52 @@ class ApiClient(
         }
     }
 
-    private suspend fun <T> sendRaw(request: Request, decode: (Response) -> T): ApiResult<T> {
+    /**
+     * GET einer öffentlichen HTML-Seite des Backends (`/support` …) als Text, ohne Zutun der Person (zählt nicht in [pending]).
+     * Weiterleitungen folgt sie nur auf denselben Host (höchstens [MAX_PAGE_REDIRECTS]): [followRedirects] ist aus, damit das
+     * Cookie nie an einen fremden Host geht. Mehr als `maxBytes` oder eine Antwort, die kein HTML ist, gilt als Fehler.
+     */
+    suspend fun getPage(path: String, maxBytes: Int): ApiResult<String> = withContext(Background()) {
+        var url = requireNotNull(base.resolve(path)) { "Ungültiger Pfad" }
+        repeat(MAX_PAGE_REDIRECTS + 1) {
+            val hop = sendRaw(Request.Builder().url(url).get().build(), accept = { it.isSuccessful || it.isRedirect }) { response ->
+                if (response.isRedirect) {
+                    PageHop.Redirect(response.header("Location"))
+                } else {
+                    if (response.body.contentType()?.subtype?.lowercase() != "html") throw IllegalArgumentException("Keine HTML-Seite")
+                    val source = response.body.source()
+                    source.request(maxBytes + 1L)
+                    if (source.buffer.size > maxBytes) throw IllegalArgumentException("Antwort zu gross")
+                    PageHop.Page(source.readString(Charsets.UTF_8))
+                }
+            }
+            when (hop) {
+                is ApiResult.Failure -> return@withContext hop
+                is ApiResult.Ok -> when (val step = hop.value) {
+                    is PageHop.Page -> return@withContext ApiResult.Ok(step.html)
+                    is PageHop.Redirect -> {
+                        val next = step.location?.let { url.resolve(it) }
+                        if (next == null || next.scheme != base.scheme || next.host != base.host || next.port != base.port) {
+                            return@withContext ApiResult.Failure(ApiError.UNKNOWN)
+                        }
+                        url = next
+                    }
+                }
+            }
+        }
+        ApiResult.Failure(ApiError.UNKNOWN)
+    }
+
+    private sealed interface PageHop {
+        class Redirect(val location: String?) : PageHop
+        class Page(val html: String) : PageHop
+    }
+
+    private suspend fun <T> sendRaw(
+        request: Request,
+        accept: (Response) -> Boolean = { it.isSuccessful },
+        decode: (Response) -> T,
+    ): ApiResult<T> {
         val counted = coroutineContext[Background] == null
         if (counted) _pending.update { it + 1 }
         try {
@@ -199,7 +244,7 @@ class ApiClient(
                     // kommt als Ausnahme beim Aufrufer an, statt dass die Anfrage ewig wartet.
                     override fun onResponse(call: Call, response: Response) {
                         val result = try {
-                            response.use { evaluate(it, decode) }
+                            response.use { evaluate(it, accept, decode) }
                         } catch (t: Throwable) {
                             continuation.resumeWithException(t)
                             return
@@ -229,8 +274,8 @@ class ApiClient(
         return ApiResult.Failure(ApiError.from(response.code, code), code, retryAfter, conflict).also { it.status = response.code }
     }
 
-    private fun <T> evaluate(response: Response, decode: (Response) -> T): ApiResult<T> {
-        if (!response.isSuccessful) return failure(response)
+    private fun <T> evaluate(response: Response, accept: (Response) -> Boolean, decode: (Response) -> T): ApiResult<T> {
+        if (!accept(response)) return failure(response)
         return try {
             ApiResult.Ok(decode(response))
         } catch (e: IOException) {
@@ -267,6 +312,7 @@ class ApiClient(
         private const val VERSION_CONFLICT_CODE = "VERSION_KONFLIKT"
         private const val STREAM_TIMEOUT_SECONDS = 70L
         private const val API_PATH = "/api/v1/"
+        private const val MAX_PAGE_REDIRECTS = 3
 
         /** Wartezeit in Sekunden bei 429; eine Stunde ist die Obergrenze, was der Server schickt, ist nicht vertrauenswürdig. */
         private const val RETRY_AFTER = "X-Retry-After"

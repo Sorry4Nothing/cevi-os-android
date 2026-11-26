@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Datenschutz, Support und «Konto löschen lassen»: Texte vom Server, hier nur der Rahmen. -->
+    <string name="info_privacy_title">Datenschutz</string>
+    <string name="info_privacy_app_title">Datenschutz in Cevi OS</string>
+    <string name="info_support_title">Support</string>
+    <string name="info_delete_title">Konto löschen lassen</string>
+    <string name="info_loading">Seite wird geladen</string>
+    <string name="info_empty_title">Die Seite ist leer</string>
+    <string name="info_empty_text">Hier steht gerade nichts. Versuche es später nochmals.</string>
+    <string name="info_stale">Neu laden ging nicht. Das ist der zuletzt geladene Text.</string>
+    <string name="info_back_to">Zurück zu %1$s</string>
+    <string name="back_to_welcome">Zurück zur Begrüssung</string>
+</resources>

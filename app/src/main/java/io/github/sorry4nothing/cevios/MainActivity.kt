@@ -93,8 +93,6 @@ import android.app.Activity
 import androidx.compose.animation.AnimatedContent
 import android.Manifest
 import android.app.LocaleManager
-import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -125,7 +123,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.net.toUri
+import io.github.sorry4nothing.cevios.info.InfoApi
+import io.github.sorry4nothing.cevios.info.InfoHost
+import io.github.sorry4nothing.cevios.info.InfoPage
+import io.github.sorry4nothing.cevios.info.InfoViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -284,7 +285,11 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
         val window = (context as? Activity)?.window
         if (lockEnabled) window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
-    val openPrivacy = { openInBrowser(context, authApi.privacyUrl()) }
+    // Datenschutz, Support und «Konto löschen lassen» zeigt die App selbst, auch vor der Anmeldung (die Seiten sind öffentlich).
+    val info = viewModel { InfoViewModel(InfoApi(client)) }
+    val infoStack by info.stack.collectAsState()
+    // Ein anderer Anmeldestand schliesst die Seite: Sie gehörte zum Bildschirm davor.
+    LaunchedEffect(state::class) { info.close() }
     val motion = rememberMotionEnabled()
     Surface(Modifier.fillMaxSize()) {
         // Über dem Start gibt es keinen zweiten Ladekreis.
@@ -325,16 +330,20 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                     AuthState.MustChangePassword -> PasswordScreen(
                         first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
                     )
-                    is AuthState.Welcome -> WelcomeScreen(
-                        name = current.profile.name,
-                        passwordSaved = passwordSaved,
-                        form = form,
-                        onReadPrivacy = openPrivacy,
-                        onAccept = auth::acceptPrivacy,
-                        lockAvailable = lockAvailable,
-                        lockEnabled = lockEnabled,
-                        onLockChange = onLockChange,
-                    )
+                    is AuthState.Welcome -> if (infoStack.isNotEmpty()) {
+                        InfoHost(info, stringResource(R.string.back_to_welcome))
+                    } else {
+                        WelcomeScreen(
+                            name = current.profile.name,
+                            passwordSaved = passwordSaved,
+                            form = form,
+                            onReadPrivacy = { info.open(InfoPage.PRIVACY) },
+                            onAccept = auth::acceptPrivacy,
+                            lockAvailable = lockAvailable,
+                            lockEnabled = lockEnabled,
+                            onLockChange = onLockChange,
+                        )
+                    }
                     is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
                         // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
                         val images = viewModel { ProfileImages(ProfileImageApi(client)) }
@@ -344,9 +353,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                                 ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
                                 passwordSaved, form, imageForm, auth,
                                 pushTarget, onPushTargetHandled,
-                                onOpenPrivacy = openPrivacy,
-                                onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
-                                onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
+                                info = info,
                                 lockAvailable = lockAvailable,
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,
@@ -359,14 +366,6 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
     }
 }
 
-private fun openInBrowser(context: Context, url: String) {
-    try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-    } catch (e: ActivityNotFoundException) {
-        // Kein Browser auf dem Gerät: Die Seite lässt sich dann nicht öffnen.
-    }
-}
-
 /** Der Bildschirm, den `MainContent` zeigt; `depth` bestimmt die Richtung des Übergangs (tiefer: von rechts herein). */
 private sealed interface Screen {
     val depth: Int
@@ -376,6 +375,7 @@ private sealed interface Screen {
     data object Notifications : Screen { override val depth = 1 }
     data object Password : Screen { override val depth = 1 }
     data class CropImage(val uri: Uri) : Screen { override val depth = 1 }
+    data class Info(val page: InfoPage) : Screen { override val depth = 1 }
     data class Program(val programId: String) : Screen { override val depth = 1 }
     data class Chat(val chatId: String) : Screen { override val depth = 1 }
     data object Queue : Screen { override val depth = 1 }
@@ -421,9 +421,7 @@ private fun MainContent(
     auth: AuthViewModel,
     pushTarget: PushTarget?,
     onPushTargetHandled: () -> Unit,
-    onOpenPrivacy: () -> Unit,
-    onOpenSupport: () -> Unit,
-    onOpenDeleteAccount: () -> Unit,
+    info: InfoViewModel,
     lockAvailable: Boolean,
     lockEnabled: Boolean,
     onLockChange: (Boolean) -> Unit,
@@ -510,6 +508,7 @@ private fun MainContent(
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
         notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false
+        info.close()
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.RoomDecision -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomsOpen = true }
@@ -749,8 +748,10 @@ private fun MainContent(
                 CampTarget.Start -> { lagerNotificationsOpen = false; destination = Destination.START }
             }
         }
+        val infoPage = info.stack.collectAsState().value.lastOrNull()
         val target = when {
             cropping != null -> Screen.CropImage(cropping)
+            infoPage != null -> Screen.Info(infoPage)
             campArea && campId != null && directConflict != null -> Screen.DirectConflict
             conflict != null -> Screen.Conflict(conflict.clientOpId)
             queueOpen && campArea && campId != null -> Screen.Queue
@@ -800,6 +801,7 @@ private fun MainContent(
             label = "bildschirm",
         ) { screen ->
             when (screen) {
+                is Screen.Info -> InfoHost(info, stringResource(R.string.back_to_profile))
                 is Screen.Event -> {
                     val leave = { openedEvent = null }
                     BackHandler(onBack = leave)
@@ -1189,9 +1191,9 @@ private fun MainContent(
                                 onRemoveImage = auth::removeImage,
                                 onChangePassword = { changingPassword = true },
                                 onOpenNotifications = { notificationsOpen = true },
-                                onOpenPrivacy = onOpenPrivacy,
-                                onOpenSupport = onOpenSupport,
-                                onOpenDeleteAccount = onOpenDeleteAccount,
+                                onOpenPrivacy = { info.open(InfoPage.PRIVACY) },
+                                onOpenSupport = { info.open(InfoPage.SUPPORT) },
+                                onOpenDeleteAccount = { info.open(InfoPage.DELETE_ACCOUNT) },
                                 onSignOut = auth::signOut,
                                 onLeave = { auth.clearPasswordSaved(); auth.clearImageError(); calendarLink.forget() },
                                 termine = {

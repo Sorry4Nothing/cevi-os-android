@@ -57,13 +57,4 @@ class AuthApi(private val api: ApiClient, private val integrity: IntegrityProvid
 
     /** Löscht das eigene Profilbild; ohne Bild ebenfalls 204. */
     suspend fun removeImage(): ApiResult<Unit> = api.delete("/api/v1/ich/bild")
-
-    /** Adresse der Datenschutzerklärung auf dem Backend. */
-    fun privacyUrl(): String = api.pageUrl("/datenschutz")
-
-    /** Adresse der Support-Seite auf dem Backend. */
-    fun supportUrl(): String = api.pageUrl("/support")
-
-    /** Adresse der Seite, die erklärt, wie das Konto gelöscht wird (in der App gibt es kein «Konto löschen»). */
-    fun deleteAccountUrl(): String = api.pageUrl("/konto-loeschen")
 }

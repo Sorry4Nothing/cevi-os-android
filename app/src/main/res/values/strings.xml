@@ -213,7 +213,7 @@
     <string name="channel_programs">Programme</string>
     <string name="channel_messages">Mitteilungen</string>
     <string name="profile_privacy">Datenschutz</string>
-    <string name="profile_privacy_open">Im Browser öffnen</string>
+    <string name="profile_privacy_open">Öffnen</string>
     <string name="profile_support">Support</string>
     <string name="profile_delete_account">Konto löschen lassen</string>
     <string name="profile_change_password">Passwort ändern</string>

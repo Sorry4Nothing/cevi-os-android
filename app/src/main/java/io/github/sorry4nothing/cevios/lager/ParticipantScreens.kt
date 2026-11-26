@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +41,7 @@ import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
@@ -100,7 +100,7 @@ fun ParticipantsScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.s2),
                     ) {
                         if (stages.isNotEmpty()) item {
-                            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                            FlowRow(Modifier.pickGroup(stringResource(R.string.group_filter_stage)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                                 PickPill(stringResource(R.string.filter_all), stage == null, { stage = null })
                                 stages.forEach { s -> PickPill(s, stage == s, { stage = s }) }
                             }

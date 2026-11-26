@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +51,7 @@ import io.github.sorry4nothing.cevios.ui.NoticeBanner
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.TextActionButton
@@ -380,19 +380,19 @@ fun SwapRequestSheet(vm: PlanningViewModel, shift: Shift, plan: ShiftPlan?, onDi
                 style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() },
             )
             Text(stringResource(R.string.swaps_request_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.group_swap_form)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 PickPill(stringResource(R.string.swaps_form_give), form == 0, { form = 0 })
                 PickPill(stringResource(R.string.swaps_form_person), form == 1, { form = 1 })
                 PickPill(stringResource(R.string.swaps_form_swap), form == 2, { form = 2 })
             }
             if (form == 1) {
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.pickGroup(stringResource(R.string.group_swap_person)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     others.forEach { p -> PickPill(p.display, person == p.id, { person = p.id }) }
                 }
                 if (others.isEmpty()) Text(stringResource(R.string.groups_nobody_known), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (form == 2) {
-                Column(Modifier.selectableGroup()) {
+                Column(Modifier.pickGroup(stringResource(R.string.group_swap_shift))) {
                     swappable.forEach { s ->
                         val label = stringResource(R.string.swaps_swap_option, s.name, duties[s.dienstId]?.name.orEmpty(), formatMeetingDay(s.date))
                         PickPill(label, other == s.id, { other = s.id }, Modifier.padding(bottom = Spacing.s2))
@@ -463,7 +463,7 @@ private fun DutyEditorSheet(
             )
             if (initial == null) {
                 Text(stringResource(R.string.shifts_field_section), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.pickGroup(stringResource(R.string.shifts_field_section)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     sections.forEach { s -> PickPill(s.name, sectionId == s.id, { sectionId = s.id }) }
                 }
                 if (sections.isEmpty()) Text(stringResource(R.string.shifts_no_sections), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)

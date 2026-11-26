@@ -101,7 +101,7 @@ fun AttendanceScreen(frame: LiveFrame) {
                 val ownError = ownState as? ApiResult.Failure
                 LiveColumn {
                     if (ownError != null && own == null) {
-                        ErrorState(ownError.error, { vm.loadOwn() }, Modifier.heightIn(max = ERROR_MAX))
+                        ErrorState(ownError.error, { vm.loadOwn() }, Modifier.heightIn(min = ERROR_MIN))
                     }
                     if (own != null) {
                         OwnAttendance(frame, schedule, own, draft, busy, onRequest = { requestNote = true }, onDeadline = { deadlineDialog = true })
@@ -109,7 +109,7 @@ fun AttendanceScreen(frame: LiveFrame) {
                     if (rights.decideAttendance) {
                         when (val result = requestsState) {
                             is ApiResult.Ok -> RequestsSection(frame, result.value, busy)
-                            is ApiResult.Failure -> ErrorState(result.error, { vm.loadRequests() }, Modifier.heightIn(max = ERROR_MAX))
+                            is ApiResult.Failure -> ErrorState(result.error, { vm.loadRequests() }, Modifier.heightIn(min = ERROR_MIN))
                             null -> Unit
                         }
                         if (own == null) DeadlineRow(frame, null, { deadlineDialog = true })
@@ -117,7 +117,7 @@ fun AttendanceScreen(frame: LiveFrame) {
                     if (rights.readAttendance) {
                         when (val result = summaryState) {
                             is ApiResult.Ok -> SummarySection(LiveRules.summary(result.value, schedule))
-                            is ApiResult.Failure -> ErrorState(result.error, { vm.loadSummary() }, Modifier.heightIn(max = ERROR_MAX))
+                            is ApiResult.Failure -> ErrorState(result.error, { vm.loadSummary() }, Modifier.heightIn(min = ERROR_MIN))
                             null -> Unit
                         }
                     }
@@ -146,7 +146,7 @@ fun AttendanceScreen(frame: LiveFrame) {
     }
 }
 
-private val ERROR_MAX = 320.dp
+private val ERROR_MIN = 320.dp
 private const val NOTE_CHARS = 500
 
 /** Die eigene Zeile: Name, Raster, Hinweis zur Frist, «Speichern» und die Anfragen. */
@@ -173,7 +173,7 @@ private fun OwnAttendance(frame: LiveFrame, schedule: Schedule, own: AttendanceO
     if (!vertical) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             sections.forEach { section ->
-                Text(section.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, modifier = Modifier.weight(1f))
+                Text(section.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             }
         }
     }

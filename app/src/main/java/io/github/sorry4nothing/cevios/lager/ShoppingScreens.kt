@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +40,7 @@ import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.OutlinedPillButton
 import io.github.sorry4nothing.cevios.ui.PickPill
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.RoundButton
 import io.github.sorry4nothing.cevios.ui.HeaderButton
@@ -237,7 +237,7 @@ private fun ShopEditorSheet(
                 LabeledTextField(stringResource(R.string.shop_unit), unit, { unit = it }, UNIT_MAX, Modifier.weight(1f))
             }
             Text(stringResource(R.string.shop_buyer), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(Modifier.pickGroup(stringResource(R.string.shop_buyer)), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 choices.forEach { choice -> PickPill(choice.label, buyer == choice.key, { buyer = choice.key }) }
             }
             PrimaryButton(

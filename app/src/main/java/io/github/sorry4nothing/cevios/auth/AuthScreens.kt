@@ -417,7 +417,7 @@ fun LockedScreen(form: FormState, onUnlock: () -> Unit, onUsePassword: () -> Uni
 
 /**
  * Willkommen beim ersten Start: Die Person nimmt die Datenschutzerklärung zur Kenntnis (Kenntnisnahme, keine Einwilligung).
- * Der Text der Erklärung steht auf dem Backend und öffnet im Browser.
+ * Der Text der Erklärung steht auf dem Backend; die App zeigt ihn selbst (`info/InfoScreen.kt`).
  */
 @Composable
 fun WelcomeScreen(

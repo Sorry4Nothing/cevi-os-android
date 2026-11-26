@@ -187,6 +187,7 @@ import io.github.sorry4nothing.cevios.termine.ProposalScreen
 import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
 import io.github.sorry4nothing.cevios.termine.RoomDecisionScreen
 import io.github.sorry4nothing.cevios.termine.RoomDecisionsViewModel
+import io.github.sorry4nothing.cevios.termine.decisionRowCount
 import io.github.sorry4nothing.cevios.termine.RoomListScreen
 import io.github.sorry4nothing.cevios.termine.RoomRequestScreen
 import io.github.sorry4nothing.cevios.termine.RoomsViewModel
@@ -1402,11 +1403,15 @@ private fun MainContent(
                                             )
                                         }
                                     }
-                                    // Zuständig ist, wem der Server offene Anfragen liefert; sonst fehlt die Zeile.
+                                    // Zuständig ist, wem `GET /ich` es sagt (auch bei leerer Liste); sonst fehlt die Zeile.
                                     val toDecide = (roomDecisions.open.collectAsState().value as? ApiResult.Ok)?.value?.requests?.size ?: 0
-                                    if (toDecide > 0) {
+                                    decisionRowCount(account.decidesRoomRequests, toDecide)?.let { count ->
                                         SettingsCard {
-                                            SettingsRow(R.drawable.ic_door, stringResource(R.string.decide_row), value = stringResource(R.string.decide_row_count, toDecide), onClick = { roomDecideOpen = true }, chevron = true)
+                                            SettingsRow(
+                                                R.drawable.ic_door, stringResource(R.string.decide_row),
+                                                value = if (count > 0) stringResource(R.string.decide_row_count, count) else null,
+                                                onClick = { roomDecideOpen = true }, chevron = true,
+                                            )
                                         }
                                     }
                                 },

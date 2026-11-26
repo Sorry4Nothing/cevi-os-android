@@ -171,8 +171,8 @@
     <string name="decide_row">Raumanfragen entscheiden</string>
     <string name="decide_row_count">%1$d offen</string>
     <string name="decide_title">Raumanfragen entscheiden</string>
-    <string name="decide_empty_title">Nichts zu entscheiden</string>
-    <string name="decide_empty_text">Neue Anfragen für dein Team erscheinen hier.</string>
+    <string name="decide_empty_title">Keine offenen Anfragen</string>
+    <string name="decide_empty_text">Neue Anfragen für deine Räume erscheinen hier.</string>
     <string name="decide_more">Es gibt weitere offene Anfragen. Sie erscheinen, sobald du diese entschieden hast.</string>
     <string name="decide_from">Von %1$s</string>
     <string name="decide_confirm">Bestätigen</string>

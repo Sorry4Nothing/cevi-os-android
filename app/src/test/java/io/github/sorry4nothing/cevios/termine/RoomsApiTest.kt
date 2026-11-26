@@ -162,6 +162,19 @@ class RoomsApiTest {
     }
 
     @Test
+    fun onlyThePlatformRoleStillMeetsTheSecondFactorAndTheAppSaysComputerOnly() {
+        // Team, Gruppenrollen und Abteilungsleitung brauchen ihn nicht mehr (#859); beide Codes des Servers bleiben «nur am Computer».
+        listOf("ZWEITER_FAKTOR_FEHLT", "ZWEITER_FAKTOR_SITZUNG").forEach { code ->
+            server.enqueue(json(403, """{"code":"$code","message":"x"}"""))
+            val failure = runBlocking { api.decideRoomRequest("a1", RoomDecisionBody("annehmen")) } as ApiResult.Failure
+            assertEquals(DecisionNotice.SECOND_FACTOR, decisionNotice(true, failure))
+        }
+        server.enqueue(json(403, """{"code":"VERBOTEN","message":"x"}"""))
+        val forbidden = runBlocking { api.decideRoomRequest("a1", RoomDecisionBody("annehmen")) } as ApiResult.Failure
+        assertEquals(DecisionNotice.NOT_ALLOWED, decisionNotice(true, forbidden))
+    }
+
+    @Test
     fun anAlreadyDecidedRequestCannotBeWithdrawn() {
         server.enqueue(json(409, """{"code":"STATUS_UNGUELTIG","message":"x"}"""))
         val failure = runBlocking { api.cancelRoomRequest("a1") } as ApiResult.Failure

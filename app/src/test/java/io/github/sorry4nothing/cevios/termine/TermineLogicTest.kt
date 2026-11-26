@@ -1,8 +1,10 @@
 package io.github.sorry4nothing.cevios.termine
 
+import io.github.sorry4nothing.cevios.R
 import io.github.sorry4nothing.cevios.chat.Profile
 import io.github.sorry4nothing.cevios.chat.ProfileAgeGroup
 import io.github.sorry4nothing.cevios.chat.ProfileRole
+import io.github.sorry4nothing.cevios.chat.ProfileTag
 import io.github.sorry4nothing.cevios.programs.Program
 import io.github.sorry4nothing.cevios.programs.calendarEntry
 import kotlinx.serialization.json.JsonElement
@@ -128,6 +130,20 @@ class TermineLogicTest {
         assertEquals(listOf("Abteilungsleitung"), groupLabels(Profile(id = "a", departmentLead = true), "Abteilungsleitung", "Stufenleitung", "Leitung").map { it.name })
         assertTrue("der Entwickler hat keine Funktion in der Abteilung", groupLabels(Profile(id = "e", developer = true), "A", "S", "L").isEmpty())
         assertTrue(groupLabels(Profile(id = "p"), "A", "S", "L").isEmpty())
+    }
+
+    @Test
+    fun groupsAlsoShowTheOwnTeamsAndCampsInTheOrderOfTheServer() {
+        val profile = Profile(
+            id = "u", ageGroups = listOf(ProfileAgeGroup("s1", "Wölfe")),
+            tags = listOf(ProfileTag("t1", "Hausteam", "team"), ProfileTag("t2", "Sommerlager", "lager"), ProfileTag("t3", "Neues", "unbekannt")),
+        )
+        val labels = groupLabels(profile, "Abteilungsleitung", "Stufenleitung", "Leitung")
+        assertEquals(listOf("Wölfe", "Hausteam", "Sommerlager"), labels.map { it.name })
+        assertEquals(listOf(R.string.group_type_stufe, R.string.group_type_team, R.string.group_type_lager), labels.map { it.type })
+        assertNull("nur eine Stufe trägt ein Logo", labels[1].stageId)
+        // Wer nur Tags hat, bekommt trotzdem Gruppen (kein «Du hast noch keine Gruppe»).
+        assertEquals(listOf("Hausteam"), groupLabels(Profile(id = "p", tags = listOf(ProfileTag("t1", "Hausteam", "team"))), "A", "S", "L").map { it.name })
     }
 
     private fun program(allDay: Boolean, vararg fields: String) = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }.decodeFromString<Program>(

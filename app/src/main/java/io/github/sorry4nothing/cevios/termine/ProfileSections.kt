@@ -48,14 +48,22 @@ import io.github.sorry4nothing.cevios.ui.theme.cevi
 data class GroupLabel(val type: Int, val name: String, val stageId: String? = null)
 
 /**
- * Die Gruppen der Person, soweit das Profil sie nennt: ihre Stufen (aus Rollen und Kindern) und ihre Funktion in der Stufe. Teams
- * und Lager liefert `GET /api/v1/ich` nicht; sie fehlen hier, bis es eine Route dafür gibt.
+ * Die Gruppen der Person, wie `GET /api/v1/ich` sie nennt: ihre Stufen (aus Rollen und Kindern), ihre Funktion in der Stufe und ihre
+ * Gruppen vom Typ Team und Lager (`tags`, nach Name; eine unbekannte Art lässt die App weg, ohne Typ-Wort wäre der Chip nicht lesbar).
  */
 fun groupLabels(profile: Profile, leadershipName: String, groupLeaderName: String, leaderName: String): List<GroupLabel> = buildList {
     profile.ageGroups.forEach { add(GroupLabel(R.string.group_type_stufe, it.name, it.id)) }
     if (profile.departmentLead) add(GroupLabel(R.string.group_type_funktion, leadershipName))
     if (profile.roles.any { it.type == "stufenleitung" }) add(GroupLabel(R.string.group_type_funktion, groupLeaderName))
     else if (profile.roles.any { it.type == "leitung" }) add(GroupLabel(R.string.group_type_funktion, leaderName))
+    profile.tags.forEach { tag -> tagTypeName(tag.kind)?.let { add(GroupLabel(it, tag.name)) } }
+}
+
+/** Das Typ-Wort einer eigenen Gruppe: `team` oder `lager`, sonst `null`. */
+private fun tagTypeName(kind: String): Int? = when (kind) {
+    "team" -> R.string.group_type_team
+    "lager" -> R.string.group_type_lager
+    else -> null
 }
 
 /** «Meine Gruppen»: Chips mit dem Typ als Wort. Ohne Gruppe steht ein Satz, kein leerer Abschnitt. */

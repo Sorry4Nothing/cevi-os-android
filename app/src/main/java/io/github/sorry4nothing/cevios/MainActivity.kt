@@ -67,6 +67,9 @@ import io.github.sorry4nothing.cevios.lager.CampCache
 import io.github.sorry4nothing.cevios.lager.CampViewModel
 import io.github.sorry4nothing.cevios.lager.LocalStaleSince
 import io.github.sorry4nothing.cevios.lager.ChangeState
+import io.github.sorry4nothing.cevios.lager.CheckApi
+import io.github.sorry4nothing.cevios.lager.CheckRights
+import io.github.sorry4nothing.cevios.lager.CheckViewModel
 import io.github.sorry4nothing.cevios.lager.ConflictScreen
 import io.github.sorry4nothing.cevios.lager.ModeMenu
 import io.github.sorry4nothing.cevios.lager.MoreEntry
@@ -344,7 +347,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                         val staleSince by client.staleSince.collectAsState()
                         CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos, LocalStaleSince provides staleSince) {
                             MainContent(
-                                ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
+                                ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), CheckApi(client), TermineApi(client), current.profile,
                                 passwordSaved, form, imageForm, auth,
                                 pushTarget, onPushTargetHandled,
                                 onOpenPrivacy = openPrivacy,
@@ -416,6 +419,7 @@ private fun MainContent(
     planningApi: PlanningApi,
     liveApi: LiveApi,
     archiveApi: ArchiveApi,
+    checkApi: CheckApi,
     termineApi: TermineApi,
     account: Profile,
     passwordSaved: Boolean,
@@ -444,6 +448,7 @@ private fun MainContent(
     val planning = viewModel { PlanningViewModel(planningApi, camp, AndroidCommsTexts(appContext), account.id) }
     val live = viewModel { LiveViewModel(liveApi, camp, AndroidCommsTexts(appContext), account.id) }
     val archive = viewModel { ArchiveViewModel(archiveApi, meetingsApi, tasksApi, camp, AndroidCommsTexts(appContext)) }
+    val check = viewModel { CheckViewModel(checkApi, camp) { AndroidCommsTexts(appContext).fieldLabels() + ("erledigt" to appContext.getString(R.string.field_done)) } }
     val calendarLink = viewModel { CalendarLinkViewModel(termineApi) }
     val proposals = viewModel { ProposalsViewModel(termineApi) }
     val rooms = viewModel { RoomsViewModel(termineApi) }
@@ -631,6 +636,7 @@ private fun MainContent(
             planning.close()
             live.close()
             archive.close()
+            check.close()
         } else {
             camp.open(id)
             tasks.open(id)
@@ -639,6 +645,7 @@ private fun MainContent(
             planning.open(id)
             live.open(id)
             archive.open(id)
+            check.open(id)
             pendingArea?.let { applyCampArea(it); pendingArea = null }
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { camp.follow(id) }
         }
@@ -688,7 +695,8 @@ private fun MainContent(
         val planRights = PlanRights.of(campPermissions)
         val liveRights = LiveRights.of(campPermissions)
         val archiveRights = ArchiveRights.of(campPermissions)
-        SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
+        val checkRights = CheckRights.of(campPermissions)
+        SideEffect { check.rights = checkRights; tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
         // Wer Mitteilungen schreibt, wählt auch Ressorts und Gruppen als Empfänger; ohne Recht bleiben die Listen leer.
         val recipientRessorts = (tasks.ressorts.collectAsState().value as? ApiResult.Ok)?.value
         val recipientGroups = (planning.groups.collectAsState().value as? ApiResult.Ok)?.value?.groups
@@ -708,7 +716,8 @@ private fun MainContent(
         val liveConflict by live.writer.conflict.collectAsState()
         val archiveConflict by archive.writer.conflict.collectAsState()
         val planPeople by planning.people.collectAsState()
-        val directConflict = meetingConflict ?: commsConflict ?: planConflict ?: liveConflict ?: archiveConflict
+        val checkConflict by check.writer.conflict.collectAsState()
+        val directConflict = meetingConflict ?: commsConflict ?: planConflict ?: liveConflict ?: archiveConflict ?: checkConflict
         val taskList = (tasks.tasks.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
         val memberList by meetings.members.collectAsState()
         // Namen für die Marken @{person:…} in Titeln und Texten: bekannte Personen aus Aufgaben und Mitgliedern.
@@ -995,7 +1004,7 @@ private fun MainContent(
                     )
                 }
                 is Screen.Live -> {
-                    val leave = if (screen.area == LiveArea.DAY) ({ liveArea = LiveArea.TODAY; liveDay = null; live.closeDay() }) else ({ liveArea = null; live.dismissNotice(); archive.dismissNotice(); archive.clearSearch() })
+                    val leave = if (screen.area == LiveArea.DAY) ({ liveArea = LiveArea.TODAY; liveDay = null; live.closeDay() }) else ({ liveArea = null; live.dismissNotice(); archive.dismissNotice(); archive.clearSearch(); check.dismissNotice() })
                     BackHandler(onBack = leave)
                     LiveScreen(
                         screen.area, liveDay,
@@ -1020,7 +1029,7 @@ private fun MainContent(
                                 }
                             },
                         ),
-                        tasks, taskList, archive, archiveRights,
+                        tasks, taskList, archive, archiveRights, check, checkRights,
                     )
                 }
                 is Screen.Plan -> {
@@ -1310,6 +1319,7 @@ private fun MainContent(
                     // Jeder Eintrag steht nur, wenn das Lesen erlaubt ist (Rechte aus dem Lagerdetail); fehlt das Detail, fehlen sie alle.
                     if (campPermissions.may("zeitplan.lesen")) MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE } else null,
                     if (campPermissions.may("hoecks.lesen_alle", "hoecks.team_lesen")) MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true } else null,
+                    if (checkRights.read) MoreEntry(R.string.check_title, R.drawable.ic_shield) { moreOpen = false; liveArea = LiveArea.CHECK } else null,
                     if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS } else null,
                     if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS } else null,
                     if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.groups_title, R.drawable.ic_group) { moreOpen = false; planArea = PlanArea.GROUPS } else null,

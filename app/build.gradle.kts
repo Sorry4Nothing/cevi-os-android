@@ -11,7 +11,7 @@ if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google
 android {
     namespace = "io.github.sorry4nothing.cevios"
     compileSdk {
-        version = release(37)
+        version = release(37) { minorApiLevel = 1 }
     }
 
     defaultConfig {

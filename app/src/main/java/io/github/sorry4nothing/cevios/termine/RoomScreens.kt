@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +49,7 @@ import io.github.sorry4nothing.cevios.ui.CardSkeleton
 import io.github.sorry4nothing.cevios.ui.ChipKind
 import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.Header
+import io.github.sorry4nothing.cevios.ui.pickGroup
 import io.github.sorry4nothing.cevios.ui.HeaderButton
 import io.github.sorry4nothing.cevios.ui.LabeledTextField
 import io.github.sorry4nothing.cevios.ui.NoticeBanner
@@ -253,7 +253,7 @@ private fun RoomForm(
             stringResource(R.string.room_field_room), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.semantics { heading() },
         )
-        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+        Column(Modifier.pickGroup(stringResource(R.string.room_field_room)), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             rooms.forEach { room -> RoomChoice(room, room.id == draft.roomId, !send.running) { onEdit { it.copy(roomId = room.id) } } }
         }
         FieldError(RoomProblem.ROOM in problems, R.string.room_error_room)

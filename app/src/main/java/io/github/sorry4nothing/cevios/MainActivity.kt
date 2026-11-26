@@ -196,6 +196,7 @@ import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.theme.CeviTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist (Takt laut API). */
@@ -643,6 +644,8 @@ private fun MainContent(
     // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
     // fragt sie nur, solange sie sichtbar ist.
     LaunchedEffect(destination, openedChat, phoneOpen) {
+        // Der Punkt an der Pille veraltet sonst auf den anderen Reitern: einmal still neu bei jedem Wechsel, ohne eigenen Takt.
+        launch { camp.refreshNews() }
         if (openedChat == null && !phoneOpen) {
             chat.loadList(silent = true)
             if (destination == Destination.CHAT) {

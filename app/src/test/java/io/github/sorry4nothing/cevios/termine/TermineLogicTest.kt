@@ -38,9 +38,9 @@ class TermineLogicTest {
         assertTrue(proposalProblems(draft(), today, now).isEmpty())
         val request = proposalRequest(draft(), today, now)!!
         // Mai ist Sommerzeit (+02:00), im Winter +01:00: Der Offset kommt aus der Zone der Abteilung, nicht aus dem Gerät.
-        assertEquals("2027-05-08T14:00+02:00", request.start)
-        assertEquals("2027-05-08T17:00+02:00", request.end)
-        assertEquals("2027-12-04T14:00+01:00", proposalRequest(draft(day = LocalDate.of(2027, 12, 4)), today, now)!!.start)
+        assertEquals("2027-05-08T14:00:00+02:00", request.start)
+        assertEquals("2027-05-08T17:00:00+02:00", request.end)
+        assertEquals("2027-12-04T14:00:00+01:00", proposalRequest(draft(day = LocalDate.of(2027, 12, 4)), today, now)!!.start)
     }
 
     @Test

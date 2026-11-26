@@ -31,6 +31,8 @@ data class MeetingRights(
     val mentionToTask: Boolean,
     /** Eine eigene Erwähnung als erledigt markieren (jede Rolle, solange das Lager offen ist). */
     val markMention: Boolean,
+    /** Beiträge als «gesehen» melden: Im abgeschlossenen Lager antwortet der Server mit 409, die App meldet gar nicht erst. */
+    val markSeen: Boolean,
 ) {
     companion object {
         fun of(p: CampPermissions) = MeetingRights(
@@ -46,6 +48,7 @@ data class MeetingRights(
             readOwnInbox = p.may("eingang.senden"),
             mentionToTask = p.mayWrite("aufgaben.bearbeiten", "aufgaben.eigene"),
             markMention = !p.readOnly,
+            markSeen = p.mayWrite("pinnwand.lesen"),
         )
     }
 }

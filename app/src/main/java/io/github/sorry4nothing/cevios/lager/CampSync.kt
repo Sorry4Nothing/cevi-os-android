@@ -67,6 +67,45 @@ sealed interface PullResult {
     data class Failed(val error: ApiError, val retryAfterSeconds: Int? = null) : PullResult
 }
 
+/** Was beim Verbinden mit dem Ereignisstrom zuerst geschieht. */
+enum class ConnectStep {
+    /** Noch keine Folgenummer: den Stand holen, er ist der Anfang. */
+    BASELINE,
+
+    /** Die Verbindung brach mit einem Fehler ab: die Folgenummer behalten und den Feed einmal ab dort abfragen. */
+    CATCH_UP,
+
+    /** Die Verbindung endete ordentlich: die Folgenummer behalten, der Strom meldet mit `bereit`, ob es Neues gibt. */
+    RESUME,
+}
+
+/** Die Folgenummer wird nie überschrieben, solange sie bekannt ist: Sonst ginge verloren, was zwischen zwei Verbindungen geschah. */
+fun connectStep(seq: Long?, interrupted: Boolean): ConnectStep = when {
+    seq == null -> ConnectStep.BASELINE
+    interrupted -> ConnectStep.CATCH_UP
+    else -> ConnectStep.RESUME
+}
+
+/**
+ * Wann die Rechte der Rolle neu gelesen werden (ohne Dauerabfrage): beim erneuten Start der Ansicht (Rückkehr in die App) und wenn
+ * die Module neu laden (`reload`). Beim ersten Start liest `open` sie schon.
+ */
+class RightsReads {
+    private var followed: String? = null
+
+    /** Ein anderes Lager wird geöffnet oder das Lager geschlossen. */
+    fun reset() {
+        followed = null
+    }
+
+    /** Die Ansicht von `campId` beginnt zu folgen; wahr, wenn sie schon einmal folgte (also fortgesetzt wird). */
+    fun followStarted(campId: String): Boolean {
+        val resumed = followed == campId
+        followed = campId
+        return resumed
+    }
+}
+
 /** Wie eine Verbindung des Ereignisstroms endete. */
 sealed interface ListenResult {
     /** Der Server hat die Verbindung beendet (`ende`) oder sie ist abgerissen ohne Fehler: sofort neu verbinden. */

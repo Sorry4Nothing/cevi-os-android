@@ -31,9 +31,9 @@ class RoomLogicTest {
         assertTrue(roomProblems(draft(), now).isEmpty())
         val body = roomRequestBody(draft(), now)!!
         // Mai ist Sommerzeit (+02:00), im Winter +01:00: Der Offset kommt aus der Zone der Abteilung, nicht aus dem Gerät.
-        assertEquals("2027-05-08T14:00+02:00", body.start)
-        assertEquals("2027-05-08T17:00+02:00", body.end)
-        assertEquals("2027-12-04T14:00+01:00", roomRequestBody(draft(day = LocalDate.of(2027, 12, 4)), now)!!.start)
+        assertEquals("2027-05-08T14:00:00+02:00", body.start)
+        assertEquals("2027-05-08T17:00:00+02:00", body.end)
+        assertEquals("2027-12-04T14:00:00+01:00", roomRequestBody(draft(day = LocalDate.of(2027, 12, 4)), now)!!.start)
         assertEquals("Waldspiel", body.purpose)
     }
 

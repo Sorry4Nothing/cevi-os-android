@@ -142,7 +142,7 @@ class LiveViewModel(
         _own.value = null; _draft.value = emptyMap(); _summary.value = null; _requests.value = null
         _shopping.value = null; _onlyMine.value = false; _suggestions.value = emptyList(); _shopUndo.value = null
         _pack.value = null; _templates.value = null; _emergency.value = null; _emergencyStale.value = false; _infos.value = null
-        _notice.value = null; _busy.value = false
+        _notice.value = null; _busy.value = false; addingTodo = false
         suggestionJob?.cancel()
         writer.clear()
     }
@@ -238,10 +238,16 @@ class LiveViewModel(
 
     fun loadTodos(silent: Boolean = false): Unit = launchLoad(_todos, silent, api::todos)
 
+    private var addingTodo = false
+
     fun addTodo(text: String) {
-        // Läuft schon eine Aktion, zählt ein zweiter Tipp nicht: Die Route kennt keine Wiederholung ohne Doppelanlage.
-        if (_busy.value) return
-        send({ addTodo(text) }, { api.addTodo(it, text) }) { todo -> updateTodos { it + todo } }
+        // Läuft das Anlegen schon, zählt ein zweiter Tipp nicht: Die Route kennt keine Wiederholung ohne Doppelanlage. Andere Aktionen sperren nicht.
+        if (addingTodo || campId == null) return
+        addingTodo = true
+        send({ addTodo(text) }, { api.addTodo(it, text) }, onFail = { addingTodo = false }) { todo ->
+            addingTodo = false
+            updateTodos { it + todo }
+        }
     }
 
     fun toggleTodo(todo: CampTodo) {

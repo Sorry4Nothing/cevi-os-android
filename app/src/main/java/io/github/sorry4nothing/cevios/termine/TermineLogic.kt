@@ -94,6 +94,11 @@ data class ProposalDraft(
 /** Was am Vorschlag noch nicht stimmt, bevor er gesendet wird. */
 enum class ProposalProblem { TITLE, DAY, FROM, TO, ORDER, PAST, TAGS }
 
+private val OFFSET_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+
+/** Tag und Zeit in der Zone der Abteilung als RFC 3339 mit Sekunden («2026-12-01T14:00:00+01:00»); `OffsetDateTime.toString()` lässt sie bei vollen Minuten weg. */
+fun offsetText(day: LocalDate, time: LocalTime): String = OFFSET_FORMAT.format(day.atTime(time).atZone(SWISS_ZONE))
+
 /** «14:00», «9:30» oder «14.00» als Zeit; `null`, wenn es keine ist. */
 fun parseTime(text: String): LocalTime? {
     val match = Regex("""^\s*(\d{1,2})[:.](\d{2})\s*$""").matchEntire(text) ?: return null
@@ -141,8 +146,8 @@ fun proposalRequest(draft: ProposalDraft, today: LocalDate, now: ZonedDateTime =
         val to = parseTime(draft.to) ?: return null
         ProposalRequest(
             draft.title.trim(), false,
-            start = day.atTime(from).atZone(SWISS_ZONE).toOffsetDateTime().toString(),
-            end = day.atTime(to).atZone(SWISS_ZONE).toOffsetDateTime().toString(),
+            start = offsetText(day, from),
+            end = offsetText(day, to),
             place = place, description = description, tagIds = tags,
         )
     }

@@ -178,6 +178,11 @@ import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
 import io.github.sorry4nothing.cevios.termine.RoomListScreen
 import io.github.sorry4nothing.cevios.termine.RoomRequestScreen
 import io.github.sorry4nothing.cevios.termine.RoomsViewModel
+import io.github.sorry4nothing.cevios.laden.CartScreen
+import io.github.sorry4nothing.cevios.laden.OrdersScreen
+import io.github.sorry4nothing.cevios.laden.ShopApi
+import io.github.sorry4nothing.cevios.laden.ShopScreen
+import io.github.sorry4nothing.cevios.laden.ShopViewModel
 import io.github.sorry4nothing.cevios.termine.TermineApi
 import io.github.sorry4nothing.cevios.auth.SettingsCard
 import io.github.sorry4nothing.cevios.auth.SettingsRow
@@ -350,6 +355,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
                                 lockAvailable = lockAvailable,
                                 lockEnabled = lockEnabled,
                                 onLockChange = onLockChange,
+                                shopApi = ShopApi(client),
                             )
                         }
                     }
@@ -399,6 +405,9 @@ private sealed interface Screen {
     data object Proposal : Screen { override val depth = 1 }
     data object Rooms : Screen { override val depth = 1 }
     data object RoomRequest : Screen { override val depth = 2 }
+    data object Shop : Screen { override val depth = 1 }
+    data object ShopCart : Screen { override val depth = 2 }
+    data object ShopOrders : Screen { override val depth = 2 }
 }
 
 @Composable
@@ -427,6 +436,7 @@ private fun MainContent(
     lockAvailable: Boolean,
     lockEnabled: Boolean,
     onLockChange: (Boolean) -> Unit,
+    shopApi: ShopApi,
 ) {
     val context = LocalContext.current
     val resolver = context.contentResolver
@@ -444,6 +454,7 @@ private fun MainContent(
     val calendarLink = viewModel { CalendarLinkViewModel(termineApi) }
     val proposals = viewModel { ProposalsViewModel(termineApi) }
     val rooms = viewModel { RoomsViewModel(termineApi) }
+    val shop = viewModel { ShopViewModel(shopApi) }
     val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
@@ -480,6 +491,10 @@ private fun MainContent(
     // Räume: «Meine Raumanfragen» (K3) und davon aus «Raum anfragen» (K2).
     var roomsOpen by rememberSaveable { mutableStateOf(false) }
     var roomRequestOpen by rememberSaveable { mutableStateOf(false) }
+    // Lädeli: Artikel, Warenkorb und «Meine Bestellungen».
+    var shopOpen by rememberSaveable { mutableStateOf(false) }
+    var shopCartOpen by rememberSaveable { mutableStateOf(false) }
+    var shopOrdersOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
@@ -509,7 +524,7 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false
+        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false; shopOpen = false; shopCartOpen = false; shopOrdersOpen = false
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
             is PushTarget.RoomDecision -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomsOpen = true }
@@ -592,6 +607,9 @@ private fun MainContent(
     // Die Räume laden beim Öffnen neu: Daten bleiben nur im Arbeitsspeicher.
     LaunchedEffect(roomsOpen) { if (roomsOpen) rooms.reloadMine() }
     LaunchedEffect(roomRequestOpen) { if (roomRequestOpen) rooms.reloadRooms() }
+    // Das Lädeli und die Bestellungen laden beim Öffnen neu; der Warenkorb bleibt im Arbeitsspeicher.
+    LaunchedEffect(shopOpen) { if (shopOpen) shop.reload() }
+    LaunchedEffect(shopOrdersOpen) { if (shopOrdersOpen) shop.reloadOrders() }
     // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
     LaunchedEffect(destination) {
         if (destination == Destination.PROFILE) {
@@ -768,6 +786,9 @@ private fun MainContent(
             campArea && campId != null && inboxOpen -> Screen.Inbox
             campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
             openedEvent != null -> Screen.Event(openedEvent!!)
+            shopOrdersOpen -> Screen.ShopOrders
+            shopCartOpen -> Screen.ShopCart
+            shopOpen -> Screen.Shop
             roomRequestOpen -> Screen.RoomRequest
             roomsOpen -> Screen.Rooms
             proposalOpen -> Screen.Proposal
@@ -841,6 +862,55 @@ private fun MainContent(
                         onDismiss = rooms::dismissNotice,
                         onBack = leave,
                         onRetry = rooms::reloadMine,
+                    )
+                }
+                Screen.Shop -> {
+                    val leave = { shopOpen = false }
+                    BackHandler(onBack = leave)
+                    ShopScreen(
+                        view = shop.view.collectAsState().value,
+                        cart = shop.cart.collectAsState().value,
+                        picked = shop.picked.collectAsState().value,
+                        sizeMissing = shop.sizeMissing.collectAsState().value,
+                        cartNotice = shop.cartNotice.collectAsState().value,
+                        onPick = shop::pick,
+                        onAdd = shop::add,
+                        onDismissNotice = shop::dismissCartNotice,
+                        onOpenCart = { shop.dismissCartNotice(); shopCartOpen = true },
+                        onOrders = { shopOrdersOpen = true },
+                        onBack = leave,
+                        onRetry = shop::reload,
+                    )
+                }
+                Screen.ShopCart -> {
+                    val leave = { shopCartOpen = false; shop.leaveCart(); shop.dismissCartNotice() }
+                    BackHandler(onBack = leave)
+                    CartScreen(
+                        view = shop.view.collectAsState().value,
+                        cart = shop.cart.collectAsState().value,
+                        handover = shop.handover.collectAsState().value,
+                        send = shop.send.collectAsState().value,
+                        cartNotice = shop.cartNotice.collectAsState().value,
+                        onChange = shop::change,
+                        onHandover = shop::chooseHandover,
+                        onSubmit = shop::submit,
+                        onDismissNotice = shop::dismissCartNotice,
+                        onDismissSend = shop::dismissSendNotice,
+                        onOrders = { shopCartOpen = false; shop.leaveCart(); shopOrdersOpen = true },
+                        onBack = leave,
+                        onRetry = shop::reload,
+                    )
+                }
+                Screen.ShopOrders -> {
+                    val leave = { shopOrdersOpen = false; shop.dismissListNotice() }
+                    BackHandler(onBack = leave)
+                    OrdersScreen(
+                        orders = shop.orders.collectAsState().value,
+                        list = shop.list.collectAsState().value,
+                        onCancel = { shop.cancel(it.id) },
+                        onDismiss = shop::dismissListNotice,
+                        onBack = leave,
+                        onRetry = shop::reloadOrders,
                     )
                 }
                 Screen.Proposal -> {
@@ -1214,6 +1284,10 @@ private fun MainContent(
                                     // Räume anfragen darf jede angemeldete Person der Abteilung (Vertrag `frageRaumAn`).
                                     SettingsCard {
                                         SettingsRow(R.drawable.ic_door, stringResource(R.string.room_row), onClick = { roomsOpen = true }, chevron = true)
+                                    }
+                                    // Das Lädeli darf jede angemeldete Person lesen und bestellen (Vertrag `holeLaden`, `bestelleImLaden`).
+                                    SettingsCard {
+                                        SettingsRow(R.drawable.ic_bag, stringResource(R.string.store_row), onClick = { shopOpen = true }, chevron = true)
                                     }
                                 },
                                 lockAvailable = lockAvailable,

@@ -64,6 +64,7 @@ class CampViewModel(
 
     private val queues = mutableMapOf<String, OfflineQueue>()
     private var openedId: String? = null
+    private val rightsReads = RightsReads()
 
     init {
         loadCamps()
@@ -95,8 +96,9 @@ class CampViewModel(
     }
 
     /** Liest den Neuigkeiten-Stand still neu; ein Fehler lässt den alten Punkt stehen. */
-    suspend fun refreshNews() {
+    suspend fun refreshNews() = withContext(Background()) {
         (api.news() as? ApiResult.Ok)?.let { _news.value = it.value }
+        Unit
     }
 
     suspend fun refreshUnread(campId: String) {
@@ -110,6 +112,7 @@ class CampViewModel(
             _detail.value = null
             _readable.value = null
             _lostAccess.value = null
+            rightsReads.reset()
         }
         queueFor(campId)
         viewModelScope.launch {
@@ -123,6 +126,7 @@ class CampViewModel(
         openedId = null
         _detail.value = null
         _readable.value = null
+        rightsReads.reset()
     }
 
     /** Die Objekttypen, die die Rolle im offenen Lager lesen darf (aus dem Feed); `null`, bis sie da sind. */
@@ -172,19 +176,26 @@ class CampViewModel(
                 }
             }
             var failures = 0
+            var interrupted = false
+            // Kehrt die Ansicht in den Vordergrund zurück, können die Rechte der Rolle anders sein.
+            if (rightsReads.followStarted(campId)) launch { refreshRights(campId) }
             while (true) {
                 val failure: Pair<ApiError, Int?>? = run {
-                    when (val base = sync.baseline()) {
+                    val step = connectStep(sync.seq, interrupted)
+                    // Der Stand ersetzt die Folgenummer nur beim ersten Mal; sonst ginge verloren, was seit der letzten Verbindung geschah.
+                    when (val base = if (step == ConnectStep.BASELINE) sync.baseline() else api.feedState(campId)) {
                         is ApiResult.Failure -> return@run base.error to base.retryAfterSeconds
                         is ApiResult.Ok -> _readable.value = base.value.types.toSet()
                     }
                     _online.value = true
                     launch { refreshUnread(campId) }
                     launch { flushAndAnnounce(queue) }
+                    // Scheitert das Nachziehen, bleibt die Unterbrechung offen: Die nächste Verbindung versucht es wieder.
+                    if (step != ConnectStep.CATCH_UP || handlePull(campId, sync) !is PullResult.Failed) interrupted = false
                     val openedAt = System.nanoTime()
                     val result = sync.listen(
                         onNews = { handlePull(campId, sync) },
-                        onReload = { _changes.tryEmit(CampChange(sync.seq ?: 0, emptySet(), 0, reload = true)) },
+                        onReload = { announceReload(campId, sync.seq ?: 0) },
                     )
                     // Ein Strom, der gleich wieder endet, zählt als Fehler: Sonst wüchse die Pause nie und die App fragte im Takt von Sekunden.
                     val lasted = (System.nanoTime() - openedAt) / 1_000_000 >= STREAM_OK_MS
@@ -197,6 +208,7 @@ class CampViewModel(
                     continue
                 }
                 val (error, retryAfter) = failure
+                interrupted = true
                 when (error) {
                     // coroutineScope wartet auf seine Kinder: Ohne Abbruch liefe die Sendeschleife weiter und fragte ein verlorenes Lager ab.
                     ApiError.NOT_FOUND, ApiError.FORBIDDEN -> {
@@ -217,16 +229,30 @@ class CampViewModel(
         }
     }
 
-    private suspend fun handlePull(campId: String, sync: CampSync) {
-        when (val result = sync.pull()) {
+    private suspend fun handlePull(campId: String, sync: CampSync): PullResult {
+        val result = sync.pull()
+        when (result) {
             is PullResult.Done -> {
                 result.change?.let { _changes.tryEmit(it) }
                 refreshUnread(campId)
             }
-            is PullResult.Reload -> _changes.tryEmit(CampChange(result.seq, emptySet(), 0, reload = true))
+            is PullResult.Reload -> announceReload(campId, result.seq)
             // Das Netz fehlt oder der Server antwortet nicht: Der Strom meldet es mit seiner Verbindung.
             is PullResult.Failed -> if (result.error == ApiError.NETWORK) _online.value = false
         }
+        return result
+    }
+
+    /** Die Module laden ihre Listen neu; auch die Rechte der Rolle können sich geändert haben. */
+    private suspend fun announceReload(campId: String, seq: Long) {
+        _changes.tryEmit(CampChange(seq, emptySet(), 0, reload = true))
+        refreshRights(campId)
+    }
+
+    /** Liest die Rechte der Rolle still neu; ein Fehler lässt die bisherigen stehen. */
+    private suspend fun refreshRights(campId: String) {
+        val result = api.read(campId)
+        if (openedId == campId && result is ApiResult.Ok) _detail.value = result
     }
 
     /** Löst das Ziel eines Lager-Pushes auf (`typ` und `id` aus dem Push). Das Ziel gibt es nur, wenn die Person es sehen darf. */

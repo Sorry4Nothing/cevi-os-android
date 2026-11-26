@@ -4,6 +4,7 @@ import io.github.sorry4nothing.cevios.net.ApiError
 import io.github.sorry4nothing.cevios.net.ApiResult
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +36,25 @@ class RobustnessTest {
         files.clear()
         runBlocking { files.link(draft, add) }
         assertEquals(listOf("A", "B", "A", "B"), added)
+    }
+
+    @Test
+    fun theSequenceNumberIsKeptOnceKnown() {
+        assertEquals(ConnectStep.BASELINE, connectStep(null, interrupted = false))
+        assertEquals(ConnectStep.BASELINE, connectStep(null, interrupted = true))
+        assertEquals(ConnectStep.CATCH_UP, connectStep(42, interrupted = true))
+        assertEquals(ConnectStep.RESUME, connectStep(42, interrupted = false))
+    }
+
+    @Test
+    fun rightsAreReadAgainOnlyWhenTheViewResumes() {
+        val reads = RightsReads()
+        assertFalse("beim ersten Start hat `open` sie gelesen", reads.followStarted("a"))
+        assertTrue("Rückkehr in die App", reads.followStarted("a"))
+        assertTrue(reads.followStarted("a"))
+        reads.reset()
+        assertFalse("ein neu geöffnetes Lager beginnt von vorn", reads.followStarted("a"))
+        assertFalse("ein anderes Lager auch", reads.followStarted("b"))
     }
 
     @Test

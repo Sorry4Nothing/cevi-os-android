@@ -706,13 +706,13 @@ private fun MainContent(
     LaunchedEffect(campList) { (campList as? ApiResult.Ok)?.let { list -> downloads.retainOnly(list.value.filterNot { it.readOnly }.map { it.id }.toSet()) } }
     val lostCamp by camp.lostAccess.collectAsState()
     LaunchedEffect(lostCamp) { lostCamp?.let(downloads::deleteCamp) }
-    // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
-    // fragt sie nur, solange sie sichtbar ist.
+    // Der Zähler im Dock liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: auf den anderen Reitern nur die Zahl
+    // (`GET /chats/ungelesen`, kein Inhalt), auf dem Chat-Reiter die Liste, die dort ohnehin steht. Im Takt fragt nur die sichtbare Liste.
     LaunchedEffect(destination, openedChat, phoneOpen) {
         // Der Punkt an der Pille veraltet sonst auf den anderen Reitern: einmal still neu bei jedem Wechsel, ohne eigenen Takt.
         launch { camp.refreshNews() }
         if (openedChat == null && !phoneOpen) {
-            chat.loadList(silent = true)
+            if (destination != Destination.CHAT) chat.refreshUnread() else chat.loadList(silent = true)
             if (destination == Destination.CHAT) {
                 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     while (true) {
@@ -732,7 +732,7 @@ private fun MainContent(
         val detail by programs.detail.collectAsState()
         val programProfile = (programs.profile.collectAsState().value as? ApiResult.Ok)?.value
         val assignedProgram = (detail as? ApiResult.Ok)?.value?.takeIf { it.id == programId }
-        val chatUnread = (chat.list.collectAsState().value as? ApiResult.Ok)?.value?.chats?.sumOf { it.unread } ?: 0
+        val chatUnread = chat.unread.collectAsState().value ?: (chat.list.collectAsState().value as? ApiResult.Ok)?.value?.chats?.sumOf { it.unread } ?: 0
         val tabState = rememberSaveableStateHolder()
         val cropping = croppingImage
         val camps = (camp.camps.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()

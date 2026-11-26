@@ -1,6 +1,6 @@
 package io.github.sorry4nothing.cevios.widget
 
-import io.github.sorry4nothing.cevios.chat.Chat
+import io.github.sorry4nothing.cevios.chat.ChatUnread
 import io.github.sorry4nothing.cevios.lager.Camp
 import io.github.sorry4nothing.cevios.lager.CampTask
 import io.github.sorry4nothing.cevios.lager.MineSort
@@ -187,10 +187,10 @@ fun calendarContent(upcoming: List<Program>, limit: Int): WidgetContent.Calendar
     return WidgetContent.Calendar(unique.size, unique.take(limit).map(::calendarRow))
 }
 
-/** Nur die Zähler der Chatliste: Vorschau, Absender und Namen bleiben aussen vor. */
-fun chatContent(chats: List<Chat>): WidgetContent.Chat {
-    val unread = chats.map { it.unread }.filter { it > 0 }
-    return WidgetContent.Chat(unread.sum(), unread.size)
+/** Nur die Zahlen aus `GET /chats/ungelesen`: Der Server liefert gar keine Vorschau, Absender oder Namen; sie kommen nie auf das Gerät. */
+fun chatContent(unread: ChatUnread): WidgetContent.Chat {
+    val counts = unread.chats.map { it.unread }.filter { it > 0 }
+    return WidgetContent.Chat(counts.sum(), counts.size)
 }
 
 /** Das Lager, das ein Lager-Widget zeigt: das gewählte, sonst das einzige oder erste aktive; Rollen mit nur «lesen» zählen nicht. */

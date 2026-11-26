@@ -35,6 +35,17 @@ class ChatApiTest {
     private fun json(code: Int, body: String) = MockResponse.Builder().code(code).body(body).build()
 
     @Test
+    fun unreadReadsOnlyNumbers() {
+        server.enqueue(json(200, """{"anzahl":5,"chats":[{"id":"c1","ungelesen":3},{"id":"c2","ungelesen":2}]}"""))
+        val unread = (runBlocking { chat.unread() } as ApiResult.Ok).value
+        assertEquals("GET /api/v1/chats/ungelesen HTTP/1.1", server.takeRequest().requestLine)
+        assertEquals(5, unread.count)
+        assertEquals(listOf("c1" to 3, "c2" to 2), unread.chats.map { it.id to it.unread })
+        server.enqueue(json(200, """{"anzahl":0,"chats":[]}"""))
+        assertEquals(0, (runBlocking { chat.unread() } as ApiResult.Ok).value.count)
+    }
+
+    @Test
     fun chatsReadsGroupAndDirectChat() {
         server.enqueue(
             json(

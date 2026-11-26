@@ -9,6 +9,9 @@ import io.github.sorry4nothing.cevios.net.replacingError
 class ChatApi(private val api: ApiClient) {
     suspend fun chats(): ApiResult<ChatList> = api.get("/api/v1/chats")
 
+    /** Nur die Zahl der ungelesenen Nachrichten, für den Zähler im Dock und das Chat-Widget: ohne Texte und Namen, ein kleiner Aufruf statt der ganzen Liste. */
+    suspend fun unread(): ApiResult<ChatUnread> = api.get("/api/v1/chats/ungelesen")
+
     /** Eine Seite zu 50 Nachrichten, neueste zuerst. `before` ist der Cursor `next` der vorherigen Seite. */
     suspend fun messages(chatId: String, before: String? = null): ApiResult<MessagePage> =
         api.get("/api/v1/chats/$chatId/nachrichten" + if (before == null) "" else "?vor=$before")

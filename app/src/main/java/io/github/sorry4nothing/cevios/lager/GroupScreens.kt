@@ -48,6 +48,7 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import kotlinx.serialization.json.JsonElement
@@ -220,7 +221,8 @@ private fun GroupCard(group: Group, rights: PlanRights, onAssign: () -> Unit, on
             listOfNotNull(leadership, others).forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         if (group.participants.isNotEmpty() || group.people.isNotEmpty()) {
-            TextActionButton(stringResource(if (expanded) R.string.groups_hide_members else R.string.groups_show_members), { expanded = !expanded })
+            val toggle = stringResource(if (expanded) R.string.groups_hide_members else R.string.groups_show_members)
+            TextActionButton(toggle, { expanded = !expanded }, Modifier.rowAction(toggle, group.name))
         }
         if (expanded) {
             group.people.forEach { p ->
@@ -234,8 +236,10 @@ private fun GroupCard(group: Group, rights: PlanRights, onAssign: () -> Unit, on
         }
         if (rights.edit) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                OutlinedPillButton(stringResource(R.string.groups_assign), onAssign, icon = R.drawable.ic_plus)
-                TextActionButton(stringResource(R.string.groups_edit), onEdit)
+                val assign = stringResource(R.string.groups_assign)
+                val edit = stringResource(R.string.groups_edit)
+                OutlinedPillButton(assign, onAssign, Modifier.rowAction(assign, group.name), icon = R.drawable.ic_plus)
+                TextActionButton(edit, onEdit, Modifier.rowAction(edit, group.name))
             }
         }
     }
@@ -338,7 +342,8 @@ private fun ExcludedSheet(vm: PlanningViewModel, onDismiss: () -> Unit) {
                         Text(person.fullName, style = MaterialTheme.typography.bodyLarge)
                         person.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                    TextActionButton(stringResource(R.string.participants_include), { vm.setExcluded(listOf(person.id), false) })
+                    val include = stringResource(R.string.participants_include)
+                    TextActionButton(include, { vm.setExcluded(listOf(person.id), false) }, Modifier.rowAction(include, person.fullName))
                 }
             }
             OutlinedPillButton(stringResource(R.string.close), onDismiss, Modifier.fillMaxWidth())

@@ -45,6 +45,7 @@ import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
@@ -186,7 +187,8 @@ private fun OwnAttendance(frame: LiveFrame, schedule: Schedule, own: AttendanceO
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).semantics { heading() })
                 if (editable) {
-                    TextActionButton(stringResource(R.string.att_whole_day), { vm.tapDay(day.id, sections, values) })
+                    val wholeDay = stringResource(R.string.att_whole_day)
+                    TextActionButton(wholeDay, { vm.tapDay(day.id, sections, values) }, Modifier.rowAction(wholeDay, title))
                 }
             }
             if (vertical) {
@@ -335,8 +337,10 @@ private fun RequestsSection(frame: LiveFrame, requests: List<AttendanceRequest>,
                 Text(line, style = MaterialTheme.typography.bodyLarge)
                 request.note?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                    TextActionButton(stringResource(R.string.att_accept), { vm.decide(true, listOf(request)) })
-                    TextActionButton(stringResource(R.string.att_decline), { vm.decide(false, listOf(request)) })
+                    val accept = stringResource(R.string.att_accept)
+                    val decline = stringResource(R.string.att_decline)
+                    TextActionButton(accept, { vm.decide(true, listOf(request)) }, Modifier.rowAction(accept, line))
+                    TextActionButton(decline, { vm.decide(false, listOf(request)) }, Modifier.rowAction(decline, line))
                 }
             }
         }

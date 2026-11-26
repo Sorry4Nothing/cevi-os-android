@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -237,7 +238,7 @@ private fun FieldInput(
             "text" -> LabeledTextField(label, answer?.asAnswerText().orEmpty(), onText, TEXT_LIMIT, minLines = 2, enabled = !busy)
             "ja_nein" -> {
                 Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.selectableGroup().semantics { contentDescription = label }, horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     val chosen = answer?.asAnswerBoolean()
                     PickPill(stringResource(R.string.anlass_yes), chosen == true, { onAnswer(kotlinx.serialization.json.JsonPrimitive(true)) }, enabled = !busy)
                     PickPill(stringResource(R.string.anlass_no), chosen == false, { onAnswer(kotlinx.serialization.json.JsonPrimitive(false)) }, enabled = !busy)
@@ -245,7 +246,7 @@ private fun FieldInput(
             }
             else -> {
                 Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                FlowRow(Modifier.selectableGroup().semantics { contentDescription = label }, horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                     field.options.forEach { option ->
                         PickPill(option, answer?.asAnswerText() == option, { onAnswer(kotlinx.serialization.json.JsonPrimitive(option)) }, enabled = !busy)
                     }

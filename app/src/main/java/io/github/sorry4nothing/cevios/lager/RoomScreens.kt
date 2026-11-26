@@ -52,6 +52,7 @@ import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import kotlinx.serialization.json.JsonElement
@@ -218,8 +219,10 @@ private fun RoomCard(room: Room, rights: PlanRights, onAssign: () -> Unit, onEdi
         }
         if (rights.edit) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                OutlinedPillButton(stringResource(R.string.rooms_assign), onAssign, icon = R.drawable.ic_plus)
-                TextActionButton(stringResource(R.string.rooms_edit), onEdit)
+                val assign = stringResource(R.string.rooms_assign)
+                val edit = stringResource(R.string.rooms_edit)
+                OutlinedPillButton(assign, onAssign, Modifier.rowAction(assign, room.name), icon = R.drawable.ic_plus)
+                TextActionButton(edit, onEdit, Modifier.rowAction(edit, room.name))
             }
         }
     }

@@ -123,7 +123,7 @@ fun RoomListScreen(
     confirming?.let { request ->
         ConfirmDialog(
             stringResource(R.string.room_cancel_title),
-            stringResource(R.string.room_cancel_text, request.roomName, roomWhen(request.start, request.end)),
+            stringResource(R.string.room_cancel_text, request.roomName, roomWhenSpoken(request.start, request.end)),
             stringResource(R.string.room_cancel_booking),
             onConfirm = { confirming = null; onCancel(request) },
             onDismiss = { confirming = null },
@@ -165,8 +165,10 @@ private fun RequestCard(request: RoomRequest, running: Boolean, onCancel: () -> 
                 }
                 StatusChip(kind, stringResource(label))
             }
+            val whenSpoken = roomWhenSpoken(request.start, request.end)
             Text(
                 roomWhen(request.start, request.end),
+                Modifier.semantics { contentDescription = whenSpoken },
                 style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

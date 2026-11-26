@@ -33,6 +33,7 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.RoundButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.TextActionButton
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.LocalDate
@@ -263,7 +264,8 @@ fun DayScreen(frame: LiveFrame, nav: LiveNav, dayId: String, tasks: TasksViewMod
                                 dayTasks.forEach { task ->
                                     StartTaskRow(task, today, onOpen = { nav.onOpenTask(task.id) })
                                     if (tasks.rights.edit && !task.done) {
-                                        TextActionButton(stringResource(R.string.day_push_task), { LiveRules.nextDay(task.due)?.let { tasks.setDue(task, it) } })
+                                        val push = stringResource(R.string.day_push_task)
+                                        TextActionButton(push, { LiveRules.nextDay(task.due)?.let { tasks.setDue(task, it) } }, Modifier.rowAction(push, task.title))
                                     }
                                 }
                             }

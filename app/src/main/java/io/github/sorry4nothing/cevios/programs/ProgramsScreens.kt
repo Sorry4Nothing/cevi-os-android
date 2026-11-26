@@ -40,6 +40,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -125,8 +127,13 @@ private fun Timeline(days: List<Day>, onOpen: (String) -> Unit) {
 
 @Composable
 private fun DateColumn(day: Day, withLine: Boolean) {
-    Column(Modifier.width(52.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-        val date = day.date
+    val date = day.date
+    // «MI 25» liest TalkBack sonst als Kürzel und Zahl: Der Tag wird ausgeschrieben gesprochen.
+    val spoken = date?.let { "${weekdayLong(it)}, ${dayAndMonth(it)}" }
+    Column(
+        Modifier.width(52.dp).fillMaxHeight().then(if (spoken != null) Modifier.clearAndSetSemantics { contentDescription = spoken } else Modifier),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         if (date != null) {
             Text(weekdayShort(date), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.cevi.accent)
             Text(

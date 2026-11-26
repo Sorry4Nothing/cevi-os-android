@@ -7,6 +7,8 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.time.format.TextStyle
+import java.util.Locale
 
 /** Der Zweck: eine Zeile, höchstens so viele Zeichen (Vertrag `RaumAnfrageNeu`). */
 const val ROOM_PURPOSE_MAX = 200
@@ -81,14 +83,23 @@ fun dayNameShort(date: LocalDate): String = SHORT_DAYS[date.dayOfWeek.value - 1]
 fun dayNameLong(day: DayOfWeek): String = LONG_DAYS[day.value - 1]
 
 /** «Sa 12.12., 14:00–18:00»; über mehrere Tage «Sa 12.12., 14:00 – So 13.12., 10:00». Leer ohne lesbare Zeit. */
-fun roomWhen(startIso: String, endIso: String): String = try {
+fun roomWhen(startIso: String, endIso: String): String = roomWhenText(startIso, endIso, spoken = false)
+
+/** Wie [roomWhen], aber zum Vorlesen: «Samstag, 12. Dezember, 14:00 bis 18:00». TalkBack liest «Sa» und «12.12.» sonst Zeichen für Zeichen. */
+fun roomWhenSpoken(startIso: String, endIso: String): String = roomWhenText(startIso, endIso, spoken = true)
+
+private fun roomWhenText(startIso: String, endIso: String, spoken: Boolean): String = try {
     val start = Instant.parse(startIso).atZone(SWISS_ZONE)
     val end = Instant.parse(endIso).atZone(SWISS_ZONE)
-    fun day(zoned: ZonedDateTime) = "${dayNameShort(zoned.toLocalDate())} ${zoned.dayOfMonth}.${zoned.monthValue}."
+    fun day(zoned: ZonedDateTime): String {
+        val date = zoned.toLocalDate()
+        return if (spoken) "${dayNameLong(date.dayOfWeek)}, ${date.dayOfMonth}. ${date.month.getDisplayName(TextStyle.FULL, Locale.GERMAN)}"
+        else "${dayNameShort(date)} ${zoned.dayOfMonth}.${zoned.monthValue}."
+    }
     if (start.toLocalDate() == end.toLocalDate()) {
-        "${day(start)}, ${ROOM_TIME.format(start)}–${ROOM_TIME.format(end)}"
+        "${day(start)}, ${ROOM_TIME.format(start)}${if (spoken) " bis " else "–"}${ROOM_TIME.format(end)}"
     } else {
-        "${day(start)}, ${ROOM_TIME.format(start)} – ${day(end)}, ${ROOM_TIME.format(end)}"
+        "${day(start)}, ${ROOM_TIME.format(start)}${if (spoken) " bis " else " – "}${day(end)}, ${ROOM_TIME.format(end)}"
     }
 } catch (e: DateTimeParseException) {
     ""

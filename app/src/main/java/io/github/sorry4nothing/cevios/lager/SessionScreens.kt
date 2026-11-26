@@ -58,6 +58,7 @@ import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
@@ -174,8 +175,10 @@ fun MinutesScreen(
                             Text(renderMentions(decision.text, names, unknown), style = MaterialTheme.typography.bodyLarge)
                             if (rights.editMinutes) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                                    TextActionButton(stringResource(R.string.decision_edit), { decisionEdit = decision })
-                                    TextActionButton(stringResource(R.string.task_delete), { decisionDelete = decision })
+                                    val edit = stringResource(R.string.decision_edit)
+                                    val delete = stringResource(R.string.task_delete)
+                                    TextActionButton(edit, { decisionEdit = decision }, Modifier.rowAction(edit, decision.text))
+                                    TextActionButton(delete, { decisionDelete = decision }, Modifier.rowAction(delete, decision.text))
                                 }
                             }
                         }
@@ -516,12 +519,15 @@ fun MentionsScreen(
                             Text(text, style = MaterialTheme.typography.bodyLarge)
                             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
                                 if (mention.taskId != null) {
-                                    OutlinedPillButton(stringResource(R.string.task_open), { onOpenTask(mention.taskId) })
+                                    val openTask = stringResource(R.string.task_open)
+                                    OutlinedPillButton(openTask, { onOpenTask(mention.taskId) }, Modifier.rowAction(openTask, mention.title))
                                 } else if (rights.mentionToTask) {
-                                    OutlinedPillButton(stringResource(R.string.mention_as_task), { vm.mentionToTask(mention) })
+                                    val asTask = stringResource(R.string.mention_as_task)
+                                    OutlinedPillButton(asTask, { vm.mentionToTask(mention) }, Modifier.rowAction(asTask, mention.title))
                                 }
                                 if (rights.markMention) {
-                                    TextActionButton(stringResource(if (mention.done) R.string.mention_reopen else R.string.mention_mark_done), { vm.setMentionDone(mention, !mention.done) })
+                                    val mark = stringResource(if (mention.done) R.string.mention_reopen else R.string.mention_mark_done)
+                                    TextActionButton(mark, { vm.setMentionDone(mention, !mention.done) }, Modifier.rowAction(mark, mention.title))
                                 }
                                 if (mention.done) StatusChip(ChipKind.YES, stringResource(R.string.mention_done))
                             }

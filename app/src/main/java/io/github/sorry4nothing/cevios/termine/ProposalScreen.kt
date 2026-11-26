@@ -150,8 +150,9 @@ private fun ProposalForm(
         FieldError(ProposalProblem.ORDER in problems, R.string.proposal_error_order)
         FieldError(ProposalProblem.PAST in problems, R.string.proposal_error_past)
         LabeledTextField(stringResource(R.string.proposal_field_place), draft.place, { v -> onEdit { it.copy(place = v) } }, 120, enabled = !send.running)
-        Text(stringResource(R.string.proposal_field_groups), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+        val groupsLabel = stringResource(R.string.proposal_field_groups)
+        Text(groupsLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(Modifier.selectableGroup().semantics { contentDescription = groupsLabel },horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             tags.forEach { tag ->
                 val chosen = tag.id in draft.tagIds
                 PickPill(

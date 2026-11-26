@@ -101,6 +101,13 @@ class RoomLogicTest {
     }
 
     @Test
+    fun theSpokenTimeNamesTheWeekdayInFull() {
+        assertEquals("Samstag, 11. Dezember, 14:00 bis 18:00", roomWhenSpoken("2027-12-11T13:00:00Z", "2027-12-11T17:00:00Z"))
+        assertEquals("Mittwoch, 2. Juni, 22:00 bis Donnerstag, 3. Juni, 02:00", roomWhenSpoken("2027-06-02T20:00:00Z", "2027-06-03T00:00:00Z"))
+        assertEquals("", roomWhenSpoken("morgen", "später"))
+    }
+
+    @Test
     fun theDayIsNamedInFull() {
         assertEquals("Samstag, 12.12.", roomDayLong(LocalDate.of(2026, 12, 12)))
         assertEquals("So", dayNameShort(LocalDate.of(2026, 12, 13)))

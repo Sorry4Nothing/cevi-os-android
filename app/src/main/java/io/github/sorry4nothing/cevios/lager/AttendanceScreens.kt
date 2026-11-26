@@ -173,7 +173,7 @@ private fun OwnAttendance(frame: LiveFrame, schedule: Schedule, own: AttendanceO
     if (!vertical) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             sections.forEach { section ->
-                Text(section.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, modifier = Modifier.weight(1f))
+                Text(section.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             }
         }
     }

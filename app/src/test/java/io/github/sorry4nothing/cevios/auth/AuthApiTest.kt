@@ -159,6 +159,26 @@ class AuthApiTest {
     }
 
     @Test
+    fun profileCarriesTheRoomDecisionFlagAndTheOwnTags() {
+        reply(
+            200,
+            """{"id":"u","rollen":[],"stufen":[],"kinder":[],"raumAnfragenEntscheiden":true,
+               "tags":[{"id":"t1","name":"Hausteam","art":"team"},{"id":"t2","name":"Sommerlager","art":"lager"}]}""",
+        )
+        val profile = (runBlocking { auth.profile() } as ApiResult.Ok).value
+        assertTrue(profile.decidesRoomRequests)
+        assertEquals(listOf("Hausteam" to "team", "Sommerlager" to "lager"), profile.tags.map { it.name to it.kind })
+    }
+
+    @Test
+    fun profileWithoutTheNewFieldsDecidesNothingAndHasNoTags() {
+        reply(200, """{"id":"u","rollen":[]}""")
+        val profile = (runBlocking { auth.profile() } as ApiResult.Ok).value
+        assertFalse(profile.decidesRoomRequests)
+        assertTrue(profile.tags.isEmpty())
+    }
+
+    @Test
     fun profileWithoutTheRoleFieldsIsNoLeadership() {
         // Ein älterer Stand ohne die Felder gilt als «keine Rolle»; ein Altfeld `admin` zählt nicht mehr.
         reply(200, """{"id":"u","admin":true,"rollen":[]}""")

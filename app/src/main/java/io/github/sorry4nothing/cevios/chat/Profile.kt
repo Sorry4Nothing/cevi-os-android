@@ -9,6 +9,10 @@ data class ProfileRole(@SerialName("stufeId") val ageGroupId: String, @SerialNam
 @Serializable
 data class ProfileAgeGroup(val id: String, val name: String, @SerialName("kuerzel") val abbreviation: String = "")
 
+/** Eine eigene Gruppe vom Typ Team oder Lager (`art` ist `team` oder `lager`). */
+@Serializable
+data class ProfileTag(val id: String, val name: String, @SerialName("art") val kind: String)
+
 @Serializable
 data class ProfileChild(
     val id: String,
@@ -30,6 +34,10 @@ data class Profile(
     @SerialName("rollen") val roles: List<ProfileRole> = emptyList(),
     @SerialName("stufen") val ageGroups: List<ProfileAgeGroup> = emptyList(),
     @SerialName("kinder") val children: List<ProfileChild> = emptyList(),
+    /** Die eigenen Gruppen vom Typ Team und Lager, nach Name; Stufen stehen in `stufen`. */
+    @SerialName("tags") val tags: List<ProfileTag> = emptyList(),
+    /** Ob die Person über Raumanfragen entscheidet, auch wenn gerade keine offen ist. */
+    @SerialName("raumAnfragenEntscheiden") val decidesRoomRequests: Boolean = false,
     val name: String = "",
     @SerialName("benutzername") val username: String? = null,
     @SerialName("mussPasswortAendern") val mustChangePassword: Boolean = false,

@@ -116,4 +116,15 @@ class PushApiTest {
         assertNull(PushTarget.from("chat", "../../ich"))
         assertNull(PushTarget.from("programm", "7c9e6679-7425-40de-944b-e07fc1f90ae7/teilnahmen"))
     }
+
+    @Test
+    fun theDecisionOnARoomRequestLeadsToMyRequestsAndOnlyWithARealId() {
+        val id = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        assertEquals(PushTarget.RoomDecision(id), PushTarget.from("raum_entscheid", id))
+        assertNull(PushTarget.from("raum_entscheid", "../../admin"))
+        assertNull(PushTarget.from("raum_entscheid", null))
+        // `raum_anfrage` geht ans Team; dafür gibt es keinen Bildschirm.
+        assertNull(PushTarget.from("raum_anfrage", id))
+        assertEquals(Notifications.ROOMS_CHANNEL, Notifications.channelOf("raeume"))
+    }
 }

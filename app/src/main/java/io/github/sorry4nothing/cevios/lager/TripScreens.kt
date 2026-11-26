@@ -52,6 +52,7 @@ import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
 import io.github.sorry4nothing.cevios.ui.focusRing
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import kotlinx.serialization.json.JsonElement
@@ -222,16 +223,25 @@ private fun TripCard(trip: Trip, rights: PlanRights, onAssign: () -> Unit, onEdi
                     .semantics(mergeDescendants = true) { contentDescription = joinDetail(passenger.name, passenger.stage).orEmpty() },
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(passenger.name)
+                Avatar(passenger.name, imageUrl = passenger.imageUrl)
                 Text(passenger.name, style = MaterialTheme.typography.bodyLarge)
             }
         }
         val link = trip.link?.takeIf { it.startsWith("https://") }
         if (link != null || rights.edit) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                if (rights.edit) OutlinedPillButton(stringResource(R.string.trips_assign), onAssign, icon = R.drawable.ic_plus)
-                link?.let { OutlinedPillButton(stringResource(R.string.trips_open_timetable), { openLink(it) }) }
-                if (rights.edit) TextActionButton(stringResource(R.string.trips_edit), onEdit)
+                if (rights.edit) {
+                    val assign = stringResource(R.string.trips_assign)
+                    OutlinedPillButton(assign, onAssign, Modifier.rowAction(assign, title), icon = R.drawable.ic_plus)
+                }
+                link?.let {
+                    val timetable = stringResource(R.string.trips_open_timetable)
+                    OutlinedPillButton(timetable, { openLink(it) }, Modifier.rowAction(timetable, title))
+                }
+                if (rights.edit) {
+                    val edit = stringResource(R.string.trips_edit)
+                    TextActionButton(edit, onEdit, Modifier.rowAction(edit, title))
+                }
             }
         }
     }

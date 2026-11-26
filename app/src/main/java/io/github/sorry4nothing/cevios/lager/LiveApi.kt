@@ -143,6 +143,15 @@ class LiveApi(private val api: ApiClient) {
 
     suspend fun deleteShopItem(campId: String, itemId: String, version: Long): ApiResult<Unit> = api.delete("/api/v1/lager/$campId/einkauf/$itemId?version=$version")
 
+    // ---- Vorlagen ----
+
+    /** Die Vorlagen der Abteilung zum Anwenden (Recht `vorlagen.anwenden`, Standard nur die Lagerleitung). */
+    suspend fun templates(campId: String): ApiResult<TemplateList> = api.get("/api/v1/lager/$campId/vorlagen")
+
+    /** Legt die Einträge der Vorlage im Lager an. Wer dieselbe Vorlage zweimal anwendet, hat jeden Eintrag zweimal. */
+    suspend fun applyTemplate(campId: String, templateId: String): ApiResult<TemplateApplied> =
+        api.postWithoutBodyJson("/api/v1/lager/$campId/vorlagen/$templateId/anwenden")
+
     // ---- Packliste ----
 
     suspend fun packList(campId: String): ApiResult<PackList> = api.get("/api/v1/lager/$campId/packliste")

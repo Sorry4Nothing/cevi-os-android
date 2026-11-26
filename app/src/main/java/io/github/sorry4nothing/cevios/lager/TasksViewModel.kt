@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -24,7 +26,9 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import java.time.LocalDate
 
 /** Die Sätze der Warteschlange und die Feldnamen des Konfliktdialogs; sie stehen in `strings.xml`, der ViewModel kennt sie nicht. */
@@ -36,6 +40,8 @@ interface TaskTexts {
     fun statusSet(title: String, status: TaskStatus): String
 
     fun deleted(title: String): String
+
+    fun ressortQuiet(name: String, quiet: Boolean): String
 
     fun fieldLabels(): Map<String, String>
 }
@@ -116,8 +122,17 @@ class TasksViewModel(
     private val rawTasks = MutableStateFlow<ApiResult<List<CampTask>>?>(null)
     private val rawRessorts = MutableStateFlow<ApiResult<List<Ressort>>?>(null)
 
+    private val _members = MutableStateFlow<List<TaskPerson>?>(null)
+
+    /** Die Mitglieder des Lagers für die Personenauswahl (von der Einteilung geladen); `null`, solange sie fehlen. */
+    val members: StateFlow<List<TaskPerson>?> = _members.asStateFlow()
+
+    fun setMembers(list: List<TaskPerson>?) {
+        _members.value = list
+    }
+
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie, sobald das Lager geladen ist. */
-    var rights: TaskRights = TaskRights.of(CampRole.READ_ONLY, true)
+    var rights: TaskRights = TaskRights.of(NO_PERMISSIONS)
 
     /** Die Aufgaben, wie sie die Person sehen soll: Stand des Servers mit den wartenden Änderungen darüber. */
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -181,8 +196,27 @@ class TasksViewModel(
     private var tasksApplied = 0
     private val duplicateMerge = DuplicateMerge()
 
+    /** Gesendete Änderungen, deren Erwähnungen schon abgeglichen sind. */
+    private val mentionsSynced = mutableSetOf<String>()
+
     init {
         viewModelScope.launch { camp.changes.collect(::onChange) }
+        watchMentions()
+    }
+
+    /** Gleicht die Erwähnungen ab, sobald eine Änderung an Titel oder Notiz beim Server angekommen ist. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun watchMentions() {
+        viewModelScope.launch(Background()) {
+            openCamp.flatMapLatest { id -> if (id == null) emptyFlow() else camp.queueFor(id).state.map { id to it.changes } }.collect { (id, changes) ->
+                for (change in changes) {
+                    val taskId = mentionSyncTarget(change) ?: continue
+                    if (!mentionsSynced.add(change.clientOpId)) continue
+                    // Nur Leitende dürfen abgleichen; ein Fehler (kein Recht, ungültige Marke) lässt die gespeicherte Aufgabe, wie sie ist.
+                    if (rights.edit) api.syncMentions(id, taskId)
+                }
+            }
+        }
     }
 
     private val campId: String? get() = openCamp.value
@@ -234,7 +268,7 @@ class TasksViewModel(
             if (campId != id || seq < tasksApplied) return@launch
             tasksApplied = seq
             // Eine stille Aktualisierung lässt den alten Stand stehen, wenn sie scheitert.
-            if (result is ApiResult.Ok || !silent || rawTasks.value == null) rawTasks.value = result
+            if (replacesState(result, silent, rawTasks.value != null)) rawTasks.value = result
             if (result is ApiResult.Ok) {
                 _reloads.update { it + 1 }
                 // Alles, was die Person gesendet hat, steht jetzt in der Liste; die Anzeige braucht die Ebene darüber nicht mehr.
@@ -245,6 +279,11 @@ class TasksViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        // Gelöschte Aufgaben verschwinden sofort aus Liste und Auswahl; das Neuladen gleicht den Rest ab.
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone ->
+            rawTasks.update { it.withoutIds(gone) { task -> task.id } }
+            _selection.update { it?.minus(gone) }
+        }
         val tasksChanged = change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { it.startsWith("aufgabe") }
         if (tasksChanged) {
             loadTasks(silent = true)
@@ -673,8 +712,22 @@ class TasksViewModel(
             if (!silent) rawRessorts.value = null
             val result = api.ressorts(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || rawRessorts.value == null) rawRessorts.value = result
+            if (replacesState(result, silent, rawRessorts.value != null)) rawRessorts.value = result
         }
+    }
+
+    /**
+     * «Ruhiges Ressort» an- oder ausschalten (Recht `ressorts.bearbeiten`). Die Änderung geht über die Warteschlange; bis der Server
+     * sie bestätigt, zeigt die Ansicht den neuen Wert.
+     */
+    fun setRessortQuiet(ressort: Ressort, quiet: Boolean) {
+        val id = campId ?: return
+        if (!rights.editRessorts || ressort.quiet == quiet) return
+        val payload = buildJsonObject { put("id", ressort.id); put("version", ressort.version); put("ruhig", quiet) }
+        camp.enqueue(id, RESSORT_QUIET_OP, payload, texts.ressortQuiet(ressort.name, quiet), texts.fieldLabels())
+        val shown = ressort.copy(quiet = quiet)
+        (rawRessorts.value as? ApiResult.Ok)?.let { ok -> rawRessorts.value = ApiResult.Ok(ok.value.map { if (it.id == ressort.id) shown else it }) }
+        _bundle.update { current -> (current as? ApiResult.Ok)?.takeIf { it.value.ressort.id == ressort.id }?.let { ApiResult.Ok(it.value.copy(ressort = shown)) } ?: current }
     }
 
     fun openRessort(ressortId: String) {
@@ -709,7 +762,7 @@ class TasksViewModel(
                 }
             }
             if (bundleId != ressortId) return@launch
-            if (result is ApiResult.Ok || !silent || _bundle.value == null) _bundle.value = result
+            if (replacesState(result, silent, _bundle.value != null)) _bundle.value = result
         }
     }
 

@@ -25,20 +25,20 @@ class ArchiveLogicTest {
 
     @Test
     fun addressBookIsForTheLeadershipOnly() {
-        assertTrue(ArchiveRights.of(CampRole.LEADERSHIP, readOnly = false).readAddressBook)
+        assertTrue(ArchiveRights.of(defaultPermissions(CampRole.LEADERSHIP, false)).readAddressBook)
         listOf(CampRole.LEADER, CampRole.TEAM, CampRole.READ_ONLY).forEach {
-            val rights = ArchiveRights.of(it, readOnly = false)
+            val rights = ArchiveRights.of(defaultPermissions(it, false))
             assertFalse(it.name, rights.readAddressBook || rights.editAddressBook || rights.editSchedule)
         }
     }
 
     @Test
     fun documentsAreEditedByLeadershipAndLeaderAndNothingChangesInAClosedCamp() {
-        assertTrue(ArchiveRights.of(CampRole.LEADERSHIP, false).editDocuments)
-        assertTrue(ArchiveRights.of(CampRole.LEADER, false).editDocuments)
-        assertFalse(ArchiveRights.of(CampRole.TEAM, false).editDocuments)
-        assertFalse(ArchiveRights.of(CampRole.READ_ONLY, false).editDocuments)
-        val closed = ArchiveRights.of(CampRole.LEADERSHIP, readOnly = true)
+        assertTrue(ArchiveRights.of(defaultPermissions(CampRole.LEADERSHIP, false)).editDocuments)
+        assertTrue(ArchiveRights.of(defaultPermissions(CampRole.LEADER, false)).editDocuments)
+        assertFalse(ArchiveRights.of(defaultPermissions(CampRole.TEAM, false)).editDocuments)
+        assertFalse(ArchiveRights.of(defaultPermissions(CampRole.READ_ONLY, false)).editDocuments)
+        val closed = ArchiveRights.of(defaultPermissions(CampRole.LEADERSHIP, true))
         assertTrue(closed.readAddressBook)
         assertFalse(closed.editDocuments || closed.editAddressBook || closed.editSchedule)
     }

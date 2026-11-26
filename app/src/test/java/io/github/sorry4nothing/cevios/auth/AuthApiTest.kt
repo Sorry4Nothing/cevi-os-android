@@ -10,6 +10,7 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -58,7 +59,7 @@ class AuthApiTest {
         val cookie = "__Secure-better-auth.session_token=abc"
         reply(200, """{"redirect":false,"token":"t","user":{"id":"u","name":"M"}}""", "$cookie; Path=/; Max-Age=7776000; HttpOnly")
         val result = runBlocking { auth.signIn("m.keller", "geheim") }
-        assertEquals(ApiResult.Ok(SignInResponse(twoFactorRedirect = false)), result)
+        assertEquals(ApiResult.Ok(Unit), result)
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api/auth/sign-in/username", request.url.encodedPath)
@@ -67,12 +68,12 @@ class AuthApiTest {
     }
 
     @Test
-    fun signInWithSecondFactorIsRecognised() {
-        reply(200, """{"twoFactorRedirect":true,"twoFactorMethods":["totp"]}""", "two_factor=zwischen; Path=/; Max-Age=600")
-        val result = runBlocking { auth.signIn("admin", "geheim") }
-        assertEquals(ApiResult.Ok(SignInResponse(twoFactorRedirect = true)), result)
-        // Das Zwischen-Cookie steht jetzt im Speicher; die App wirft es weg (ApiClient.forgetSession).
-        assertEquals("two_factor=zwischen", storage.value)
+    fun signInWithSecondFactorOnTheAccountStillGivesASession() {
+        // Die App meldet sich ohne Code an, auch mit Faktor am Konto: Der Server gibt die Sitzung sofort (`zweiterFaktorGeprueft: false`).
+        val cookie = "__Secure-better-auth.session_token=abc"
+        reply(200, """{"redirect":false,"token":"t","user":{"id":"u","name":"M","twoFactorEnabled":true}}""", "$cookie; Path=/; Max-Age=7776000; HttpOnly")
+        assertEquals(ApiResult.Ok(Unit), runBlocking { auth.signIn("m.keller", "geheim") })
+        assertEquals(cookie, storage.value)
     }
 
     @Test
@@ -144,7 +145,7 @@ class AuthApiTest {
         reply(
             200,
             """{"id":"u","name":"Marion Keller","benutzername":"m.keller","mussPasswortAendern":false,"datenschutzGelesenAm":null,
-               "telefon":null,"bildUrl":"/api/v1/personen/u/bild?v=3","pushChat":true,"pushProgramme":true,"admin":false,"zweiterFaktor":false,
+               "telefon":null,"bildUrl":"/api/v1/personen/u/bild?v=3","pushChat":true,"pushProgramme":true,"abteilungsleitung":true,"entwickler":false,"clientArt":"app_nachgewiesen",
                "rollen":[],"stufen":[],"kinder":[{"id":"k","vorname":"Lena","nachname":"Keller","stufeId":"s"}]}""",
         )
         val profile = (runBlocking { auth.profile() } as ApiResult.Ok).value
@@ -153,6 +154,17 @@ class AuthApiTest {
         assertNull(profile.privacyReadAt)
         assertEquals("Lena", profile.children.single().firstName)
         assertEquals("/api/v1/personen/u/bild?v=3", profile.imageUrl)
+        assertTrue(profile.departmentLead && !profile.developer && profile.seesAll)
+        assertEquals("app_nachgewiesen", profile.clientKind)
+    }
+
+    @Test
+    fun profileWithoutTheRoleFieldsIsNoLeadership() {
+        // Ein älterer Stand ohne die Felder gilt als «keine Rolle»; ein Altfeld `admin` zählt nicht mehr.
+        reply(200, """{"id":"u","admin":true,"rollen":[]}""")
+        val profile = (runBlocking { auth.profile() } as ApiResult.Ok).value
+        assertFalse(profile.departmentLead || profile.developer || profile.seesAll)
+        assertNull(profile.clientKind)
     }
 
     @Test

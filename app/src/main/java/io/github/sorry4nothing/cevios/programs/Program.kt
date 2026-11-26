@@ -19,6 +19,10 @@ data class ProgramAgeGroup(
     @SerialName("logoUrl") val logoUrl: String? = null,
 )
 
+/** Die Stufen der Abteilung (`GET /api/v1/stufen`); gelesen werden ID, Name und Logo. */
+@Serializable
+data class AgeGroupList(@SerialName("stufen") val ageGroups: List<ProgramAgeGroup>)
+
 /** Eigenes Kind in einer Stufe des Programms. `status` ist «ja», «nein» oder `null` für noch offen. */
 @Serializable
 data class ProgramChild(val id: String, @SerialName("vorname") val firstName: String, val status: String? = null)
@@ -51,8 +55,6 @@ data class Program(
     val id: String,
     @SerialName("titel") val title: String,
     val status: String,
-    /** «intern», «leitende» oder «eltern»: wer das Programm ausser Admins und Stufenleitungen sieht. */
-    @SerialName("sichtbarkeit") val visibility: String = "intern",
     @SerialName("ganztaegig") val allDay: Boolean,
     @SerialName("beginn") val start: String? = null,
     @SerialName("ende") val end: String? = null,

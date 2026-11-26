@@ -150,8 +150,9 @@ private fun ProposalForm(
         FieldError(ProposalProblem.ORDER in problems, R.string.proposal_error_order)
         FieldError(ProposalProblem.PAST in problems, R.string.proposal_error_past)
         LabeledTextField(stringResource(R.string.proposal_field_place), draft.place, { v -> onEdit { it.copy(place = v) } }, 120, enabled = !send.running)
-        Text(stringResource(R.string.proposal_field_groups), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+        val groupsLabel = stringResource(R.string.proposal_field_groups)
+        Text(groupsLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(Modifier.selectableGroup().semantics { contentDescription = groupsLabel },horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             tags.forEach { tag ->
                 val chosen = tag.id in draft.tagIds
                 PickPill(
@@ -204,7 +205,7 @@ private fun SendBanner(send: ProposalsViewModel.SendState, onRetry: () -> Unit, 
 }
 
 @Composable
-private fun FieldError(show: Boolean, text: Int) {
+internal fun FieldError(show: Boolean, text: Int) {
     if (!show) return
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1), verticalAlignment = Alignment.CenterVertically) {
         Icon(painterResource(R.drawable.ic_warning), contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
@@ -242,7 +243,7 @@ private fun SwitchField(label: String, checked: Boolean, enabled: Boolean, onCha
 
 /** Ein Feld, das den Datumsdialog öffnet. Der Wert steht als Text im Feld, nicht nur als Platzhalter. */
 @Composable
-private fun DateField(label: String, value: LocalDate?, enabled: Boolean, onClick: () -> Unit) {
+internal fun DateField(label: String, value: LocalDate?, enabled: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.small
     val text = value?.let { dayText(it.toString()) } ?: stringResource(R.string.proposal_no_date)

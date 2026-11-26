@@ -51,9 +51,9 @@ data class GroupLabel(val type: Int, val name: String, val stageId: String? = nu
  * Die Gruppen der Person, soweit das Profil sie nennt: ihre Stufen (aus Rollen und Kindern) und ihre Funktion in der Stufe. Teams
  * und Lager liefert `GET /api/v1/ich` nicht; sie fehlen hier, bis es eine Route dafür gibt.
  */
-fun groupLabels(profile: Profile, adminName: String, groupLeaderName: String, leaderName: String): List<GroupLabel> = buildList {
+fun groupLabels(profile: Profile, leadershipName: String, groupLeaderName: String, leaderName: String): List<GroupLabel> = buildList {
     profile.ageGroups.forEach { add(GroupLabel(R.string.group_type_stufe, it.name, it.id)) }
-    if (profile.admin) add(GroupLabel(R.string.group_type_funktion, adminName))
+    if (profile.departmentLead) add(GroupLabel(R.string.group_type_funktion, leadershipName))
     if (profile.roles.any { it.type == "stufenleitung" }) add(GroupLabel(R.string.group_type_funktion, groupLeaderName))
     else if (profile.roles.any { it.type == "leitung" }) add(GroupLabel(R.string.group_type_funktion, leaderName))
 }
@@ -64,7 +64,7 @@ fun groupLabels(profile: Profile, adminName: String, groupLeaderName: String, le
 fun GroupsSection(profile: Profile) {
     SectionTitle(R.string.profile_groups_title)
     val groups = groupLabels(
-        profile, stringResource(R.string.role_function_admin), stringResource(R.string.role_function_leader), stringResource(R.string.role_function_leading),
+        profile, stringResource(R.string.role_function_department_lead), stringResource(R.string.role_function_leader), stringResource(R.string.role_function_leading),
     )
     if (groups.isEmpty()) {
         Text(stringResource(R.string.profile_groups_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp))

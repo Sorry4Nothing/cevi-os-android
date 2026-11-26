@@ -12,8 +12,8 @@ private val SWISS_LOCALE = Locale.forLanguageTag("de-CH")
 private val ZURICH_ZONE = ZoneId.of("Europe/Zurich")
 
 /**
- * Was die Rolle in «Im Lager» darf. Der Server prüft bei jeder Anfrage; die App blendet nur aus, was die Rolle nie darf
- * (Standardrechte, `GET …/rechte` nennt die einzelnen Rechte nur der Lagerleitung). Im geschlossenen Lager bleibt nichts zum Ändern.
+ * Was die Person in «Im Lager» darf, nach den Rechten aus dem Lagerdetail. Der Server prüft bei jeder Anfrage. Im geschlossenen
+ * Lager bleibt nichts zum Ändern.
  */
 data class LiveRights(
     /** `anwesenheit.eigene`: die eigene Anwesenheit eintragen und Anfragen stellen. Standard: Lagerleitung, Leitung, Team. */
@@ -32,29 +32,30 @@ data class LiveRights(
     val editShopping: Boolean,
     /** `packliste.abhaken`: abhaken, entfernen, eigene Punkte. Standard: Lagerleitung, Leitung, Team. */
     val tickPacking: Boolean,
+    /** `vorlagen.anwenden`: Vorlagen für die Packliste im Lager anwenden. Standard: nur die Lagerleitung. */
+    val applyTemplates: Boolean,
     /** `infos.bearbeiten`: Abschnitte ändern, anlegen, löschen, ordnen. Standard: nur die Lagerleitung. */
     val editInfos: Boolean,
     /** Eigene To-dos führt jede Rolle (auch «lesen»), solange das Lager offen ist. */
     val todos: Boolean,
+    /** Die Anwesenheit öffnen: die eigene oder die aller; auch im geschlossenen Lager (nur lesend). */
+    val seesAttendance: Boolean,
 ) {
     companion object {
-        fun of(role: CampRole, readOnly: Boolean): LiveRights {
-            val writes = !readOnly
-            val leadership = role == CampRole.LEADERSHIP
-            val leads = leadership || role == CampRole.LEADER
-            return LiveRights(
-                ownAttendance = writes && role != CampRole.READ_ONLY,
-                readAttendance = role != CampRole.TEAM,
-                decideAttendance = writes && leadership,
-                readDayPages = role != CampRole.TEAM,
-                editDayPages = writes && leads,
-                readShopping = role != CampRole.TEAM,
-                editShopping = writes && leads,
-                tickPacking = writes && role != CampRole.READ_ONLY,
-                editInfos = writes && leadership,
-                todos = writes,
-            )
-        }
+        fun of(p: CampPermissions) = LiveRights(
+            ownAttendance = p.mayWrite("anwesenheit.eigene"),
+            readAttendance = p.may("anwesenheit.lesen_alle"),
+            decideAttendance = p.mayWrite("anwesenheit.bearbeiten"),
+            readDayPages = p.may("tagesseiten.lesen"),
+            editDayPages = p.mayWrite("tagesseiten.bearbeiten"),
+            readShopping = p.may("einkauf.lesen"),
+            editShopping = p.mayWrite("einkauf.bearbeiten"),
+            tickPacking = p.mayWrite("packliste.abhaken"),
+            applyTemplates = p.mayWrite("vorlagen.anwenden"),
+            editInfos = p.mayWrite("infos.bearbeiten"),
+            todos = !p.readOnly,
+            seesAttendance = p.may("anwesenheit.eigene", "anwesenheit.lesen_alle"),
+        )
     }
 }
 

@@ -197,6 +197,8 @@ class WidgetRenderer(private val context: Context) {
             }
             row.setTextViewText(R.id.row_title, title)
             row.setViewVisibility(R.id.row_line, View.GONE)
+            // Der Zeileninhalt ist für Bedienhilfen verborgen: ohne Satz hörte TalkBack nichts.
+            row.setContentDescription(R.id.row_root, context.getString(R.string.widget_a11y_important, title))
             views.addView(R.id.widget_content, row)
         }
         val duty = content.duty?.let { context.getString(R.string.widget_a11y_camp_duty, dutyText(it)) }.orEmpty()

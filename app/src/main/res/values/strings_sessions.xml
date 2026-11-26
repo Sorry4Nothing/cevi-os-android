@@ -23,6 +23,10 @@
     <!-- Feldnamen im Konfliktbildschirm -->
     <string name="field_text">Text</string>
     <string name="field_decision">Entscheid</string>
+    <string name="field_duration">Dauer</string>
+    <string name="field_present">Anwesend</string>
+    <string name="summary_present">«%1$s» im Höck als anwesend eingetragen</string>
+    <string name="summary_absent">«%1$s» im Höck als abwesend eingetragen</string>
     <string name="field_date">Datum</string>
     <string name="field_time">Zeit</string>
     <string name="field_place">Ort</string>
@@ -107,6 +111,13 @@
     <string name="agenda_editor_edit">Traktandum bearbeiten</string>
     <string name="agenda_field_title">Titel</string>
     <string name="agenda_field_text">Text (optional)</string>
+    <string name="agenda_field_minutes">Dauer in Minuten (optional)</string>
+    <string name="agenda_minutes_hint">Eine Zahl von 1 bis 600.</string>
+    <string name="agenda_minutes_invalid">Gib eine Zahl von 1 bis 600 ein oder lass das Feld leer.</string>
+    <plurals name="agenda_minutes">
+        <item quantity="one">%d Minute</item>
+        <item quantity="other">%d Minuten</item>
+    </plurals>
     <string name="agenda_field_decision">Entscheid (optional)</string>
     <string name="agenda_field_responsible">Verantwortliche</string>
     <string name="agenda_field_mention">Person erwähnen</string>
@@ -154,6 +165,7 @@
     <string name="mode_ressort_none">Keine Ressorts.</string>
     <string name="mode_ressort_counts">%1$d von %2$d erledigt</string>
     <string name="mode_ressort_open">Ressort öffnen</string>
+    <string name="mode_task_open">Aufgabe öffnen</string>
     <plurals name="task_overdue_count">
         <item quantity="one">%d überfällig</item>
         <item quantity="other">%d überfällig</item>
@@ -201,6 +213,21 @@
     <string name="post_delete_title">«%1$s» löschen?</string>
     <string name="post_delete_text">Die Mitteilung verschwindet für alle.</string>
     <string name="recipient_all">Alle</string>
+    <string name="recipient_ressort">%1$s</string>
+    <string name="recipient_group">Gruppe %1$s</string>
+    <plurals name="post_ressorts">
+        <item quantity="one">%d Ressort</item>
+        <item quantity="other">%d Ressorts</item>
+    </plurals>
+    <plurals name="post_groups">
+        <item quantity="one">%d Gruppe</item>
+        <item quantity="other">%d Gruppen</item>
+    </plurals>
+    <plurals name="post_seen">
+        <item quantity="one">%d Person hat es gesehen</item>
+        <item quantity="other">%d Personen haben es gesehen</item>
+    </plurals>
+    <string name="post_seen_by">Wer hat es gesehen</string>
     <string name="recipient_leadership">Leitung</string>
     <string name="recipient_team">Team</string>
     <string name="recipient_read">Lesende</string>

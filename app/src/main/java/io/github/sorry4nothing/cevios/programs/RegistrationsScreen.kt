@@ -60,7 +60,7 @@ import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
 
 /**
- * Wer zu einem Programm ja, nein oder noch nichts gesagt hat, für Leitende, Stufenleitungen und Admins. Nur zum Ansehen: Eine
+ * Wer zu einem Programm ja, nein oder noch nichts gesagt hat, für Leitende, Stufenleitungen, Abteilungsleitung und Entwickler. Nur zum Ansehen: Eine
  * fehlende Antwort bleibt offen, niemand ändert sie hier (Entscheid des Auftraggebers). `subtitle` nennt das Programm.
  */
 @Composable

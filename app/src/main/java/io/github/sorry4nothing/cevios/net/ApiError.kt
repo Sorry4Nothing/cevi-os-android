@@ -26,7 +26,10 @@ enum class ApiError(@StringRes val text: Int) {
     /** 410 `FEED_NEU_LADEN`: Der Stand der App ist zu alt für den Änderungsfeed; sie lädt die Listen neu. */
     FEED_RELOAD(R.string.error_feed_reload),
 
-    /** 403 `ZWEITER_FAKTOR_FEHLT`: Die Lagerleitung braucht den zweiten Faktor; die App kann ihn nicht abfragen. */
+    /**
+     * 403 `ZWEITER_FAKTOR_FEHLT` oder `ZWEITER_FAKTOR_SITZUNG` (Sitzung der App ohne Code): Verwaltung und Rechte mit «erweitert» gibt es nur im Web;
+     * die App bietet das nicht an, zeigt aber «nur am Computer», falls ein Server es meldet.
+     */
     SECOND_FACTOR_MISSING(R.string.error_second_factor),
 
     /** 503 `IN_WARTUNG`: Der Bereich ist nur lesbar, bis die Wartung endet. */
@@ -37,14 +40,26 @@ enum class ApiError(@StringRes val text: Int) {
 
     /** 429 beim Senden einer Nachricht: höchstens 20 pro Minute. */
     MESSAGE_TOO_FAST(R.string.error_message_too_fast),
+
+    /** 401 `APP_NACHWEIS_UNGUELTIG` oder `APP_NACHWEIS_FEHLT`: Der Server nimmt die Anmeldung der App nicht an; er nennt keinen Grund. */
+    APP_PROOF_INVALID(R.string.error_app_proof_invalid),
+
+    /** 503 `APP_NACHWEIS_NICHT_ERREICHBAR`: Google war für den Server nicht erreichbar. */
+    APP_PROOF_UNREACHABLE(R.string.error_app_proof_unreachable),
+
+    /** Das Gerät liefert kein Integrity-Token (kein Google Play, kein Netz oder abgelehnt); die App fragt den Server dann gar nicht. */
+    INTEGRITY_UNAVAILABLE(R.string.error_integrity_unavailable),
     NETWORK(R.string.error_network),
     UNKNOWN(R.string.error_unknown);
 
     companion object {
+        private val SECOND_FACTOR_CODES = setOf("ZWEITER_FAKTOR_FEHLT", "ZWEITER_FAKTOR_SITZUNG")
+        private val APP_PROOF_CODES = setOf("APP_NACHWEIS_FEHLT", "APP_NACHWEIS_UNGUELTIG")
+
         /** `code` ist der Fehlercode des Servers (bei 409 und 400); er unterscheidet dort die Fälle. */
         fun from(status: Int, code: String? = null): ApiError = when (status) {
-            401 -> NOT_SIGNED_IN
-            403 -> if (code == "ZWEITER_FAKTOR_FEHLT") SECOND_FACTOR_MISSING else FORBIDDEN
+            401 -> if (code in APP_PROOF_CODES) APP_PROOF_INVALID else NOT_SIGNED_IN
+            403 -> if (code in SECOND_FACTOR_CODES) SECOND_FACTOR_MISSING else FORBIDDEN
             404 -> NOT_FOUND
             409 -> when (code) {
                 "PROGRAMM_BEGONNEN" -> PROGRAM_STARTED
@@ -55,7 +70,11 @@ enum class ApiError(@StringRes val text: Int) {
             410 -> FEED_RELOAD
             426 -> APP_OUTDATED
             429 -> TOO_MANY_REQUESTS
-            503 -> if (code == "IN_WARTUNG") MAINTENANCE else UNKNOWN
+            503 -> when (code) {
+                "IN_WARTUNG" -> MAINTENANCE
+                "APP_NACHWEIS_NICHT_ERREICHBAR" -> APP_PROOF_UNREACHABLE
+                else -> UNKNOWN
+            }
             else -> UNKNOWN
         }
 

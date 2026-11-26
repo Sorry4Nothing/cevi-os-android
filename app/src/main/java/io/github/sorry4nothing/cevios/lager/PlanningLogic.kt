@@ -7,8 +7,8 @@ import java.util.Locale
 private val SWISS_LOCALE = Locale.forLanguageTag("de-CH")
 
 /**
- * Was die Rolle bei der Einteilung darf. Der Server prüft bei jeder Anfrage; die App blendet nur aus, was die Rolle nie darf
- * (Standardrechte, `GET …/rechte` nennt die einzelnen Rechte nur der Lagerleitung). Im geschlossenen Lager bleibt nichts zum Ändern.
+ * Was die Person bei der Einteilung darf, nach den Rechten aus dem Lagerdetail. Der Server prüft bei jeder Anfrage. Im
+ * geschlossenen Lager bleibt nichts zum Ändern.
  */
 data class PlanRights(
     /** `teilnehmer.bearbeiten`: Teilnehmende erfassen, ändern, löschen, importieren; sieht den Cevi-Namen. Standard: nur die Lagerleitung. */
@@ -25,18 +25,15 @@ data class PlanRights(
     val decideSwap: Boolean,
 ) {
     companion object {
-        fun of(role: CampRole, readOnly: Boolean): PlanRights {
-            val writes = !readOnly
-            val leads = role == CampRole.LEADERSHIP || role == CampRole.LEADER
-            return PlanRights(
-                editParticipants = writes && role == CampRole.LEADERSHIP,
-                edit = writes && leads,
-                seeAll = role != CampRole.TEAM,
-                count = writes && role != CampRole.READ_ONLY,
-                requestSwap = writes && (leads || role == CampRole.TEAM),
-                decideSwap = writes && leads,
-            )
-        }
+        fun of(p: CampPermissions) = PlanRights(
+            editParticipants = p.mayWrite("teilnehmer.bearbeiten"),
+            edit = p.mayWrite("einteilung.bearbeiten"),
+            // Der Server zeigt dem Team nur das Eigene (Zeilenfilter nach Rolle, kein Recht dafür im Katalog).
+            seeAll = p.role != CampRole.TEAM || p.may("einteilung.bearbeiten"),
+            count = p.mayWrite("abzaehlen.schreiben"),
+            requestSwap = p.mayWrite("diensttausch.anfragen"),
+            decideSwap = p.mayWrite("diensttausch.entscheiden"),
+        )
     }
 }
 
@@ -124,7 +121,7 @@ object PlanRules {
 
     /** Der Name einer Person oder eines Teilnehmenden in einer Schicht: wer nicht bekannt ist, bekommt `fallback`. */
     fun swapActor(swap: Swap, plan: ShiftPlan?, people: Map<String, String>, fallback: String): String =
-        people[swap.vonPersonId] ?: plan?.shifts?.firstOrNull { it.id == swap.schichtId && it.personId == swap.vonPersonId }?.name ?: fallback
+        swap.vonName?.takeIf { it.isNotBlank() } ?: people[swap.vonPersonId] ?: plan?.shifts?.firstOrNull { it.id == swap.schichtId && it.personId == swap.vonPersonId }?.name ?: fallback
 
     /** Offene Anfragen zuerst (die älteste oben), danach die entschiedenen, die jüngste zuerst. */
     fun sortedSwaps(swaps: List<Swap>): List<Swap> =

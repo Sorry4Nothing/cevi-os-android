@@ -26,8 +26,8 @@ class RegistrationsTest {
         ageGroups = groups.map { ProgramAgeGroup(it, "Stufe $it") },
     )
 
-    private fun profile(admin: Boolean = false, vararg roles: Pair<String, String>) =
-        Profile(id = "u1", admin = admin, roles = roles.map { ProfileRole(it.first, it.second) })
+    private fun profile(departmentLead: Boolean = false, developer: Boolean = false, vararg roles: Pair<String, String>) =
+        Profile(id = "u1", departmentLead = departmentLead, developer = developer, roles = roles.map { ProfileRole(it.first, it.second) })
 
     @Test
     fun theOverviewIsReadAsTheContractSaysIt() {
@@ -50,8 +50,9 @@ class RegistrationsTest {
     }
 
     @Test
-    fun adminsAndLeadersOfTheProgramsAgeGroupsMaySee() {
-        assertTrue(RegistrationsRules.maySee(program("s1"), profile(admin = true)))
+    fun departmentLeadDeveloperAndLeadersOfTheProgramsAgeGroupsMaySee() {
+        assertTrue(RegistrationsRules.maySee(program("s1"), profile(departmentLead = true)))
+        assertTrue(RegistrationsRules.maySee(program("s1"), profile(developer = true)))
         assertTrue(RegistrationsRules.maySee(program("s1"), profile(roles = arrayOf("s1" to "leitung"))))
         assertTrue(RegistrationsRules.maySee(program("s1", "s2"), profile(roles = arrayOf("s2" to "stufenleitung"))))
     }
@@ -65,7 +66,8 @@ class RegistrationsTest {
 
     @Test
     fun forAllAgeGroupsEveryLeaderWithARoleMaySee() {
-        assertTrue(RegistrationsRules.maySee(program(), profile(admin = true)))
+        assertTrue(RegistrationsRules.maySee(program(), profile(departmentLead = true)))
+        assertTrue(RegistrationsRules.maySee(program(), profile(developer = true)))
         assertTrue(RegistrationsRules.maySee(program(), profile(roles = arrayOf("s9" to "leitung"))))
         assertFalse("ohne Rolle", RegistrationsRules.maySee(program(), profile()))
         assertFalse(RegistrationsRules.maySee(program(), null))

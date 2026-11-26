@@ -9,10 +9,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SignInRequest(val username: String, val password: String)
 
-/** Antwort der Anmeldung. `twoFactorRedirect`: Das Backend verlangt den zweiten Faktor; eine Sitzung gibt es dann noch nicht. */
-@Serializable
-data class SignInResponse(val twoFactorRedirect: Boolean = false)
-
 @Serializable
 data class AuthUser(val name: String = "", val mussPasswortAendern: Boolean = false)
 

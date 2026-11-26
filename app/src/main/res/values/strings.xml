@@ -8,6 +8,9 @@
     <string name="error_registration_closed">Die Anmeldung ist geschlossen. Das Programm ist abgesagt oder hat schon begonnen.</string>
     <string name="error_network">Keine Verbindung. Prüfe dein Internet und versuche es nochmals.</string>
     <string name="error_unknown">Etwas ist schiefgelaufen. Bitte versuche es nochmals.</string>
+    <string name="error_app_proof_invalid">Anmeldung nicht möglich. Bitte versuche es später nochmals.</string>
+    <string name="error_app_proof_unreachable">Die Bestätigung der App ist gerade nicht erreichbar. Bitte versuche es in einem Moment nochmals.</string>
+    <string name="error_integrity_unavailable">Die App konnte hier nicht bestätigt werden. Dafür braucht es Google Play und eine Verbindung. Bitte prüfe beides und versuche es nochmals.</string>
 
     <string name="loading">Wird geladen …</string>
     <string name="retry">Nochmals versuchen</string>
@@ -92,7 +95,7 @@
     <string name="programs_loading">Programme werden geladen</string>
     <string name="program_loading">Programm wird geladen</string>
     <string name="programs_empty_title">Keine Termine für dich</string>
-    <string name="programs_empty_text">Es gibt gerade keine Termine für deine Gruppen. Sobald die Leitung neue Termine einträgt, siehst du sie hier.</string>
+    <string name="programs_empty_text">Termine erscheinen hier, sobald sie einer deiner Gruppen zugeordnet sind.</string>
     <string name="time_list_all_day">Ganztägig</string>
     <string name="time_list_until">Ganztägig bis %1$s</string>
     <string name="back_to_programs">Zurück zu Programme</string>
@@ -141,21 +144,6 @@
     <string name="saving">Wird gespeichert …</string>
     <string name="back_to_program">Zurück zum Programm</string>
 
-    <string name="assignment_action">Stufen und Sichtbarkeit</string>
-    <string name="assignment_title">Stufen und Sichtbarkeit</string>
-    <string name="assignment_loading">Stufen werden geladen</string>
-    <string name="assignment_age_groups">Stufen</string>
-    <string name="assignment_no_choices">Du bist in keiner Stufe Stufenleitung. Darum kannst du keine Stufe zuordnen.</string>
-    <string name="assignment_fixed">Diese Stufen kannst du nicht ändern: %1$s. Sie und die Sichtbarkeit bleiben, wie sie sind.</string>
-    <string name="assignment_visibility">Wer sieht das Programm?</string>
-    <string name="visibility_intern">Intern</string>
-    <string name="visibility_intern_text">Nur Stufenleitungen und Admins</string>
-    <string name="visibility_leaders">Leitende</string>
-    <string name="visibility_leaders_text">Zusätzlich die Leitenden der Stufen</string>
-    <string name="visibility_parents">Eltern</string>
-    <string name="visibility_parents_text">Zusätzlich die Eltern der Stufen</string>
-    <string name="assignment_needs_age_group">Ohne Stufe geht nur «Intern».</string>
-
     <!-- Anmeldung, Passwort, Willkommen, Profil -->
     <string name="department">Cevi Stäfa-Hombrechtikon</string>
     <string name="start_loading">Wird geladen …</string>
@@ -166,7 +154,6 @@
     <string name="login_running">Anmeldung läuft …</string>
     <string name="login_forgot">Passwort vergessen? Dann hilft die Leitung.</string>
     <string name="login_failed">Anmeldung nicht möglich. Bitte Benutzername und Passwort prüfen oder später nochmals versuchen. Sonst hilft die Leitung.</string>
-    <string name="login_admin_only">Admins melden sich im Admin-Bereich an. In der App geht das nicht.</string>
     <string name="password_show">Passwort anzeigen</string>
     <string name="password_title_first">Eigenes Passwort wählen</string>
     <string name="password_title">Passwort ändern</string>
@@ -289,6 +276,7 @@
     <string name="mode_menu_title">Bereich wechseln</string>
     <string name="mode_department_sub">Programme, Chat, Profil</string>
     <string name="mode_camp_sub">Start, Aufgaben, Chat, Mehr</string>
+    <string name="mode_practice_sub">Zum Ausprobieren</string>
     <string name="mode_all_camps">Alle Lager</string>
     <plurals name="mode_camp_news">
         <item quantity="one">%d neu</item>
@@ -301,6 +289,10 @@
     <string name="camps_empty_title">Du bist in keinem Lager</string>
     <string name="camps_empty_text">Sobald dich die Lagerleitung hinzufügt, erscheint das Lager hier.</string>
     <string name="camps_section_closed">Abgeschlossen</string>
+    <string name="camps_section_practice">Übungslager</string>
+    <string name="camp_practice_chip">Übung</string>
+    <string name="camp_practice_title">Übungslager</string>
+    <string name="camp_practice_text">Zum Ausprobieren, Änderungen zählen nicht</string>
     <string name="camp_open">Lager öffnen</string>
     <string name="camp_status_draft">Entwurf</string>
     <string name="camp_status_active">Aktiv</string>
@@ -323,8 +315,8 @@
     <string name="error_version_conflict">Das wurde inzwischen von jemand anderem geändert. Der aktuelle Stand ist neu geladen.</string>
     <string name="error_lager_closed">Dieses Lager ist abgeschlossen. Du kannst nichts mehr ändern.</string>
     <string name="error_feed_reload">Dein Stand im Lager ist zu alt. Die App lädt ihn neu.</string>
-    <string name="error_second_factor">Die Lagerleitung braucht einen zweiten Faktor. Die App kann ihn noch nicht abfragen. Melde dich dafür im Web an.</string>
-    <string name="state_second_factor_title">Zweiter Faktor fehlt</string>
+    <string name="error_second_factor">Diese Aktion geht nur am Computer.</string>
+    <string name="state_second_factor_title">Nur am Computer</string>
     <string name="error_maintenance">Das Lager-Modul ist gerade nicht erreichbar. Bitte versuche es später nochmals.</string>
 
     <!-- Lager: Mehr -->
@@ -460,6 +452,12 @@
     <string name="task_move_down">Nach unten</string>
     <string name="task_select">Auswählen</string>
     <string name="task_delete">Löschen</string>
+    <string name="task_checkpoint_delete_title">Checkpunkt löschen?</string>
+    <string name="task_checkpoint_delete_text">«%1$s» ist danach für alle weg.</string>
+    <string name="task_link_delete_title">Link löschen?</string>
+    <string name="task_link_delete_text">«%1$s» ist danach für alle weg.</string>
+    <string name="pack_own_delete_title">Eigenen Punkt löschen?</string>
+    <string name="pack_own_delete_text">«%1$s» ist danach weg.</string>
     <string name="task_delete_text">Die Aufgabe ist danach für alle weg. In der App lässt sie sich nicht zurückholen.</string>
     <plurals name="task_delete_title">
         <item quantity="one">%d Aufgabe löschen?</item>
@@ -692,6 +690,9 @@
     <string name="ressort_loading">Ressort wird geladen</string>
     <string name="ressort_subtitle">Ressort %1$s</string>
     <string name="ressort_people">Personen</string>
+    <string name="ressort_quiet">Ruhiges Ressort</string>
+    <string name="ressort_quiet_hint">Hat gerade nichts zu tun. Die Liste zeigt es blasser, der Zeitplan nennt es.</string>
+    <string name="ressort_quiet_label">Ruhig</string>
     <string name="ressort_no_people">Noch niemand eingetragen.</string>
     <string name="ressort_role_deputy">Stellvertretung</string>
     <string name="ressort_notes">Notizen</string>
@@ -707,6 +708,8 @@
 
     <string name="summary_created">Aufgabe «%1$s» angelegt</string>
     <string name="summary_changed">Aufgabe «%1$s» geändert</string>
+    <string name="summary_ressort_quiet">Ressort «%1$s» ruhig gestellt</string>
+    <string name="summary_ressort_active">Ressort «%1$s» nicht mehr ruhig</string>
     <string name="summary_status">Aufgabe «%1$s» auf «%2$s» gesetzt</string>
     <string name="summary_deleted">Aufgabe «%1$s» gelöscht</string>
     <string name="field_title">Titel</string>

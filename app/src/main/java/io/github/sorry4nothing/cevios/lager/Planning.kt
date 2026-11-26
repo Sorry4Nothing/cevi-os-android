@@ -21,6 +21,21 @@ data class Participant(
     val fullName: String get() = "$firstName $lastName"
 }
 
+/**
+ * Ein Mitglied des Lagers für Auswahllisten (`GET /api/v1/lager/{id}/mitglieder`): `name` ist der Anzeigename des Lagers
+ * (Cevi-Name, sonst Vorname). Keine Telefonnummer, keine E-Mail; nur anzeigen, nie loggen.
+ */
+@Serializable
+data class CampMember(
+    @SerialName("personId") val personId: String,
+    val name: String,
+    @SerialName("rolle") val role: String = "",
+    @SerialName("ressorts") val ressorts: List<String> = emptyList(),
+)
+
+@Serializable
+data class CampMemberList(@SerialName("mitglieder") val members: List<CampMember> = emptyList())
+
 @Serializable
 data class ParticipantPage(@SerialName("teilnehmer") val participants: List<Participant>, @SerialName("naechster") val next: String? = null)
 
@@ -62,7 +77,7 @@ enum class RoomKind(val wire: String) {
 
 /** Wer in einem Zimmer liegt: Teilnehmende (`teilnehmer`) oder Mitglied des Lagers (`person`); beim Team nur der Name. */
 @Serializable
-data class RoomMember(@SerialName("typ") val kind: String = "", val id: String = "", val name: String) {
+data class RoomMember(@SerialName("typ") val kind: String = "", val id: String = "", val name: String, @SerialName("bildUrl") val imageUrl: String? = null) {
     val isParticipant: Boolean get() = kind == "teilnehmer"
 }
 
@@ -129,7 +144,7 @@ enum class TripDirection(val wire: String) {
 }
 
 @Serializable
-data class TripPerson(val id: String, val version: Long, val personId: String? = null, val teilnehmerId: String? = null, val name: String, @SerialName("stufe") val stage: String? = null)
+data class TripPerson(val id: String, val version: Long, val personId: String? = null, val teilnehmerId: String? = null, val name: String, @SerialName("stufe") val stage: String? = null, @SerialName("bildUrl") val imageUrl: String? = null)
 
 @Serializable
 data class TripDriver(val personId: String, val name: String? = null)
@@ -334,6 +349,10 @@ data class Swap(
     val entschiedenVon: String? = null,
     @SerialName("entschiedenAm") val decidedAt: String? = null,
     @SerialName("erstelltAm") val createdAt: String,
+    /** Anzeigename der anfragenden Person; `null`, wenn sie nicht mehr Mitglied ist (und bei älteren Antworten). */
+    val vonName: String? = null,
+    /** Anzeigename der Wunschperson oder dessen, der übernommen hat; `null` ohne Person. */
+    val mitName: String? = null,
 ) {
     val status: SwapStatus get() = SwapStatus.from(statusWire)
 }

@@ -4,7 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,12 +79,13 @@ private val WEEKDAYS = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
  * für fehlende Lagertage und Abschnitte. Meilensteine ändern und verschieben (mit Vorschau) hat der Entwurf nicht.
  */
 @Composable
-fun TimelineScreen(frame: LiveFrame, archive: ArchiveViewModel, onOpenTask: (String) -> Unit) {
+fun TimelineScreen(frame: LiveFrame, archive: ArchiveViewModel, onOpenTask: (String) -> Unit, quietRessorts: List<String> = emptyList(), onOpenRessorts: (() -> Unit)? = null) {
     val state by archive.timeline.collectAsState()
     val proposal by archive.proposal.collectAsState()
     val busy by archive.busy.collectAsState()
     var calendar by rememberSaveable { mutableStateOf(false) }
     var proposalHidden by remember { mutableStateOf(false) }
+    var quietHidden by remember { mutableStateOf(false) }
     LaunchedEffect(frame.camp?.id) { archive.loadTimeline(silent = archive.timeline.value is ApiResult.Ok) }
 
     ArchivePage(frame, archive, stringResource(R.string.timeline_title)) {
@@ -100,6 +106,13 @@ fun TimelineScreen(frame: LiveFrame, archive: ArchiveViewModel, onOpenTask: (Str
                                 NoticeKind.INFO,
                                 stringResource(R.string.timeline_proposal_title) + ". " + stringResource(R.string.timeline_proposal_text),
                                 stringResource(R.string.timeline_proposal_action), { archive.adoptProposal() }, { proposalHidden = true },
+                            )
+                        }
+                        if (quietRessorts.isNotEmpty() && !quietHidden) {
+                            ActionBanner(
+                                NoticeKind.INFO,
+                                stringResource(R.string.timeline_quiet_title) + ". " + stringResource(R.string.timeline_quiet_text, quietRessorts.joinToString(", ")),
+                                onOpenRessorts?.let { stringResource(R.string.timeline_quiet_action) }, onOpenRessorts, { quietHidden = true },
                             )
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
@@ -192,16 +205,20 @@ private fun MonthView(entries: List<TimelineEntry>, onOpenTask: (String) -> Unit
             )
             RoundButton(HeaderButton(R.drawable.ic_chevron_right, stringResource(R.string.timeline_next_month)) { month = shown.plusMonths(1).toString(); picked = null })
         }
-        Row(Modifier.fillMaxWidth().clearAndSetSemantics { }) {
-            WEEKDAYS.forEach { Text(it, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) }
-        }
-        TimelineRules.cells(shown).chunked(WEEK_DAYS).forEach { week ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s1)) {
-                week.forEach { date ->
-                    if (date == null) {
-                        Box(Modifier.weight(1f))
-                    } else {
-                        DayCell(date, today, TimelineRules.kindsOn(entries, date), date.toString() == picked, { picked = date.toString() }, Modifier.weight(1f))
+        MonthGridFrame {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+                Row(Modifier.fillMaxWidth().clearAndSetSemantics { }) {
+                    WEEKDAYS.forEach { Text(it, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) }
+                }
+                TimelineRules.cells(shown).chunked(WEEK_DAYS).forEach { week ->
+                    Row(Modifier.fillMaxWidth()) {
+                        week.forEach { date ->
+                            if (date == null) {
+                                Box(Modifier.weight(1f))
+                            } else {
+                                DayCell(date, today, TimelineRules.kindsOn(entries, date), date.toString() == picked, { picked = date.toString() }, Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
             }
@@ -220,6 +237,25 @@ private fun MonthView(entries: List<TimelineEntry>, onOpenTask: (String) -> Unit
         }
     }
 }
+
+/**
+ * Jede Tageszelle ist mindestens 48 dp breit: Reicht der Platz knapp nicht, ragt das Raster symmetrisch in den Seitenrand
+ * (bis `GRID_BLEED`); ist es noch schmaler, scrollt es seitwärts, statt Zellen zu kürzen.
+ */
+@Composable
+private fun MonthGridFrame(content: @Composable () -> Unit) {
+    val minWidth = Sizes.touchTarget * WEEK_DAYS
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val width = maxOf(maxWidth, minWidth)
+        if (width - maxWidth <= GRID_BLEED * 2) {
+            Box(Modifier.requiredWidth(width)) { content() }
+        } else {
+            Box(Modifier.horizontalScroll(rememberScrollState())) { Box(Modifier.width(width)) { content() } }
+        }
+    }
+}
+
+private val GRID_BLEED = Spacing.s3
 
 @Composable
 private fun kindLabel(kind: TimelineKind): String = stringResource(

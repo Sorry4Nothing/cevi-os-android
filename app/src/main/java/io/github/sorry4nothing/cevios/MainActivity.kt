@@ -38,13 +38,15 @@ import io.github.sorry4nothing.cevios.lager.MentionsScreen
 import io.github.sorry4nothing.cevios.lager.MinutesScreen
 import io.github.sorry4nothing.cevios.lager.PinboardScreen
 import io.github.sorry4nothing.cevios.lager.PostEditorScreen
+import io.github.sorry4nothing.cevios.lager.RecipientChoices
 import io.github.sorry4nothing.cevios.lager.TaskRules
 import io.github.sorry4nothing.cevios.lager.campTargetFor
 import io.github.sorry4nothing.cevios.lager.todayInCamp
 import io.github.sorry4nothing.cevios.lager.clearSharedFiles
 import io.github.sorry4nothing.cevios.lager.shareCalendarFile
 import io.github.sorry4nothing.cevios.lager.CampApi
-import io.github.sorry4nothing.cevios.lager.CampRole
+import io.github.sorry4nothing.cevios.lager.NO_PERMISSIONS
+import io.github.sorry4nothing.cevios.lager.permissions
 import io.github.sorry4nothing.cevios.lager.LeadershipStart
 import io.github.sorry4nothing.cevios.lager.RessortListScreen
 import io.github.sorry4nothing.cevios.lager.RessortScreen
@@ -130,6 +132,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import io.github.sorry4nothing.cevios.auth.AuthApi
+import io.github.sorry4nothing.cevios.auth.PlayIntegrity
 import io.github.sorry4nothing.cevios.auth.AuthState
 import io.github.sorry4nothing.cevios.auth.AuthViewModel
 import io.github.sorry4nothing.cevios.auth.FormState
@@ -172,11 +175,12 @@ import io.github.sorry4nothing.cevios.termine.EventViewModel
 import io.github.sorry4nothing.cevios.termine.GroupsSection
 import io.github.sorry4nothing.cevios.termine.ProposalScreen
 import io.github.sorry4nothing.cevios.termine.ProposalsViewModel
+import io.github.sorry4nothing.cevios.termine.RoomListScreen
+import io.github.sorry4nothing.cevios.termine.RoomRequestScreen
+import io.github.sorry4nothing.cevios.termine.RoomsViewModel
 import io.github.sorry4nothing.cevios.termine.TermineApi
 import io.github.sorry4nothing.cevios.auth.SettingsCard
 import io.github.sorry4nothing.cevios.auth.SettingsRow
-import io.github.sorry4nothing.cevios.programs.AssignmentRules
-import io.github.sorry4nothing.cevios.programs.AssignmentScreen
 import io.github.sorry4nothing.cevios.programs.ProgramDetailScreen
 import io.github.sorry4nothing.cevios.programs.ProgramsApi
 import io.github.sorry4nothing.cevios.programs.ProgramListScreen
@@ -192,6 +196,7 @@ import io.github.sorry4nothing.cevios.ui.ErrorState
 import io.github.sorry4nothing.cevios.ui.theme.CeviTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** So oft fragt ein offener Chat den Server nach neuen Nachrichten, solange die App im Vordergrund ist (Takt laut API). */
@@ -249,8 +254,8 @@ class MainActivity : FragmentActivity() {
 /** Je nach Anmeldestand: Start, Fehler, Anmelden, Passwort wählen, Willkommen oder die App selbst. */
 @Composable
 private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, pushTarget: PushTarget?, onPushTargetHandled: () -> Unit) {
-    val authApi = remember(client) { AuthApi(client) }
     val widgetContext = LocalContext.current.applicationContext
+    val authApi = remember(client) { AuthApi(client, PlayIntegrity.forBuild(widgetContext)) }
     // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets und geteilte Dateien im Cache verschwinden.
     val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext) }, lock, client::hasSession) }
     val state by auth.state.collectAsState()
@@ -282,74 +287,75 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
     val openPrivacy = { openInBrowser(context, authApi.privacyUrl()) }
     val motion = rememberMotionEnabled()
     Surface(Modifier.fillMaxSize()) {
-        AnimatedContent(
-            state,
-            transitionSpec = { loginTransition(initialState, motion) },
-            contentKey = { it::class },
-            label = "anmeldung",
-        ) { current ->
-            when (current) {
-                AuthState.Loading -> StartScreen()
-                AuthState.Locked -> LockedScreen(
-                    form,
-                    onUnlock = {
-                        prompter.unlock {
-                            when (it) {
-                                LockOutcome.Success -> auth.unlock()
-                                LockOutcome.Invalidated -> auth.lockInvalidated()
-                                LockOutcome.Failed -> auth.unlockFailed()
-                                LockOutcome.Declined -> Unit
+        // Über dem Start gibt es keinen zweiten Ladekreis.
+        BusyOverlay(busy = pending > 0 && state !is AuthState.Loading) {
+            AnimatedContent(
+                state,
+                transitionSpec = { loginTransition(initialState, motion) },
+                contentKey = { it::class },
+                label = "anmeldung",
+            ) { current ->
+                when (current) {
+                    AuthState.Loading -> StartScreen()
+                    AuthState.Locked -> LockedScreen(
+                        form,
+                        onUnlock = {
+                            prompter.unlock {
+                                when (it) {
+                                    LockOutcome.Success -> auth.unlock()
+                                    LockOutcome.Invalidated -> auth.lockInvalidated()
+                                    LockOutcome.Failed -> auth.unlockFailed()
+                                    LockOutcome.Declined -> Unit
+                                }
                             }
+                        },
+                        onUsePassword = auth::signOut,
+                    )
+                    is AuthState.Failed -> Box(Modifier.safeDrawingPadding()) { ErrorState(current.error, onRetry = auth::start) }
+                    is AuthState.SignedOut -> {
+                        var loginRequested by rememberSaveable { mutableStateOf(false) }
+                        if (current.expired && !loginRequested) {
+                            Box(Modifier.safeDrawingPadding()) {
+                                ErrorState(ApiError.NOT_SIGNED_IN, onRetry = {}, onSignIn = { loginRequested = true })
+                            }
+                        } else {
+                            LoginScreen(form, onSignIn = auth::signIn)
                         }
-                    },
-                    onUsePassword = auth::signOut,
-                )
-                is AuthState.Failed -> Box(Modifier.safeDrawingPadding()) { ErrorState(current.error, onRetry = auth::start) }
-                is AuthState.SignedOut -> {
-                    var loginRequested by rememberSaveable { mutableStateOf(false) }
-                    if (current.expired && !loginRequested) {
-                        Box(Modifier.safeDrawingPadding()) {
-                            ErrorState(ApiError.NOT_SIGNED_IN, onRetry = {}, onSignIn = { loginRequested = true })
-                        }
-                    } else {
-                        LoginScreen(form, onSignIn = auth::signIn)
                     }
-                }
-                AuthState.MustChangePassword -> PasswordScreen(
-                    first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
-                )
-                is AuthState.Welcome -> WelcomeScreen(
-                    name = current.profile.name,
-                    passwordSaved = passwordSaved,
-                    form = form,
-                    onReadPrivacy = openPrivacy,
-                    onAccept = auth::acceptPrivacy,
-                    lockAvailable = lockAvailable,
-                    lockEnabled = lockEnabled,
-                    onLockChange = onLockChange,
-                )
-                is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
-                    // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
-                    val images = viewModel { ProfileImages(ProfileImageApi(client)) }
-                    val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
-                    CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
-                        MainContent(
-                            ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
-                            passwordSaved, form, imageForm, auth,
-                            pushTarget, onPushTargetHandled,
-                            onOpenPrivacy = openPrivacy,
-                            onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
-                            onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
-                            lockAvailable = lockAvailable,
-                            lockEnabled = lockEnabled,
-                            onLockChange = onLockChange,
-                        )
+                    AuthState.MustChangePassword -> PasswordScreen(
+                        first = true, form, onSave = auth::changePassword, startPasswordKnown = auth.startPasswordKnown.collectAsState().value,
+                    )
+                    is AuthState.Welcome -> WelcomeScreen(
+                        name = current.profile.name,
+                        passwordSaved = passwordSaved,
+                        form = form,
+                        onReadPrivacy = openPrivacy,
+                        onAccept = auth::acceptPrivacy,
+                        lockAvailable = lockAvailable,
+                        lockEnabled = lockEnabled,
+                        onLockChange = onLockChange,
+                    )
+                    is AuthState.SignedIn -> CompositionLocalProvider(LocalViewModelStoreOwner provides current.scope) {
+                        // Die Bilder der Sitzung liegen im Speicher der Sitzung und verschwinden mit ihr.
+                        val images = viewModel { ProfileImages(ProfileImageApi(client)) }
+                        val stageLogos by viewModel { StageLogos(ProgramsApi(client)) }.paths.collectAsState()
+                        CompositionLocalProvider(LocalProfileImages provides images, LocalStageLogos provides stageLogos) {
+                            MainContent(
+                                ProgramsApi(client), ChatApi(client), PushApi(client), CampApi(client), TasksApi(client), MeetingsApi(client), CommsApi(client), PlanningApi(client), LiveApi(client), ArchiveApi(client), TermineApi(client), current.profile,
+                                passwordSaved, form, imageForm, auth,
+                                pushTarget, onPushTargetHandled,
+                                onOpenPrivacy = openPrivacy,
+                                onOpenSupport = { openInBrowser(context, authApi.supportUrl()) },
+                                onOpenDeleteAccount = { openInBrowser(context, authApi.deleteAccountUrl()) },
+                                lockAvailable = lockAvailable,
+                                lockEnabled = lockEnabled,
+                                onLockChange = onLockChange,
+                            )
+                        }
                     }
                 }
             }
         }
-        // Über dem Start gibt es keinen zweiten Ladekreis.
-        BusyOverlay(busy = pending > 0 && state !is AuthState.Loading)
     }
 }
 
@@ -389,9 +395,10 @@ private sealed interface Screen {
     data class RessortPage(val ressortId: String) : Screen { override val depth = 2 }
     data class Conflict(val changeId: String) : Screen { override val depth = 2 }
     data class Registrations(val programId: String) : Screen { override val depth = 2 }
-    data class Assign(val programId: String) : Screen { override val depth = 2 }
     data class Event(val eventId: String) : Screen { override val depth = 2 }
     data object Proposal : Screen { override val depth = 1 }
+    data object Rooms : Screen { override val depth = 1 }
+    data object RoomRequest : Screen { override val depth = 2 }
 }
 
 @Composable
@@ -436,6 +443,7 @@ private fun MainContent(
     val archive = viewModel { ArchiveViewModel(archiveApi, meetingsApi, tasksApi, camp, AndroidCommsTexts(appContext)) }
     val calendarLink = viewModel { CalendarLinkViewModel(termineApi) }
     val proposals = viewModel { ProposalsViewModel(termineApi) }
+    val rooms = viewModel { RoomsViewModel(termineApi) }
     val eventForm = viewModel { EventViewModel(termineApi) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var changingPassword by rememberSaveable { mutableStateOf(false) }
@@ -469,9 +477,11 @@ private fun MainContent(
     // Termine: die Anmeldung zu einem Anlass (ID des Anlasses) und «Termin vorschlagen».
     var openedEvent by rememberSaveable { mutableStateOf<String?>(null) }
     var proposalOpen by rememberSaveable { mutableStateOf(false) }
+    // Räume: «Meine Raumanfragen» (K3) und davon aus «Raum anfragen» (K2).
+    var roomsOpen by rememberSaveable { mutableStateOf(false) }
+    var roomRequestOpen by rememberSaveable { mutableStateOf(false) }
     var openedChat by rememberSaveable { mutableStateOf<String?>(null) }
     var phoneOpen by rememberSaveable { mutableStateOf(false) }
-    var assigning by rememberSaveable { mutableStateOf(false) }
     var viewingRegistrations by rememberSaveable { mutableStateOf(false) }
     // Das gewählte Profilfoto, solange die Person den Ausschnitt wählt.
     var croppingImage by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -499,9 +509,10 @@ private fun MainContent(
     // Das Tippen auf einen Push öffnet den Chat oder das Programm und schliesst, was davor offen war.
     LaunchedEffect(pushTarget) {
         val target = pushTarget ?: return@LaunchedEffect
-        notificationsOpen = false; phoneOpen = false; assigning = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false
+        notificationsOpen = false; phoneOpen = false; viewingRegistrations = false; openedEvent = null; proposalOpen = false; roomsOpen = false; roomRequestOpen = false
         when (target) {
             is PushTarget.Proposal -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; proposalOpen = true }
+            is PushTarget.RoomDecision -> { campArea = false; destination = Destination.PROFILE; openedChat = null; openedProgram = null; roomsOpen = true }
             is PushTarget.Chat -> { destination = Destination.CHAT; openedProgram = null; openedChat = target.id }
             is PushTarget.Program -> { campArea = false; destination = Destination.PROGRAMS; openedChat = null; openedProgram = target.id }
             // Widgets: die Liste der Programme, die Chatliste oder eine Lager-Seite (das Lager kennt das Widget, sonst zeigt die Lagerwahl).
@@ -578,6 +589,9 @@ private fun MainContent(
             proposals.loadMine()
         }
     }
+    // Die Räume laden beim Öffnen neu: Daten bleiben nur im Arbeitsspeicher.
+    LaunchedEffect(roomsOpen) { if (roomsOpen) rooms.reloadMine() }
+    LaunchedEffect(roomRequestOpen) { if (roomRequestOpen) rooms.reloadRooms() }
     // Im Profil: der Kalenderlink und, ob die Person Termine vorschlagen darf.
     LaunchedEffect(destination) {
         if (destination == Destination.PROFILE) {
@@ -585,7 +599,6 @@ private fun MainContent(
             proposals.loadOptions()
         }
     }
-    LaunchedEffect(assigning, openedProgram) { if (assigning) openedProgram?.let(programs::loadAssignment) }
     LaunchedEffect(viewingRegistrations, openedProgram) {
         val id = openedProgram
         if (viewingRegistrations && id != null) programs.loadRegistrations(id)
@@ -632,6 +645,8 @@ private fun MainContent(
     // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
     // fragt sie nur, solange sie sichtbar ist.
     LaunchedEffect(destination, openedChat, phoneOpen) {
+        // Der Punkt an der Pille veraltet sonst auf den anderen Reitern: einmal still neu bei jedem Wechsel, ohne eigenen Takt.
+        launch { camp.refreshNews() }
         if (openedChat == null && !phoneOpen) {
             chat.loadList(silent = true)
             if (destination == Destination.CHAT) {
@@ -639,6 +654,7 @@ private fun MainContent(
                     while (true) {
                         delay(LIST_POLL_INTERVAL_MS)
                         chat.loadList(silent = true)
+                        camp.refreshNews()
                     }
                 }
             }
@@ -656,18 +672,32 @@ private fun MainContent(
         val cropping = croppingImage
         val camps = (camp.camps.collectAsState().value as? ApiResult.Ok)?.value.orEmpty()
         val campUnread by camp.unread.collectAsState()
+        val campNews by camp.news.collectAsState()
         val queueState = campId?.let { camp.queueFor(it).state.collectAsState().value } ?: QueueState()
         val online by camp.online.collectAsState()
         val lostAccess by camp.lostAccess.collectAsState()
         val campDetail = camp.detail.collectAsState().value.let { if (lostAccess != null && lostAccess == campId) ApiResult.Failure(ApiError.FORBIDDEN) else it }
         val conflict = conflictId?.let { id -> queueState.changes.firstOrNull { it.clientOpId == id && it.state == ChangeState.CONFLICT } }
         val openedCamp = (campDetail as? ApiResult.Ok)?.value?.takeIf { it.id == campId }
-        val rights = TaskRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val meetingRights = MeetingRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val planRights = PlanRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val liveRights = LiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
-        val archiveRights = ArchiveRights.of(openedCamp?.role ?: CampRole.READ_ONLY, openedCamp?.readOnly ?: true)
+        val campPermissions = openedCamp?.permissions() ?: NO_PERMISSIONS
+        val rights = TaskRights.of(campPermissions)
+        val meetingRights = MeetingRights.of(campPermissions)
+        val planRights = PlanRights.of(campPermissions)
+        val liveRights = LiveRights.of(campPermissions)
+        val archiveRights = ArchiveRights.of(campPermissions)
         SideEffect { tasks.rights = rights; comms.rights = meetingRights; meetings.rights = meetingRights; planning.rights = planRights; live.rights = liveRights; archive.rights = archiveRights }
+        // Wer Mitteilungen schreibt, wählt auch Ressorts und Gruppen als Empfänger; ohne Recht bleiben die Listen leer.
+        val recipientRessorts = (tasks.ressorts.collectAsState().value as? ApiResult.Ok)?.value
+        val recipientGroups = (planning.groups.collectAsState().value as? ApiResult.Ok)?.value?.groups
+        LaunchedEffect(campId, meetingRights.editPinboard, liveArea) {
+            if (campId != null && rights.readRessorts && (meetingRights.editPinboard || liveArea == LiveArea.TIMELINE)) tasks.loadRessortsIfNeeded()
+        }
+        LaunchedEffect(campId, meetingRights.editPinboard) {
+            if (campId != null && meetingRights.editPinboard) planning.loadGroups(silent = true)
+        }
+        LaunchedEffect(recipientRessorts, recipientGroups) {
+            comms.setChoices(RecipientChoices(recipientRessorts.orEmpty().map { it.id to it.name }, recipientGroups.orEmpty().map { it.id to it.name }))
+        }
         // Wer die Konfliktlösung offen hat: ein Konflikt aus den Sitzungen oder der Kommunikation (ohne Warteschlange).
         val meetingConflict by meetings.writer.conflict.collectAsState()
         val commsConflict by comms.writer.conflict.collectAsState()
@@ -685,6 +715,11 @@ private fun MainContent(
                 memberList.forEach { put(it.id, it.display) }
             }
         }
+        // Die Mitglieder des Lagers für die Personenauswahl; ohne das Recht `einteilung.lesen` fragt die App nicht.
+        val mayListMembers = campPermissions.may("einteilung.lesen")
+        LaunchedEffect(openedCamp?.id, mayListMembers) { if (mayListMembers) planning.loadMembers() }
+        val campMembers by planning.members.collectAsState()
+        LaunchedEffect(campMembers) { tasks.setMembers(campMembers?.map { TaskPerson(it.id, it.name) }) }
         // Konten, die andere Module schon kennen, ergänzen die Auswahl in der Einteilung (es gibt keine Route mit allen Mitgliedern).
         LaunchedEffect(taskList, memberList) {
             planning.setExtraPeople(
@@ -696,9 +731,9 @@ private fun MainContent(
             val programs = stringResource(R.string.mode_area_programs)
             val lager = stringResource(R.string.mode_area_camp)
             if (campArea) {
-                ModeSwitch(openedCamp?.title ?: stringResource(R.string.camps_title), programs, news = false) { modeMenuOpen = true }
+                ModeSwitch(openedCamp?.title ?: stringResource(R.string.camps_title), programs, news = campNews?.programs?.fresh == true || chatUnread > 0) { modeMenuOpen = true }
             } else {
-                ModeSwitch(stringResource(R.string.department), lager, news = campUnread.values.any { it > 0 }) { modeMenuOpen = true }
+                ModeSwitch(stringResource(R.string.department), lager, news = campNews?.anyCamp ?: campUnread.values.any { it > 0 }) { modeMenuOpen = true }
             }
         }
         // Ein Ziel aus einer Benachrichtigung, «Neu für dich» oder einem Push: derselbe Weg überall.
@@ -733,8 +768,9 @@ private fun MainContent(
             campArea && campId != null && inboxOpen -> Screen.Inbox
             campArea && campId != null && lagerNotificationsOpen -> Screen.LagerNotifications
             openedEvent != null -> Screen.Event(openedEvent!!)
+            roomRequestOpen -> Screen.RoomRequest
+            roomsOpen -> Screen.Rooms
             proposalOpen -> Screen.Proposal
-            programId != null && assigning -> Screen.Assign(programId)
             programId != null && viewingRegistrations -> Screen.Registrations(programId)
             programId != null -> Screen.Program(programId)
             chatId != null -> Screen.Chat(chatId)
@@ -764,18 +800,6 @@ private fun MainContent(
             label = "bildschirm",
         ) { screen ->
             when (screen) {
-                is Screen.Assign -> {
-                    val programId = screen.programId
-                    val leave = { assigning = false; programs.resetEdit() }
-                    BackHandler(onBack = leave)
-                    val edit = programs.edit.collectAsState().value
-                    AssignmentScreen(
-                        programs.assignable.collectAsState().value, programs.ageGroups.collectAsState().value, programProfile, edit,
-                        onSave = { request -> programs.saveAssignment(programId, request, leave) },
-                        onBack = leave,
-                        onRetry = { programs.loadAssignment(programId) },
-                    )
-                }
                 is Screen.Event -> {
                     val leave = { openedEvent = null }
                     BackHandler(onBack = leave)
@@ -789,6 +813,34 @@ private fun MainContent(
                         onDismiss = eventForm::dismiss,
                         onBack = leave,
                         onRetry = { eventForm.load(screen.eventId) },
+                    )
+                }
+                Screen.RoomRequest -> {
+                    val leave = { roomRequestOpen = false; rooms.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    RoomRequestScreen(
+                        rooms = rooms.rooms.collectAsState().value,
+                        draft = rooms.draft.collectAsState().value,
+                        send = rooms.send.collectAsState().value,
+                        onEdit = rooms::edit,
+                        onSubmit = rooms::submit,
+                        onUndo = rooms::undo,
+                        onDismiss = rooms::dismissNotice,
+                        onBack = leave,
+                        onRetry = rooms::reloadRooms,
+                    )
+                }
+                Screen.Rooms -> {
+                    val leave = { roomsOpen = false; rooms.dismissNotice() }
+                    BackHandler(onBack = leave)
+                    RoomListScreen(
+                        mine = rooms.mine.collectAsState().value,
+                        list = rooms.list.collectAsState().value,
+                        onAsk = { rooms.dismissNotice(); roomRequestOpen = true },
+                        onCancel = { rooms.cancel(it.id, confirmed = it.status == "bestaetigt") },
+                        onDismiss = rooms::dismissNotice,
+                        onBack = leave,
+                        onRetry = rooms::reloadMine,
                     )
                 }
                 Screen.Proposal -> {
@@ -835,13 +887,11 @@ private fun MainContent(
                         ProgramDetailScreen(
                             detail,
                             programs.rsvp.collectAsState().value,
-                            canAssign = AssignmentRules.mayAssign(programProfile),
                             canSeeRegistrations = assignedProgram?.let { RegistrationsRules.maySee(it, programProfile) } == true,
                             contacts = programs.contacts.collectAsState().value,
                             account = account,
                             onChild = { childId, attending -> programs.rsvpChild(programId, childId, attending) },
                             onLeader = { attending -> programs.rsvpLeader(programId, attending) },
-                            onAssign = { assigning = true },
                             onRegistrations = { viewingRegistrations = true },
                             onEvent = { openedEvent = it },
                             onBack = { openedProgram = null },
@@ -937,6 +987,7 @@ private fun MainContent(
                         meetings, screen.meetingId, openedCamp, meetingRights, queueState, online, personNames,
                         onOpenQueue = { queueOpen = true },
                         onOpenRessort = { openedRessort = it },
+                        onOpenTask = { openedTask = it },
                         onEnd = leave,
                     )
                 }
@@ -951,6 +1002,8 @@ private fun MainContent(
                             onOpenDay = { liveDay = it; liveArea = LiveArea.DAY },
                             onOpenTask = { openedTask = it },
                             onOpenShifts = { liveArea = null; planArea = PlanArea.SHIFTS },
+                            quietRessorts = if (rights.readRessorts) recipientRessorts.orEmpty().filter { it.quiet }.map { it.name } else emptyList(),
+                            onOpenRessorts = if (rights.readRessorts) ({ liveArea = null; ressortsOpen = true }) else null,
                             onOpenSearchHit = { hit ->
                                 archive.clearSearch()
                                 when (hit) {
@@ -1158,6 +1211,10 @@ private fun MainContent(
                                             SettingsRow(R.drawable.ic_calendar_plus, stringResource(R.string.proposal_row), onClick = { proposalOpen = true }, chevron = true)
                                         }
                                     }
+                                    // Räume anfragen darf jede angemeldete Person der Abteilung (Vertrag `frageRaumAn`).
+                                    SettingsCard {
+                                        SettingsRow(R.drawable.ic_door, stringResource(R.string.room_row), onClick = { roomsOpen = true }, chevron = true)
+                                    }
                                 },
                                 lockAvailable = lockAvailable,
                                 lockEnabled = lockEnabled,
@@ -1247,15 +1304,16 @@ private fun MainContent(
             )
             val plan = if (campId != null) {
                 listOfNotNull(
-                    MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE },
-                    MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true },
-                    MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS },
-                    MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS },
-                    MoreEntry(R.string.groups_title, R.drawable.ic_group) { moreOpen = false; planArea = PlanArea.GROUPS },
-                    MoreEntry(R.string.shifts_title, R.drawable.ic_list_check) { moreOpen = false; planArea = PlanArea.SHIFTS },
-                    MoreEntry(R.string.swaps_title, R.drawable.ic_refresh) { moreOpen = false; planArea = PlanArea.SWAPS },
-                    MoreEntry(R.string.count_title, R.drawable.ic_check) { moreOpen = false; planArea = PlanArea.COUNT },
-                    MoreEntry(R.string.participants_title, R.drawable.ic_profile) { moreOpen = false; planArea = PlanArea.PARTICIPANTS },
+                    // Jeder Eintrag steht nur, wenn das Lesen erlaubt ist (Rechte aus dem Lagerdetail); fehlt das Detail, fehlen sie alle.
+                    if (campPermissions.may("zeitplan.lesen")) MoreEntry(R.string.timeline_title, R.drawable.ic_calendar) { moreOpen = false; liveArea = LiveArea.TIMELINE } else null,
+                    if (campPermissions.may("hoecks.lesen_alle", "hoecks.team_lesen")) MoreEntry(R.string.meetings_title, R.drawable.ic_calendar) { moreOpen = false; meetingsOpen = true } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.rooms_title, R.drawable.ic_tent) { moreOpen = false; planArea = PlanArea.ROOMS } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.trips_title, R.drawable.ic_location) { moreOpen = false; planArea = PlanArea.TRIPS } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.groups_title, R.drawable.ic_group) { moreOpen = false; planArea = PlanArea.GROUPS } else null,
+                    if (campPermissions.may("einteilung.lesen")) MoreEntry(R.string.shifts_title, R.drawable.ic_list_check) { moreOpen = false; planArea = PlanArea.SHIFTS } else null,
+                    if (campPermissions.may("diensttausch.anfragen", "diensttausch.entscheiden")) MoreEntry(R.string.swaps_title, R.drawable.ic_refresh) { moreOpen = false; planArea = PlanArea.SWAPS } else null,
+                    if (campPermissions.may("teilnehmer.lesen")) MoreEntry(R.string.count_title, R.drawable.ic_check) { moreOpen = false; planArea = PlanArea.COUNT } else null,
+                    if (campPermissions.may("teilnehmer.lesen")) MoreEntry(R.string.participants_title, R.drawable.ic_profile) { moreOpen = false; planArea = PlanArea.PARTICIPANTS } else null,
                     if (rights.readRessorts) MoreEntry(R.string.more_ressorts, R.drawable.ic_group) { moreOpen = false; ressortsOpen = true } else null,
                 )
             } else {
@@ -1264,18 +1322,18 @@ private fun MainContent(
             val inCamp = if (campId != null) {
                 listOfNotNull(
                     MoreEntry(R.string.today_title, R.drawable.ic_home) { moreOpen = false; liveArea = LiveArea.TODAY },
-                    if (openedCamp?.role != CampRole.READ_ONLY || liveRights.readAttendance) MoreEntry(R.string.att_title, R.drawable.ic_check) { moreOpen = false; liveArea = LiveArea.ATTENDANCE } else null,
+                    if (liveRights.seesAttendance) MoreEntry(R.string.att_title, R.drawable.ic_check) { moreOpen = false; liveArea = LiveArea.ATTENDANCE } else null,
                     if (liveRights.readShopping) MoreEntry(R.string.shop_title, R.drawable.ic_list_check) { moreOpen = false; liveArea = LiveArea.SHOPPING } else null,
-                    MoreEntry(R.string.pack_title, R.drawable.ic_bring_along) { moreOpen = false; liveArea = LiveArea.PACKING },
-                    MoreEntry(R.string.emerg_title, R.drawable.ic_phone) { moreOpen = false; liveArea = LiveArea.EMERGENCY },
+                    if (campPermissions.may("packliste.lesen")) MoreEntry(R.string.pack_title, R.drawable.ic_bring_along) { moreOpen = false; liveArea = LiveArea.PACKING } else null,
+                    if (campPermissions.may("notfall.lesen")) MoreEntry(R.string.emerg_title, R.drawable.ic_phone) { moreOpen = false; liveArea = LiveArea.EMERGENCY } else null,
                 )
             } else {
                 emptyList()
             }
             val files = if (campId != null) {
                 listOfNotNull(
-                    MoreEntry(R.string.infos_title, R.drawable.ic_info) { moreOpen = false; liveArea = LiveArea.INFOS },
-                    MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS },
+                    if (campPermissions.may("infos.lesen")) MoreEntry(R.string.infos_title, R.drawable.ic_info) { moreOpen = false; liveArea = LiveArea.INFOS } else null,
+                    if (campPermissions.may("dokumente.lesen_alle", "dokumente.team_lesen")) MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS } else null,
                     if (archiveRights.readAddressBook) MoreEntry(R.string.ab_title, R.drawable.ic_book) { moreOpen = false; liveArea = LiveArea.ADDRESSBOOK } else null,
                     MoreEntry(R.string.print_title, R.drawable.ic_send) { moreOpen = false; liveArea = LiveArea.PRINTOUTS },
                     MoreEntry(R.string.search_title, R.drawable.ic_search) { moreOpen = false; liveArea = LiveArea.SEARCH },

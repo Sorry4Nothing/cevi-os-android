@@ -34,6 +34,7 @@ import io.github.sorry4nothing.cevios.ui.PrimaryButton
 import io.github.sorry4nothing.cevios.ui.StatePage
 import io.github.sorry4nothing.cevios.ui.StatusChip
 import io.github.sorry4nothing.cevios.ui.TextActionButton
+import io.github.sorry4nothing.cevios.ui.rowAction
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import java.time.Instant
 import java.time.ZoneId
@@ -135,7 +136,7 @@ private fun SwapCard(
     val what = if (shift != null && duty != null) "$duty ${formatMeetingDay(shift.date)}" else stringResource(R.string.swaps_unknown_shift)
     val who = PlanRules.swapActor(swap, plan, names, unknown)
     val withShift = swap.mitSchichtId?.let { id -> plan?.shifts?.firstOrNull { it.id == id } }
-    val partner = swap.mitPersonId?.let { names[it] } ?: withShift?.name ?: unknown
+    val partner = swap.mitName?.takeIf { it.isNotBlank() } ?: swap.mitPersonId?.let { names[it] } ?: withShift?.name ?: unknown
     val sentence = when {
         swap.mitSchichtId != null -> stringResource(R.string.swaps_sentence_swap, who, what, partner)
         swap.mitPersonId != null -> stringResource(R.string.swaps_sentence_person, who, what, partner)
@@ -165,10 +166,15 @@ private fun SwapCard(
         if (swap.status == SwapStatus.OPEN) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
                 if (rights.decideSwap) {
-                    PrimaryButton(stringResource(R.string.swaps_accept), onAccept, enabled = !busy)
-                    OutlinedPillButton(stringResource(R.string.swaps_decline), onDecline, enabled = !busy)
+                    val accept = stringResource(R.string.swaps_accept)
+                    val decline = stringResource(R.string.swaps_decline)
+                    PrimaryButton(accept, onAccept, Modifier.rowAction(accept, sentence), enabled = !busy)
+                    OutlinedPillButton(decline, onDecline, Modifier.rowAction(decline, sentence), enabled = !busy)
                 }
-                if (own && rights.requestSwap) TextActionButton(stringResource(R.string.swaps_withdraw), onWithdraw)
+                if (own && rights.requestSwap) {
+                    val withdraw = stringResource(R.string.swaps_withdraw)
+                    TextActionButton(withdraw, onWithdraw, Modifier.rowAction(withdraw, sentence))
+                }
             }
         }
     }

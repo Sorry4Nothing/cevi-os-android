@@ -20,6 +20,9 @@ import kotlinx.serialization.json.put
 /** Die Feldnamen des Konfliktbildschirms und die Sätze dazu; sie stehen in `strings.xml`, die ViewModels kennen sie nicht. */
 interface CommsTexts {
     fun fieldLabels(): Map<String, String>
+
+    /** Der Satz in der Warteschlange zum Haken «anwesend» einer Person im Höck-Modus. */
+    fun presence(name: String, present: Boolean): String
 }
 
 /** Ein Hinweis nach einer Aktion; `undo` ist nur gesetzt, wo sich die Aktion zurücknehmen lässt. */
@@ -49,7 +52,7 @@ class MeetingsViewModel(
     val writer = DirectWriter(viewModelScope) { texts.fieldLabels() }
 
     /** Die Rechte der Rolle im offenen Lager; die Oberfläche setzt sie. Wer die Punkte für den nächsten Höck nicht lesen darf (Team), fragt sie nicht ab. */
-    var rights: MeetingRights = MeetingRights.of(CampRole.READ_ONLY, true)
+    var rights: MeetingRights = MeetingRights.of(NO_PERMISSIONS)
 
     private val _meetings = MutableStateFlow<ApiResult<List<Meeting>>?>(null)
     val meetings: StateFlow<ApiResult<List<Meeting>>?> = _meetings.asStateFlow()
@@ -111,6 +114,16 @@ class MeetingsViewModel(
 
     private fun onChange(change: CampChange) {
         if (campId == null) return
+        change.deletedIds.takeIf { it.isNotEmpty() }?.let { gone ->
+            _meetings.update { it.withoutIds(gone) { meeting -> meeting.id } }
+            _minutes.update { it.withoutIds(gone) { minutes -> minutes.id } }
+            _decisions.update { it.withoutIds(gone) { decision -> decision.id } }
+            _mentions.update { it.withoutIds(gone) { mention -> mention.id } }
+            _state.update { s ->
+                val meeting = (s?.meeting as? ApiResult.Ok)?.value ?: return@update s
+                if (meeting.agenda.none { it.id in gone }) s else s.copy(meeting = ApiResult.Ok(meeting.copy(agenda = meeting.agenda.filterNot { it.id in gone })))
+            }
+        }
         fun touches(prefix: String) = change.reload || CampChange.QUEUE_SENT in change.types || change.types.any { it.startsWith(prefix) }
         if (touches("hoeck") || touches("traktandum")) {
             if (_meetings.value != null) loadMeetings(silent = true)
@@ -138,7 +151,7 @@ class MeetingsViewModel(
             if (!silent) _meetings.value = null
             val result = api.meetings(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _meetings.value == null) _meetings.value = result
+            if (replacesState(result, silent, _meetings.value != null)) _meetings.value = result
         }
     }
 
@@ -160,7 +173,7 @@ class MeetingsViewModel(
             if (campId != id) return@launch
             _state.update { current ->
                 if (current?.id != meetingId) current
-                else if (result is ApiResult.Ok || !silent || current.meeting == null) current.copy(meeting = result, nextItems = next) else current
+                else if (replacesState(result, silent, current.meeting != null)) current.copy(meeting = result, nextItems = next) else current
             }
         }
     }
@@ -240,7 +253,7 @@ class MeetingsViewModel(
     // ---- Traktanden ----
 
     /** Legt ein Traktandum an (ohne `meetingId`: ein Punkt für den nächsten Höck). */
-    fun createItem(meetingId: String?, title: String, text: String?, responsible: List<String>, taskId: String? = null, onDone: (AgendaItem) -> Unit = {}) {
+    fun createItem(meetingId: String?, title: String, text: String?, responsible: List<String>, taskId: String? = null, minutes: Int? = null, onDone: (AgendaItem) -> Unit = {}) {
         val id = campId ?: return
         writer.dismissError()
         viewModelScope.launch {
@@ -250,6 +263,7 @@ class MeetingsViewModel(
                 text?.takeIf { it.isNotBlank() }?.let { put("text", it.trim()) }
                 if (responsible.isNotEmpty()) put("verantwortlichePersonIds", JsonArray(responsible.map(::JsonPrimitive)))
                 taskId?.let { put("aufgabeId", it) }
+                minutes?.let { put("dauerMinuten", it) }
             }
             when (val result = api.createItem(id, body)) {
                 is ApiResult.Ok -> {
@@ -257,7 +271,7 @@ class MeetingsViewModel(
                     meetingId?.let { loadMeeting(it, silent = true) }
                     onDone(result.value)
                 }
-                is ApiResult.Failure -> writer.fail(result) { createItem(meetingId, title, text, responsible, taskId, onDone) }
+                is ApiResult.Failure -> writer.fail(result) { createItem(meetingId, title, text, responsible, taskId, minutes, onDone) }
             }
         }
     }
@@ -331,10 +345,14 @@ class MeetingsViewModel(
 
     /** Gleicht die Erwähnungen ab, wenn der Inhalt jetzt oder vorher Marken hatte (entfallene Marken nimmt der Server zurück). */
     private suspend fun syncMentionsOf(after: AgendaItem, before: AgendaItem?) {
+        if (hasMentionMarks(after.title, after.text, after.decision, before?.title, before?.text, before?.decision)) syncMentions("traktandum", after.id)
+    }
+
+    /** Gleicht die Erwähnungen ab; eine ungültige Marke (Person nicht im Lager, zu viele) sagt die App, der Inhalt bleibt gespeichert. */
+    private suspend fun syncMentions(type: String, sourceId: String) {
         val id = campId ?: return
-        if (hasMentionMarks(after.title, after.text, after.decision, before?.title, before?.text, before?.decision)) {
-            api.syncMentions(id, "traktandum", after.id)
-        }
+        val result = api.syncMentions(id, type, sourceId)
+        if (result is ApiResult.Failure && result.code in MENTION_ERRORS) writer.fail(result) { viewModelScope.launch { syncMentions(type, sourceId) } }
     }
 
     // ---- Höck-Modus ----
@@ -350,15 +368,23 @@ class MeetingsViewModel(
 
     fun loadMode(meetingId: String, silent: Boolean = false) {
         val id = campId ?: return
+        // Nur was vor der Anfrage gesendet war, steht sicher in der Antwort; später Gesendetes bleibt über dem Stand.
+        val queue = camp.queueFor(id)
+        val sentBefore = queue.state.value.changes.filter { it.state == ChangeState.SENT && it.type == PRESENCE_OP }.map { it.clientOpId }.toSet()
         viewModelScope.launch(Background()) {
-            val result = api.mode(id, meetingId)
+            val fetched = api.mode(id, meetingId)
             if (campId != id) return@launch
+            if (fetched is ApiResult.Ok) queue.clearSent(sentBefore)
+            val result: ApiResult<MeetingMode> = when (fetched) {
+                is ApiResult.Ok -> ApiResult.Ok(fetched.value.copy(members = applyPresence(fetched.value.members, meetingId, queue.state.value.changes)))
+                is ApiResult.Failure -> fetched
+            }
             _mode.update { current ->
                 if (current?.id != meetingId) return@update current
                 val items = (result as? ApiResult.Ok)?.value?.meeting?.agenda?.let(MeetingRules::sorted).orEmpty()
                 // Die erste Anzeige beginnt beim ersten offenen Traktandum; danach bestimmt die Person, wo sie steht.
                 val index = if (current.indexSet) current.index.coerceIn(0, maxOf(items.size - 1, 0)) else MeetingRules.firstOpen(items)
-                if (result is ApiResult.Ok || !silent || current.mode == null) current.copy(mode = result, index = index, indexSet = current.indexSet || result is ApiResult.Ok)
+                if (replacesState(result, silent, current.mode != null)) current.copy(mode = result, index = index, indexSet = current.indexSet || result is ApiResult.Ok)
                 else current
             }
         }
@@ -379,17 +405,12 @@ class MeetingsViewModel(
     /** Haken bei einer Person: sofort sichtbar, bei einem Fehler wieder zurück und mit Hinweis. */
     fun setPresent(meetingId: String, personId: String, present: Boolean) {
         val id = campId ?: return
-        writer.dismissError()
+        val name = (_mode.value?.mode as? ApiResult.Ok)?.value?.members?.firstOrNull { it.id == personId }?.display.orEmpty()
+        val payload = presencePayload(meetingId, personId, present)
+        val summary = texts.presence(name, present)
+        // Der Haken geht durch die Warteschlange: Er gilt sofort und kommt auch ohne Netz an, sobald es wieder da ist.
+        routePresence(camp.queueFor(id), payload, summary) { camp.enqueue(id, PRESENCE_OP, payload, summary, texts.fieldLabels()) }
         updateMember(personId, present)
-        viewModelScope.launch {
-            when (val result = api.setPresent(id, meetingId, personId, present)) {
-                is ApiResult.Ok -> Unit
-                is ApiResult.Failure -> {
-                    updateMember(personId, !present)
-                    writer.fail(result) { setPresent(meetingId, personId, present) }
-                }
-            }
-        }
     }
 
     private fun updateMember(personId: String, present: Boolean) {
@@ -407,7 +428,7 @@ class MeetingsViewModel(
             if (!silent) _minutes.value = null
             val result = api.minutes(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _minutes.value == null) _minutes.value = result
+            if (replacesState(result, silent, _minutes.value != null)) _minutes.value = result
         }
     }
 
@@ -417,7 +438,7 @@ class MeetingsViewModel(
             if (!silent) _decisions.value = null
             val result = api.decisions(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _decisions.value == null) _decisions.value = result
+            if (replacesState(result, silent, _decisions.value != null)) _decisions.value = result
         }
     }
 
@@ -471,7 +492,7 @@ class MeetingsViewModel(
             }
             when (val result = api.createDecision(id, body)) {
                 is ApiResult.Ok -> {
-                    if (hasMentionMarks(text)) api.syncMentions(id, "beschluss", result.value.id)
+                    if (hasMentionMarks(text)) syncMentions("beschluss", result.value.id)
                     loadDecisions(silent = true)
                     onDone()
                 }
@@ -488,7 +509,7 @@ class MeetingsViewModel(
             call = { v -> api.changeDecision(id, decision.id, JsonObject(mapOf("version" to JsonPrimitive(v)) + fields)) },
             onCurrent = { loadDecisions(silent = false) },
         ) { changed ->
-            viewModelScope.launch { if (hasMentionMarks(text, decision.text)) api.syncMentions(id, "beschluss", changed.id) }
+            viewModelScope.launch { if (hasMentionMarks(text, decision.text)) syncMentions("beschluss", changed.id) }
             loadDecisions(silent = true)
             onDone()
         }
@@ -507,7 +528,7 @@ class MeetingsViewModel(
             if (!silent) _mentions.value = null
             val result = api.mentions(id)
             if (campId != id) return@launch
-            if (result is ApiResult.Ok || !silent || _mentions.value == null) _mentions.value = result
+            if (replacesState(result, silent, _mentions.value != null)) _mentions.value = result
         }
     }
 

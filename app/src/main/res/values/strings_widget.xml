@@ -77,6 +77,7 @@
         <item quantity="other">%1$d Termine</item>
     </plurals>
     <string name="widget_a11y_camp">Lager heute: %1$s.%2$s</string>
+    <string name="widget_a11y_important">Wichtig heute: %1$s.</string>
     <string name="widget_a11y_camp_duty"> Dein Dienst: %1$s.</string>
     <string name="widget_a11y_tasks">Meine Aufgaben: %1$d überfällig.%2$s</string>
     <string name="widget_a11y_tasks_next"> Nächste: %1$s, Frist %2$s.</string>

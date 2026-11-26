@@ -67,7 +67,8 @@ fun QuickCaptureSheet(vm: TasksViewModel) {
     val ressorts by vm.ressorts.collectAsState()
     var chooser by remember { mutableStateOf<Chooser?>(null) }
     LaunchedEffect(Unit) { vm.loadRessortsIfNeeded() }
-    val people = TaskRules.people((tasks as? ApiResult.Ok)?.value.orEmpty(), vm.self)
+    val members by vm.members.collectAsState()
+    val people = TaskRules.pickable((tasks as? ApiResult.Ok)?.value.orEmpty(), vm.self, members)
 
     ModalBottomSheet(onDismissRequest = vm::closeQuick, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
         Column(

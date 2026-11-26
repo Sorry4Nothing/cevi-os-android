@@ -53,6 +53,9 @@ class LiveNav(
     val onOpenTask: (String) -> Unit,
     val onOpenShifts: () -> Unit,
     val onOpenSearchHit: (SearchDestination) -> Unit,
+    /** Die Namen der ruhigen Ressorts für den Hinweis im Zeitplan; leer ohne das Recht, Ressorts zu lesen. */
+    val quietRessorts: List<String> = emptyList(),
+    val onOpenRessorts: (() -> Unit)? = null,
 )
 
 /** Zeigt den Bildschirm zu einem Bereich von «Im Lager». `dayId` gehört zur Tagesseite. */
@@ -75,7 +78,7 @@ fun LiveScreen(
         LiveArea.PACKING -> PackingScreen(frame)
         LiveArea.EMERGENCY -> EmergencyScreen(frame)
         LiveArea.INFOS -> InfosScreen(frame)
-        LiveArea.TIMELINE -> TimelineScreen(frame, archive, nav.onOpenTask)
+        LiveArea.TIMELINE -> TimelineScreen(frame, archive, nav.onOpenTask, nav.quietRessorts, nav.onOpenRessorts)
         LiveArea.DOCUMENTS -> DocumentsScreen(frame, archive, archiveRights)
         LiveArea.ADDRESSBOOK -> AddressBookScreen(frame, archive, archiveRights)
         LiveArea.SEARCH -> SearchScreen(frame, archive, nav.onOpenSearchHit)

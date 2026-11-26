@@ -30,6 +30,8 @@ data class TaskPerson(
     val ceviName: String? = null,
     /** Nur bei `verantwortlich`: wahr, wenn die Leitung des Ressorts einspringt, weil niemand eingetragen ist. */
     @SerialName("automatisch") val automatic: Boolean = false,
+    /** Pfad des Profilbilds (`LagerBildUrl`), `null` ohne Bild: dann zeigt der Avatar die Initiale. */
+    @SerialName("bildUrl") val imageUrl: String? = null,
 ) {
     /** «Name (Cevi-Name)» wie im Entwurf; fehlt einer von beiden, steht der andere allein da. */
     val display: String
@@ -195,7 +197,7 @@ data class MergeBody(val version: Long, val mitId: String, val mitVersion: Long)
 // ---- Ressorts ----
 
 @Serializable
-data class RessortPerson(val id: String, val name: String? = null, val ceviName: String? = null) {
+data class RessortPerson(val id: String, val name: String? = null, val ceviName: String? = null, @SerialName("bildUrl") val imageUrl: String? = null) {
     val display: String
         get() = when {
             !name.isNullOrBlank() && !ceviName.isNullOrBlank() -> "$name ($ceviName)"
@@ -217,6 +219,8 @@ data class Ressort(
     @SerialName("reihenfolge") val order: Int = 0,
     @SerialName("leitung") val leader: RessortPerson? = null,
     @SerialName("stv") val deputy: RessortPerson? = null,
+    /** «Ruhiges Ressort»: hat gerade nichts zu tun; die App zeigt es grau und im Zeitplan als Hinweis. */
+    @SerialName("ruhig") val quiet: Boolean = false,
 )
 
 @Serializable

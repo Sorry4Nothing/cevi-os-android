@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -39,6 +40,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.sorry4nothing.cevios.R
+import io.github.sorry4nothing.cevios.push.SwitchRow
 import io.github.sorry4nothing.cevios.net.ApiResult
 import io.github.sorry4nothing.cevios.ui.ActionBanner
 import io.github.sorry4nothing.cevios.ui.Avatar
@@ -88,11 +90,13 @@ fun RessortListScreen(vm: TasksViewModel, onBack: () -> Unit, onOpen: (String) -
 private fun RessortCard(ressort: Ressort, depth: Int, onOpen: (String) -> Unit) {
     val shape = MaterialTheme.shapes.medium
     val lead = ressort.leader?.display?.takeIf { it.isNotBlank() }
-    val sentence = listOfNotNull(ressort.name, lead?.let { stringResource(R.string.ressort_lead_line, it) }).joinToString(", ")
+    val quiet = if (ressort.quiet) stringResource(R.string.ressort_quiet_label) else null
+    val sentence = listOfNotNull(ressort.name, lead?.let { stringResource(R.string.ressort_lead_line, it) }, quiet).joinToString(", ")
     Row(
         Modifier
             .padding(start = (depth * 16).coerceAtMost(48).dp)
             .fillMaxWidth()
+            .alpha(if (ressort.quiet) QUIET_ALPHA else 1f)
             .focusRing(shape)
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
@@ -107,6 +111,7 @@ private fun RessortCard(ressort: Ressort, depth: Int, onOpen: (String) -> Unit) 
         Column(Modifier.weight(1f)) {
             Text(ressort.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             lead?.let { Text(stringResource(R.string.ressort_lead_line, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            quiet?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -160,14 +165,19 @@ fun RessortScreen(
                             vm::dismissError,
                         )
                     }
+                    if (rights.editRessorts) {
+                        SwitchRow(
+                            R.drawable.ic_group, stringResource(R.string.ressort_quiet), stringResource(R.string.ressort_quiet_hint), ressort.quiet, true,
+                        ) { vm.setRessortQuiet(ressort, it) }
+                    }
                     SectionBlock(R.string.ressort_people) {
                         val lead = ressort.leader
                         val deputy = ressort.deputy
                         if (lead == null && deputy == null) {
                             Text(stringResource(R.string.ressort_no_people), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        lead?.let { PersonRow(it.display, stringResource(R.string.task_role_lead)) }
-                        deputy?.let { PersonRow(it.display, stringResource(R.string.ressort_role_deputy)) }
+                        lead?.let { PersonRow(it.display, stringResource(R.string.task_role_lead), it.imageUrl) }
+                        deputy?.let { PersonRow(it.display, stringResource(R.string.ressort_role_deputy), it.imageUrl) }
                     }
                     SectionBlock(R.string.ressort_notes) {
                         if (result.value.notes.isEmpty()) {
@@ -253,13 +263,13 @@ private fun SectionBlock(title: Int, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun PersonRow(name: String, role: String) {
+private fun PersonRow(name: String, role: String, imageUrl: String?) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = Sizes.touchTarget).semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
-        Avatar(name, size = 32.dp)
+        Avatar(name, size = 32.dp, imageUrl = imageUrl)
         Text(stringResource(R.string.task_person_role, name, role), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
     }
 }
@@ -288,3 +298,6 @@ private fun NoteCard(note: RessortNote) {
 }
 
 private const val NOTE_FOLD = 160
+
+/** Ruhige Ressorts erscheinen blasser; der Text «Ruhig» steht dabei, die Farbe allein sagt es nicht. Bei 0,85 bleibt `onSurfaceVariant` im Tag-Thema über 4,5:1 (bei 0,72 nur 4,1:1). */
+private const val QUIET_ALPHA = 0.85f

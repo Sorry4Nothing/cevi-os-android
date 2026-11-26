@@ -27,6 +27,9 @@
     <string name="timeline_proposal_title">Der Zeitplan ist unvollständig</string>
     <string name="timeline_proposal_text">Es fehlen Lagertage oder Abschnitte des Tages. Der Vorschlag nimmt die Tage vom Beginn bis zum Ende des Lagers.</string>
     <string name="timeline_proposal_action">Vorschlag übernehmen</string>
+    <string name="timeline_quiet_title">Ruhige Ressorts</string>
+    <string name="timeline_quiet_text">Gerade nichts zu tun: %1$s.</string>
+    <string name="timeline_quiet_action">Ressorts ansehen</string>
     <string name="archive_notice_schedule_adopted">Die Lagertage und Abschnitte sind übernommen.</string>
 
     <!-- Dokumente (L33) -->

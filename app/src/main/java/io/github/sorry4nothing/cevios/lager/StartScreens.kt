@@ -85,7 +85,7 @@ fun ColumnScope.LeadershipStart(
 
     when (val start = data.start) {
         null -> CardSkeleton(stringResource(R.string.camp_start_loading), count = 2)
-        is ApiResult.Failure -> ErrorState(start.error, { vm.loadStart(silent = false) }, Modifier.heightIn(max = 420.dp))
+        is ApiResult.Failure -> ErrorState(start.error, { vm.loadStart(silent = false) }, Modifier.heightIn(min = 420.dp))
         is ApiResult.Ok -> {
             val value = start.value
             ProgressCard(value, camp)
@@ -161,7 +161,7 @@ fun ColumnScope.TeamStart(
 
     when (val state = tasks) {
         null -> CardSkeleton(stringResource(R.string.camp_start_loading), count = 2)
-        is ApiResult.Failure -> ErrorState(state.error, vm::retryTasks, Modifier.heightIn(max = 420.dp))
+        is ApiResult.Failure -> ErrorState(state.error, vm::retryTasks, Modifier.heightIn(min = 420.dp))
         is ApiResult.Ok -> {
             val own = TaskRules.mine(state.value, vm.self.id, MineSort.DUE, today).filterNot { it.done }
             if (live != null) TeamArea(live, camp, onOpenToday, onOpenShifts, onOpenPacking)

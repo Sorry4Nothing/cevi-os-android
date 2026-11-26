@@ -216,7 +216,7 @@ fun TaskDetailScreen(
             // Checkliste (das Team darf sie nicht lesen)
             if (rights.readAll) when (details) {
                 null -> CardSkeleton(stringResource(R.string.task_loading), count = 1)
-                is ApiResult.Failure -> ErrorState(details.error, vm::retryDetail, Modifier.heightIn(max = 320.dp))
+                is ApiResult.Failure -> ErrorState(details.error, vm::retryDetail, Modifier.heightIn(min = 320.dp))
                 is ApiResult.Ok -> {
                     val list = details.value.checklist.sortedBy { it.order }
                     Section(R.string.task_checklist, headingExtra = list.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.task_checklist_progress, it.count { c -> c.done }, it.size) }) {

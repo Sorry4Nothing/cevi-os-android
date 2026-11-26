@@ -69,6 +69,7 @@ fun DocumentsScreen(frame: LiveFrame, archive: ArchiveViewModel, rights: Archive
     var actions by remember { mutableStateOf<CampDocument?>(null) }
     var deleting by remember { mutableStateOf<CampDocument?>(null) }
     val open = rememberLinkOpener()
+    val downloads = LocalDownloads.current
     LaunchedEffect(frame.camp?.id) { archive.loadDocuments(silent = archive.documents.value is ApiResult.Ok) }
 
     ArchivePage(frame, archive, stringResource(R.string.docs_title)) {
@@ -83,7 +84,7 @@ fun DocumentsScreen(frame: LiveFrame, archive: ArchiveViewModel, rights: Archive
                 } else {
                     LiveColumn(bottom = if (rights.editDocuments) BOTTOM_SPACE else Spacing.s6) {
                         result.value.forEach { document ->
-                            DocumentRow(document, rights.editDocuments && document.editable, onOpen = { document.file?.link?.let(open) }, onActions = { actions = document })
+                            DocumentRow(document, (rights.editDocuments && document.editable) || (downloads != null && document.file?.link != null), onOpen = { document.file?.link?.let(open) }, onActions = { actions = document })
                         }
                         Text(stringResource(R.string.docs_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -95,7 +96,15 @@ fun DocumentsScreen(frame: LiveFrame, archive: ArchiveViewModel, rights: Archive
         }
     }
     actions?.let { document ->
-        ActionSheet(document.title.clip(TITLE_CLIP), listOf(stringResource(R.string.docs_delete) to { deleting = document })) { actions = null }
+        val link = document.file?.link
+        val delete = stringResource(R.string.docs_delete)
+        ActionSheet(
+            document.title.clip(TITLE_CLIP),
+            buildList {
+                if (downloads != null && link != null) add(stringResource(R.string.dl_action) to { downloads.downloadLink(document.id, document.title, link) })
+                if (rights.editDocuments && document.editable) add(delete to { deleting = document })
+            },
+        ) { actions = null }
     }
     if (creating) {
         DocumentDialog(busy, onSave = { title, link, team -> archive.addDocument(title, link, team) { creating = false } }, onDismiss = { creating = false })
@@ -121,9 +130,9 @@ private fun documentKindText(kind: DocumentKind): String = stringResource(
     },
 )
 
-/** Eine Zeile: Titel, Art und Stichworte; tippen öffnet die Datei, «Aktionen» (nur mit Recht) bietet das Löschen an. */
+/** Eine Zeile: Titel, Art und Stichworte; tippen öffnet die Datei, «Aktionen» bietet «Herunterladen» und (nur mit Recht) das Löschen an. */
 @Composable
-private fun DocumentRow(document: CampDocument, edit: Boolean, onOpen: () -> Unit, onActions: () -> Unit) {
+private fun DocumentRow(document: CampDocument, hasActions: Boolean, onOpen: () -> Unit, onActions: () -> Unit) {
     val link = document.file?.link
     val detail = if (link == null) stringResource(R.string.docs_file_missing) else (listOf(documentKindText(DocumentKind.from(document.kindWire))) + document.keywords).joinToString(", ")
     val shape = MaterialTheme.shapes.small
@@ -146,7 +155,7 @@ private fun DocumentRow(document: CampDocument, edit: Boolean, onOpen: () -> Uni
                 Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if (edit) RoundButton(HeaderButton(R.drawable.ic_more, stringResource(R.string.docs_actions_named, document.title), onActions))
+        if (hasActions) RoundButton(HeaderButton(R.drawable.ic_more, stringResource(R.string.docs_actions_named, document.title), onActions))
     }
 }
 
@@ -401,13 +410,16 @@ private fun printoutText(printout: Printout): Int = when (printout) {
 @Composable
 fun PrintoutsScreen(frame: LiveFrame, archive: ArchiveViewModel) {
     val printing by archive.printing.collectAsState()
+    val downloads = LocalDownloads.current
     ArchivePage(frame, archive, stringResource(R.string.print_title)) {
         LiveColumn {
             Text(stringResource(R.string.print_text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Printout.entries.forEach { printout ->
                 val name = stringResource(printoutText(printout))
                 val working = printing == printout
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalAlignment = Alignment.CenterVertically) {
                 InfoCard(
+                    Modifier.weight(1f),
                     description = stringResource(R.string.print_share_named, name),
                     onClick = if (printing == null) ({ archive.loadPrintout(printout) }) else null,
                     onClickLabel = stringResource(R.string.print_share_named, name),
@@ -417,6 +429,10 @@ fun PrintoutsScreen(frame: LiveFrame, archive: ArchiveViewModel) {
                         Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                         if (working) Text(stringResource(R.string.print_working), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                }
+                if (downloads != null && printing == null) {
+                    RoundButton(HeaderButton(R.drawable.ic_download, stringResource(R.string.dl_action_named, name)) { archive.loadPrintout(printout, download = true) })
+                }
                 }
             }
         }

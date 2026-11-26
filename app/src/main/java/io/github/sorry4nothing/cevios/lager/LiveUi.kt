@@ -28,7 +28,7 @@ import io.github.sorry4nothing.cevios.ui.NoticeKind
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 
 /** Die Bildschirme von «Im Lager» und «Ablage und Querschnitt», die das Blatt «Mehr» und die Ansicht «Heute» öffnen; je einer ist ein Bildschirm. */
-enum class LiveArea { TODAY, DAY, ATTENDANCE, SHOPPING, PACKING, EMERGENCY, INFOS, TIMELINE, DOCUMENTS, ADDRESSBOOK, SEARCH, PRINTOUTS }
+enum class LiveArea { TODAY, DAY, ATTENDANCE, SHOPPING, PACKING, EMERGENCY, INFOS, TIMELINE, DOCUMENTS, ADDRESSBOOK, SEARCH, PRINTOUTS, DOWNLOADS }
 
 /**
  * Alles, was die Bildschirme von «Im Lager» gemeinsam brauchen: das ViewModel, das Lager mit seinen Rechten, die Warteschlange für
@@ -83,6 +83,7 @@ fun LiveScreen(
         LiveArea.ADDRESSBOOK -> AddressBookScreen(frame, archive, archiveRights)
         LiveArea.SEARCH -> SearchScreen(frame, archive, nav.onOpenSearchHit)
         LiveArea.PRINTOUTS -> PrintoutsScreen(frame, archive)
+        LiveArea.DOWNLOADS -> LocalDownloads.current?.let { DownloadsScreen(frame, it) }
     }
 }
 

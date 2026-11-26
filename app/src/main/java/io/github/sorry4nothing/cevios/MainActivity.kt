@@ -64,6 +64,10 @@ import io.github.sorry4nothing.cevios.lager.CampInfo
 import io.github.sorry4nothing.cevios.lager.CampListScreen
 import io.github.sorry4nothing.cevios.lager.CampStartScreen
 import io.github.sorry4nothing.cevios.lager.CampViewModel
+import io.github.sorry4nothing.cevios.lager.LocalDownloads
+import io.github.sorry4nothing.cevios.downloads.Downloads
+import io.github.sorry4nothing.cevios.downloads.DownloadsViewModel
+import io.github.sorry4nothing.cevios.downloads.LinkDownloader
 import io.github.sorry4nothing.cevios.lager.ChangeState
 import io.github.sorry4nothing.cevios.lager.ConflictScreen
 import io.github.sorry4nothing.cevios.lager.ModeMenu
@@ -257,7 +261,7 @@ private fun Root(client: ApiClient, lock: AppLock, prompter: BiometricPrompter, 
     val widgetContext = LocalContext.current.applicationContext
     val authApi = remember(client) { AuthApi(client, PlayIntegrity.forBuild(widgetContext)) }
     // Abmelden und Sitzungsende: Auch Stand und Wahl der Widgets und geteilte Dateien im Cache verschwinden.
-    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext) }, lock, client::hasSession) }
+    val auth = viewModel { AuthViewModel(authApi, client.unauthorized, client.forbidden, { client.forgetSession(); forgetWidgets(widgetContext); clearSharedFiles(widgetContext); Downloads.clear(widgetContext) }, lock, client::hasSession) }
     val state by auth.state.collectAsState()
     val form by auth.form.collectAsState()
     val passwordSaved by auth.passwordSaved.collectAsState()
@@ -435,6 +439,7 @@ private fun MainContent(
     val chat = viewModel { ChatViewModel(chatApi) }
     val push = viewModel { PushViewModel(pushApi, account) }
     val camp = viewModel { CampViewModel(campApi) }
+    val downloads = viewModel { DownloadsViewModel(Downloads.create(appContext), LinkDownloader(Downloads.create(appContext))) }
     val tasks = viewModel { TasksViewModel(tasksApi, camp, TaskPerson(account.id, account.name, account.ceviName), AndroidTaskTexts(appContext)) }
     val meetings = viewModel { MeetingsViewModel(meetingsApi, camp, AndroidCommsTexts(appContext)) }
     val comms = viewModel { CommsViewModel(commsApi, camp, AndroidCommsTexts(appContext)) }
@@ -565,8 +570,8 @@ private fun MainContent(
     // Der Kalendereintrag eines Höcks, den der Server erzeugt hat, geht über die Systemauswahl weiter.
     val calendarFile by meetings.calendar.collectAsState()
     LaunchedEffect(calendarFile) {
-        calendarFile?.let { bytes ->
-            shareCalendarFile(context, bytes)
+        calendarFile?.let { file ->
+            if (file.download) downloads.saveBytes("hoeck.ics", file.bytes) else shareCalendarFile(context, file.bytes)
             meetings.calendarShared()
         }
     }
@@ -574,7 +579,7 @@ private fun MainContent(
     val sharedPdf by archive.pdf.collectAsState()
     LaunchedEffect(sharedPdf) {
         sharedPdf?.let { pdf ->
-            sharePdf(context, pdf.bytes, pdf.name)
+            if (pdf.download) downloads.saveBytes(pdf.name + ".pdf", pdf.bytes) else sharePdf(context, pdf.bytes, pdf.name)
             archive.pdfShared()
         }
     }
@@ -642,6 +647,13 @@ private fun MainContent(
     }
     // Die Lagerliste und die Zähler lesen still neu, wenn der Bereich wechselt.
     LaunchedEffect(campArea) { camp.refreshCamps() }
+    // Die Liste der heruntergeladenen Dateien gehört zum offenen Lager. Gibt es ein Lager nicht mehr offen (aus der Liste verschwunden,
+    // abgeschlossen, archiviert, Zugriff entzogen), gehen seine Downloads weg.
+    LaunchedEffect(campId) { downloads.open(campId) }
+    val campList by camp.camps.collectAsState()
+    LaunchedEffect(campList) { (campList as? ApiResult.Ok)?.let { list -> downloads.retainOnly(list.value.filterNot { it.readOnly }.map { it.id }.toSet()) } }
+    val lostCamp by camp.lostAccess.collectAsState()
+    LaunchedEffect(lostCamp) { lostCamp?.let(downloads::deleteCamp) }
     // Die Chatliste liest einmal neu, wenn der Reiter wechselt oder ein Chat zugeht: So stimmt der Zähler im Dock. Im Takt
     // fragt sie nur, solange sie sichtbar ist.
     LaunchedEffect(destination, openedChat, phoneOpen) {
@@ -661,6 +673,7 @@ private fun MainContent(
         }
     }
 
+    CompositionLocalProvider(LocalDownloads provides downloads) {
     Surface(Modifier.fillMaxSize()) {
         val programId = openedProgram
         val chatId = openedChat
@@ -968,6 +981,7 @@ private fun MainContent(
                         onOpenMinutes = { minutesFor = screen.meetingId },
                         onShareCalendar = { meetings.loadCalendar(screen.meetingId) },
                         onBack = leave,
+                        onDownloadCalendar = { meetings.loadCalendar(screen.meetingId, download = true) },
                     )
                 }
                 is Screen.Minutes -> {
@@ -978,6 +992,7 @@ private fun MainContent(
                         onOpenQueue = { queueOpen = true },
                         onShareCalendar = { meetings.loadCalendar(screen.meetingId) },
                         onBack = leave,
+                        onDownloadCalendar = { meetings.loadCalendar(screen.meetingId, download = true) },
                     )
                 }
                 is Screen.MeetingMode -> {
@@ -1336,6 +1351,7 @@ private fun MainContent(
                     if (campPermissions.may("dokumente.lesen_alle", "dokumente.team_lesen")) MoreEntry(R.string.docs_title, R.drawable.ic_file) { moreOpen = false; liveArea = LiveArea.DOCUMENTS } else null,
                     if (archiveRights.readAddressBook) MoreEntry(R.string.ab_title, R.drawable.ic_book) { moreOpen = false; liveArea = LiveArea.ADDRESSBOOK } else null,
                     MoreEntry(R.string.print_title, R.drawable.ic_send) { moreOpen = false; liveArea = LiveArea.PRINTOUTS },
+                    MoreEntry(R.string.dl_title, R.drawable.ic_download) { moreOpen = false; liveArea = LiveArea.DOWNLOADS },
                     MoreEntry(R.string.search_title, R.drawable.ic_search) { moreOpen = false; liveArea = LiveArea.SEARCH },
                 )
             } else {
@@ -1351,5 +1367,6 @@ private fun MainContent(
                 onDismiss = { moreOpen = false },
             )
         }
+    }
     }
 }

@@ -34,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +69,9 @@ import io.github.sorry4nothing.cevios.ui.focusRing
 import io.github.sorry4nothing.cevios.ui.theme.Sizes
 import io.github.sorry4nothing.cevios.ui.theme.Spacing
 import io.github.sorry4nothing.cevios.ui.theme.cevi
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @StringRes
 private fun roleText(role: CampRole) = when (role) {
@@ -268,12 +272,18 @@ fun CampInfo(camp: Camp) {
     }
 }
 
+/** Wann der Stand ist, den die App aus dem Zwischenspeicher zeigt (das Netz fehlt); `null`, wenn alles frisch vom Server kommt. */
+val LocalStaleSince = compositionLocalOf<Long?> { null }
+
+private val STALE_TIME = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+
 /**
  * Banner über dem Inhalt eines Lagers: «Ohne Netz · 3 Änderungen warten» (tippen öffnet die Warteschlange), Änderungen, die
  * Entscheidungen brauchen, und der Hinweis auf einen veralteten Stand. Eine Live-Region: Der Screenreader hört Änderungen.
  */
 @Composable
 fun QueueBanner(queue: QueueState, online: Boolean, onOpenQueue: () -> Unit, modifier: Modifier = Modifier) {
+    val staleSince = LocalStaleSince.current
     val decisions = queue.needsDecision.size
     val waiting = queue.waiting
     val offline = !online || queue.offline
@@ -281,7 +291,10 @@ fun QueueBanner(queue: QueueState, online: Boolean, onOpenQueue: () -> Unit, mod
         decisions > 0 -> pluralStringResource(R.plurals.queue_banner_decision, decisions, decisions)
         waiting > 0 && offline -> pluralStringResource(R.plurals.queue_banner_offline, waiting, waiting)
         waiting > 0 -> pluralStringResource(R.plurals.queue_banner_sending, waiting, waiting)
-        offline -> stringResource(R.string.queue_offline_title) + " · " + stringResource(R.string.queue_offline_stale)
+        offline -> stringResource(R.string.queue_offline_title) + " · " + (
+            staleSince?.let { stringResource(R.string.queue_offline_stale_at, STALE_TIME.format(Instant.ofEpochMilli(it))) }
+                ?: stringResource(R.string.queue_offline_stale)
+        )
         else -> return
     }
     val kind = if (decisions > 0) NoticeKind.ERROR else NoticeKind.WARNING

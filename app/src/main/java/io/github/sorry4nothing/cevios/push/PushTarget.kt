@@ -14,6 +14,9 @@ sealed interface PushTarget {
     /** Der Entscheid zu einer eigenen Raumanfrage (raum_entscheid); die ID ist die der Anfrage. */
     data class RoomDecision(override val id: String) : PushTarget
 
+    /** Eine neue Raumanfrage an das Team des Raums (raum_anfrage); die ID ist die der Anfrage. Es öffnet die Liste der offenen Anfragen. */
+    data class RoomToDecide(override val id: String) : PushTarget
+
     /** Ein Objekt im Lager (`id`); in welchem Lager es liegt, löst `GET /api/v1/lager/aufloesen/{typ}/{id}` auf. */
     data class Camp(val type: String, override val id: String) : PushTarget
 
@@ -40,6 +43,7 @@ sealed interface PushTarget {
                 "programm" -> Program(id)
                 "termin_entscheid" -> Proposal(id)
                 "raum_entscheid" -> RoomDecision(id)
+                "raum_anfrage" -> RoomToDecide(id)
                 in CAMP_TYPES -> Camp(type!!, id)
                 else -> null
             }

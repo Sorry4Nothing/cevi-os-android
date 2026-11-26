@@ -20,7 +20,7 @@ import kotlinx.serialization.json.put
 enum class ArchiveNotice { SCHEDULE_ADOPTED, DOCUMENT_ADDED, DOCUMENT_DELETED, CONTACT_ADDED, CONTACT_DELETED }
 
 /** Ein Aushang, den der Server erzeugt hat; `name` ist die Art («schichtplan») und gibt den Dateinamen. */
-class SharedPdf(val name: String, val bytes: ByteArray)
+class SharedPdf(val name: String, val bytes: ByteArray, val download: Boolean = false)
 
 /** Die Eingabe für einen neuen Kontakt; leere Angaben gehen nicht hinaus. */
 data class ContactDraft(
@@ -311,8 +311,8 @@ class ArchiveViewModel(
 
     // ---- Aushänge ----
 
-    /** Lässt den Server den Aushang als PDF erzeugen; die Oberfläche teilt ihn über die Systemauswahl. */
-    fun loadPrintout(printout: Printout) {
+    /** Lässt den Server den Aushang als PDF erzeugen; die Oberfläche teilt ihn über die Systemauswahl oder legt ihn bei `download` unter den heruntergeladenen Dateien ab. */
+    fun loadPrintout(printout: Printout, download: Boolean = false) {
         val id = campId ?: return
         if (_printing.value != null) return
         writer.dismissError()
@@ -322,8 +322,8 @@ class ArchiveViewModel(
             // Das Lager ist unterdessen gewechselt: Das PDF gehört nicht mehr zu dieser Ansicht (`reset` hat «printing» schon geleert).
             if (campId != id) return@launch
             when (result) {
-                is ApiResult.Ok -> _pdf.value = SharedPdf(printout.wire, result.value)
-                is ApiResult.Failure -> writer.fail(result) { loadPrintout(printout) }
+                is ApiResult.Ok -> _pdf.value = SharedPdf(printout.wire, result.value, download)
+                is ApiResult.Failure -> writer.fail(result) { loadPrintout(printout, download) }
             }
             _printing.value = null
         }

@@ -213,7 +213,7 @@
     <string name="channel_programs">Programme</string>
     <string name="channel_messages">Mitteilungen</string>
     <string name="profile_privacy">Datenschutz</string>
-    <string name="profile_privacy_open">Im Browser öffnen</string>
+    <string name="profile_privacy_open">Öffnen</string>
     <string name="profile_support">Support</string>
     <string name="profile_delete_account">Konto löschen lassen</string>
     <string name="profile_change_password">Passwort ändern</string>
@@ -331,6 +331,7 @@
     <string name="back_to_queue">Zurück zur Warteschlange</string>
     <string name="queue_offline_title">Ohne Netz</string>
     <string name="queue_offline_stale">Du siehst den zuletzt geladenen Stand.</string>
+    <string name="queue_offline_stale_at">Du siehst den Stand von %1$s.</string>
     <plurals name="queue_banner_offline">
         <item quantity="one">Ohne Netz · %d Änderung wartet</item>
         <item quantity="other">Ohne Netz · %d Änderungen warten</item>

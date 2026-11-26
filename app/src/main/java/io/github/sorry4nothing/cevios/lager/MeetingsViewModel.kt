@@ -31,6 +31,9 @@ class MeetingNotice(val kind: Kind, val title: String, val undo: (() -> Unit)? =
 }
 
 /** Der offene Höck mit den Traktanden und den Punkten für den nächsten Höck. */
+/** Die Kalenderdatei eines Höcks, die der Server erzeugt hat; bei `download` kommt sie unter die heruntergeladenen Dateien, sonst in die Systemauswahl zum Teilen. */
+class SharedCalendar(val bytes: ByteArray, val download: Boolean = false)
+
 data class MeetingState(val id: String, val meeting: ApiResult<Meeting>? = null, val nextItems: List<AgendaItem> = emptyList())
 
 /** Höck-Modus: der Stand vom Server und die Stelle in den Traktanden (die App blättert lokal). */
@@ -81,8 +84,8 @@ class MeetingsViewModel(
     val notice: StateFlow<MeetingNotice?> = _notice.asStateFlow()
 
     /** Die Datei für den Kalender, die der Server erzeugt hat; die Oberfläche teilt sie und ruft [calendarShared] auf. */
-    private val _calendar = MutableStateFlow<ByteArray?>(null)
-    val calendar: StateFlow<ByteArray?> = _calendar.asStateFlow()
+    private val _calendar = MutableStateFlow<SharedCalendar?>(null)
+    val calendar: StateFlow<SharedCalendar?> = _calendar.asStateFlow()
 
     init {
         viewModelScope.launch { camp.changes.collect(::onChange) }
@@ -235,13 +238,13 @@ class MeetingsViewModel(
     }
 
     /** Lädt den Kalendereintrag, den der Server für diesen Höck erzeugt; die Oberfläche teilt ihn über die Systemfunktion. */
-    fun loadCalendar(meetingId: String) {
+    fun loadCalendar(meetingId: String, download: Boolean = false) {
         val id = campId ?: return
         writer.dismissError()
         viewModelScope.launch {
             when (val result = api.calendarFile(id, meetingId)) {
-                is ApiResult.Ok -> _calendar.value = result.value
-                is ApiResult.Failure -> writer.fail(result) { loadCalendar(meetingId) }
+                is ApiResult.Ok -> _calendar.value = SharedCalendar(result.value, download)
+                is ApiResult.Failure -> writer.fail(result) { loadCalendar(meetingId, download) }
             }
         }
     }

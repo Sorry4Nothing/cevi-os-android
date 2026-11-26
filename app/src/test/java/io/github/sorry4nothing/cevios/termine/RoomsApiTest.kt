@@ -10,6 +10,7 @@ import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -115,6 +116,49 @@ class RoomsApiTest {
         server.enqueue(MockResponse.Builder().code(204).build())
         assertEquals(ApiResult.Ok(Unit), runBlocking { api.cancelRoomRequest("a1") })
         assertEquals("DELETE /api/v1/raeume/anfragen/a1 HTTP/1.1", server.takeRequest().requestLine)
+    }
+
+    @Test
+    fun theOpenRequestsNameWhoAskedAndAnEmptyListMeansNothingToDecide() {
+        server.enqueue(
+            json(
+                200,
+                """{"anfragen":[
+                    {"id":"a1","raumId":"$roomId","raumName":"Pfadiheim Beispielwald","beginn":"2027-11-20T08:00:00Z","ende":"2027-11-20T11:00:00Z","zweck":"Gruppenstunde","status":"angefragt","begruendung":null,"entschiedenAm":null,"erstelltAm":"2027-11-01T10:00:00Z","vonName":"Beispiel Person"}
+                ],"weitere":true,"naechste":"7c9e6679-7425-40de-944b-e07fc1f90ae7"}""",
+            ),
+        )
+        val page = (runBlocking { api.openRoomRequests() } as ApiResult.Ok).value
+        assertEquals("GET /api/v1/raeume/anfragen/offen?limit=50 HTTP/1.1", server.takeRequest().requestLine)
+        assertEquals("Beispiel Person", page.requests.single().requesterName)
+        assertTrue(page.more)
+        server.enqueue(json(200, """{"anfragen":[],"weitere":false,"naechste":null}"""))
+        assertTrue((runBlocking { api.openRoomRequests() } as ApiResult.Ok).value.requests.isEmpty())
+    }
+
+    @Test
+    fun confirmingSendsNoReasonAndRejectingSendsOne() {
+        server.enqueue(json(200, """{"id":"a1","status":"bestaetigt"}"""))
+        val confirmed = (runBlocking { api.decideRoomRequest("a1", RoomDecisionBody("annehmen")) } as ApiResult.Ok).value
+        val first = server.takeRequest()
+        assertEquals("POST /api/v1/raeume/anfragen/a1/entscheid HTTP/1.1", first.requestLine)
+        // Der Vertrag erlaubt bei `annehmen` keine Begründung: Das Feld fehlt ganz.
+        assertEquals("""{"entscheid":"annehmen"}""", first.body?.utf8())
+        assertEquals("bestaetigt", confirmed.status)
+        server.enqueue(json(200, """{"id":"a2","status":"abgelehnt"}"""))
+        runBlocking { api.decideRoomRequest("a2", RoomDecisionBody("ablehnen", "Schon vergeben")) }
+        assertEquals("""{"entscheid":"ablehnen","begruendung":"Schon vergeben"}""", server.takeRequest().body?.utf8())
+    }
+
+    @Test
+    fun theConflictsOfADecisionKeepTheirCodeAndAreNeverSentTwice() {
+        server.enqueue(json(409, """{"code":"RAUM_BELEGT","message":"x"}"""))
+        val busy = runBlocking { api.decideRoomRequest("a1", RoomDecisionBody("annehmen")) } as ApiResult.Failure
+        assertEquals(DecisionNotice.BUSY, decisionNotice(true, busy))
+        server.enqueue(json(409, """{"code":"STATUS_UNGUELTIG","message":"x"}"""))
+        val done = runBlocking { api.decideRoomRequest("a1", RoomDecisionBody("annehmen")) } as ApiResult.Failure
+        assertEquals(DecisionNotice.ALREADY_DECIDED, decisionNotice(true, done))
+        assertEquals(2, server.requestCount)
     }
 
     @Test

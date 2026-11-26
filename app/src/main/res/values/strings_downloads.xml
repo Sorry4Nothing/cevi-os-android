@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gezielt heruntergeladene Dateien (#245): Nichts lädt von allein, alles auf Tipp. -->
+    <string name="dl_title">Heruntergeladene Dateien</string>
+    <string name="dl_action">Herunterladen</string>
+    <string name="dl_action_named">%1$s herunterladen</string>
+    <string name="dl_open">Öffnen</string>
+    <string name="dl_open_named">%1$s öffnen</string>
+    <string name="dl_remove">Entfernen</string>
+    <string name="dl_detail">%1$s, geladen am %2$s</string>
+    <string name="dl_done">«%1$s» ist heruntergeladen.</string>
+    <string name="dl_removed">«%1$s» ist entfernt.</string>
+    <string name="dl_empty_title">Noch nichts heruntergeladen</string>
+    <string name="dl_empty_text">Lade eine Datei herunter, damit du sie auch ohne Netz öffnen kannst. Bei Dokumenten, Aushängen und Kalenderdateien findest du «Herunterladen».</string>
+    <string name="dl_hint">Die Dateien liegen nur in dieser App. Sie verschwinden, wenn du dich abmeldest oder das Lager abgeschlossen ist.</string>
+    <string name="dl_calendar">Kalenderdatei herunterladen</string>
+    <string name="dl_error_not_https">Dieser Link ist nicht sicher. Öffne die Datei im Browser.</string>
+    <string name="dl_error_network">Ohne Netz. Versuche es nochmals, sobald du wieder Netz hast.</string>
+    <string name="dl_error_not_a_file">Diese Datei lässt sich nicht herunterladen, vielleicht verlangt der Ablageort eine Anmeldung. Öffne sie im Browser.</string>
+    <string name="dl_error_too_big">Die Datei ist zu gross. Du kannst höchstens 25 MB herunterladen.</string>
+    <string name="dl_error_storage">Die Datei liess sich nicht speichern. Prüfe den Platz auf dem Gerät.</string>
+    <string name="dl_error_no_app">Keine App auf diesem Gerät kann diese Datei öffnen.</string>
+</resources>

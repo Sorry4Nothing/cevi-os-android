@@ -45,4 +45,11 @@ class TermineApi(private val api: ApiClient) {
 
     /** Zieht eine offene Anfrage zurück oder sagt eine bestätigte Buchung ab, solange die Zeit nicht vorbei ist. */
     suspend fun cancelRoomRequest(id: String): ApiResult<Unit> = api.delete("/api/v1/raeume/anfragen/$id")
+
+    /** Die offenen Anfragen der Räume, über die die Person entscheidet (leer, wenn sie über nichts entscheidet). shortcut: eine Seite mit höchstens 50, die nächsten erscheinen nach dem Entscheiden. */
+    suspend fun openRoomRequests(): ApiResult<RoomRequestPage> = api.get("/api/v1/raeume/anfragen/offen?limit=50")
+
+    /** Nimmt eine Anfrage an oder lehnt sie ab. Nicht idempotent (der Vertrag kennt keine `clientOpId`): Die App sendet nie von selbst nochmals. */
+    suspend fun decideRoomRequest(id: String, body: RoomDecisionBody): ApiResult<RoomRequestCreated> =
+        api.post("/api/v1/raeume/anfragen/$id/entscheid", body)
 }

@@ -16,7 +16,7 @@
     <string name="store_size">Grösse</string>
     <string name="store_size_missing">Wähle eine Grösse.</string>
     <string name="store_add">In den Warenkorb</string>
-    <string name="store_add_label">%1$s in den Warenkorb legen</string>
+    <string name="store_add_label">In den Warenkorb, %1$s</string>
     <string name="store_in_cart">%1$d im Warenkorb</string>
     <string name="store_cart_summary">%1$d Stück, %2$s</string>
     <string name="store_cart_open">Warenkorb ansehen</string>
@@ -29,10 +29,10 @@
     <string name="store_cart_empty_action">Zum Lädeli</string>
     <string name="store_line_size">Grösse %1$s</string>
     <string name="store_line_each">%1$s pro Stück</string>
-    <string name="store_more_label">%1$s: ein Stück mehr</string>
-    <string name="store_less_label">%1$s: ein Stück weniger</string>
+    <string name="store_more_label">Ein Stück mehr, %1$s</string>
+    <string name="store_less_label">Ein Stück weniger, %1$s</string>
     <string name="store_remove">Entfernen</string>
-    <string name="store_remove_label">%1$s entfernen</string>
+    <string name="store_remove_label">Entfernen, %1$s</string>
     <string name="store_cart_too_many">Du kannst höchstens %1$d verschiedene Artikel bestellen.</string>
     <string name="store_cart_too_much">Von einem Artikel geht höchstens %1$d Stück.</string>
     <string name="store_handover">Übergabe</string>
@@ -80,7 +80,7 @@
     <string name="store_order_line">%1$d × %2$s</string>
     <string name="store_order_line_size">%1$d × %2$s, Grösse %3$s</string>
     <string name="store_order_cancel">Stornieren</string>
-    <string name="store_order_cancel_label">Bestellung vom %1$s stornieren</string>
+    <string name="store_order_cancel_label">Stornieren, Bestellung vom %1$s</string>
     <string name="store_order_cancelling">Wird storniert</string>
     <string name="store_order_cancel_title">Bestellung stornieren?</string>
     <string name="store_order_cancel_text">Die Bestellung vom %1$s über %2$s ist danach storniert. Das lässt sich nicht rückgängig machen.</string>
